@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.svg" alt="OMEN Banner" width="100%">
+  <img src="docs/banner.png" alt="OMEN Banner" width="100%">
 </p>
 
 <h1 align="center">🔮 OMEN — The Oracle Machine</h1>
@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#features"><img src="https://img.shields.io/badge/AI_Agents-1200+-7C3AED?style=for-the-badge&logo=openai&logoColor=white" alt="AI Agents"></a>
   <a href="#whale-intelligence"><img src="https://img.shields.io/badge/Whales_Tracked-50+-F59E0B?style=for-the-badge&logo=ethereum&logoColor=white" alt="Whales"></a>
-  <a href="#revenue-model"><img src="https://img.shields.io/badge/Trade_Fee-1%25-10B981?style=for-the-badge&logo=stripe&logoColor=white" alt="Trade Fee"></a>
+  <a href="#pricing"><img src="https://img.shields.io/badge/Trade_Fee-1%25-10B981?style=for-the-badge&logo=stripe&logoColor=white" alt="Trade Fee"></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Deploy-1_Click-3B82F6?style=for-the-badge&logo=docker&logoColor=white" alt="Deploy"></a>
 </p>
 
@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick Start</a> •
   <a href="#features">Features</a> •
   <a href="#how-it-works">How It Works</a> •
-  <a href="#revenue-model">Revenue Model</a> •
+  <a href="#pricing">Pricing</a> •
   <a href="#deployment">Deploy</a> •
   <a href="docs/API.md">API Docs</a>
 </p>
@@ -43,20 +43,18 @@ OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](
 
 ## 📸 Screenshots
 
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="OMEN Dashboard" width="90%">
+</p>
+
 <table>
   <tr>
     <td align="center"><strong>🔮 Oracle Chamber</strong></td>
     <td align="center"><strong>🐋 Whale Leaderboard</strong></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/oracle.svg" alt="Oracle" width="400"></td>
-    <td><img src="docs/screenshots/whales.svg" alt="Whales" width="400"></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><strong>📊 Dashboard</strong></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><img src="docs/screenshots/dashboard.svg" alt="Dashboard" width="700"></td>
+    <td><img src="docs/screenshots/oracle.png" alt="Oracle Chat" width="100%"></td>
+    <td><img src="docs/screenshots/whales.png" alt="Whale Leaderboard" width="100%"></td>
   </tr>
 </table>
 
@@ -101,9 +99,10 @@ Agents debate in real-time → Vote → Reach consensus → Generate verdict wit
 
 ### 💬 Personal AI Chat
 
-- Each user gets a dedicated AI agent with memory
+- Each user gets a dedicated AI assistant with memory
 - Ask questions, adjust strategy, get insights
 - "Why did the Oracle pick Lakers?" → Full reasoning breakdown
+- **10 free messages** included with every account, then 1 credit per message
 
 ---
 
@@ -137,51 +136,49 @@ Agents debate in real-time → Vote → Reach consensus → Generate verdict wit
 ┌──────────────────────▼──────────────────────────────────┐
 │                 ⚡ EXECUTION ENGINE                      │
 │  User clicks "Bet $5" → CLOB order → Polymarket        │
-│  Trade fee: 1% ($0.05) → OMEN revenue                  │
-│  Win fee: 1% of profit → OMEN revenue                  │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 💰 Revenue Model
+## 💰 Pricing
 
-### Pay-As-You-Go Credits
+### Getting Started — It's Almost Free
 
-| Credits | Price | Per Credit |
-|---------|-------|------------|
-| 50 | $5 | $0.10 |
-| 120 | $10 | $0.083 |
-| 300 | $20 | $0.067 |
-| 1,000 | $50 | $0.050 |
+Every new account gets **50 free credits** + **10 free AI chat messages** to try everything.
 
-### Credit Usage
+### Credit Packages
 
-| Action | Cost |
-|--------|------|
-| 🔮 Oracle Prediction | 1 credit |
-| 👁️ Whale Intel Report | 1 credit |
-| 🤖 Auto-Pilot (per bet) | 2 credits |
-| 💬 AI Chat Message | Free |
-| 🏆 Leaderboard Access | Free |
+| Package | Credits | Price | Best For |
+|---------|---------|-------|----------|
+| **Starter** | 50 credits | $5 | Try it out |
+| ⭐ **Popular** | 120 credits | $10 | Regular users |
+| **Pro** | 300 credits | $20 | Active traders |
+| **Whale** | 1,000 credits | $50 | Power users |
+
+### What Credits Cost
+
+| Action | Cost | What You Get |
+|--------|------|-------------|
+| 🔮 **Oracle Prediction** | 1 credit | AI swarm verdict + confidence score + whale signals |
+| 💬 **AI Chat Message** | 1 credit | Personal AI assistant (first 10 messages free) |
+| 👁️ **Whale Deep Dive** | 1 credit | Full whale analysis: positions, history, win streaks |
+| 🤖 **Auto-Pilot Bet** | 2 credits | Fully automated bet placement + exit management |
+| 🏆 **Leaderboard** | Free | Browse top whale rankings anytime |
+| 🔮 **Daily Free Oracle** | Free | 1 free prediction every day — no credits needed |
 
 ### Trading Fees
 
-| Fee Type | Amount | When |
-|----------|--------|------|
-| **Trade Fee** | **1%** of bet amount | Every bet placed through OMEN |
-| **Win Fee** | **1%** of profit | Only on winning bets |
+Simple, transparent, and low:
 
-> 💡 **Example**: Bet $20 → Trade fee: $0.20. Win $16 profit → Win fee: $0.16. **Total OMEN revenue: $0.36**
+| Fee | Amount | When |
+|-----|--------|------|
+| **Trade Fee** | 1% of bet | When OMEN places a bet for you |
+| **Win Fee** | 1% of profit | Only when you win — if you lose, we charge nothing |
 
-### Revenue at Scale
+> **Example:** You bet $20 through OMEN → $0.20 trade fee. You win $16 profit → $0.16 win fee. **Total cost: $0.36** for a $16 profit.
 
-| Users | Daily Bets | Avg Size | Est. Daily Revenue |
-|-------|-----------|----------|-------------------|
-| 100 | 300 | $10 | ~$42 |
-| 1,000 | 3,000 | $15 | ~$630 |
-| 10,000 | 30,000 | $20 | ~$8,400 |
-| 50,000 | 150,000 | $25 | ~$52,500 |
+> 💡 No monthly subscriptions. No hidden fees. No lock-in. Just pay for what you use.
 
 ---
 
@@ -202,18 +199,14 @@ docker-compose up -d
 | API Docs | http://localhost:8000/docs |
 | WebSocket | ws://localhost:8000/ws |
 
-### Manual Setup
+### Quick Deploy (No Docker)
 
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Frontend
-cd frontend
-npm install
-npm run dev
+git clone https://github.com/Mecasa-hub/omen.git
+cd omen
+pip install aiosqlite httpx aiohttp pydantic pydantic-settings uvicorn fastapi
+python deploy.py
+# OMEN is live at http://localhost:8888
 ```
 
 ### Environment Variables
@@ -221,7 +214,6 @@ npm run dev
 ```env
 # Required
 DATABASE_URL=postgresql://user:pass@localhost/omen
-REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-secret-key
 
 # AI Engine (we provide defaults)
@@ -254,6 +246,9 @@ omen/
 │   │   ├── components/# Reusable UI components
 │   │   └── stores/    # Pinia state management
 │   └── package.json
+├── deploy.py          # Lightweight deployment (SQLite)
+├── whale_discovery.py # Auto-discover profitable wallets
+├── x_whale_bot.py     # X/Twitter whale alert bot
 ├── docs/              # Architecture, API, deployment guides
 ├── tests/             # Comprehensive test suite
 ├── scripts/           # DB migration, whale seeding
@@ -269,7 +264,7 @@ omen/
 |-------|------------|
 | **Backend** | FastAPI, Python 3.11+, SQLAlchemy, Celery |
 | **Frontend** | Vue 3, Vite, Tailwind CSS, Pinia |
-| **Database** | PostgreSQL, Redis |
+| **Database** | PostgreSQL, Redis (SQLite for quick deploy) |
 | **AI Engine** | Multi-agent swarm (Gemini Flash / GPT-4o) |
 | **Execution** | Polymarket CLOB API |
 | **Auth** | JWT + OAuth2 |
@@ -277,11 +272,9 @@ omen/
 
 ---
 
-## 🔥 Viral Growth Engine
+## 🔥 Built for Virality
 
-OMEN is designed to go viral:
-
-| Feature | Viral Mechanic |
+| Feature | How It Spreads |
 |---------|----------------|
 | 🎬 **War Room** | Screen-record AI debates → TikTok/Reels |
 | 🏆 **Oracle Streak** | "🔥 OMEN is on a 12-win streak!" |
@@ -311,8 +304,10 @@ OMEN is designed to go viral:
 - [x] 🐋 Whale Tracking & Copy Trading
 - [x] 💳 Credit System (pay-as-you-go)
 - [x] 🤖 Auto-Pilot Mode
-- [x] 💬 Personal AI Chat
+- [x] 💬 Personal AI Chat (10 free + credits)
 - [x] 📊 Dashboard & Analytics
+- [x] 🔍 Whale Discovery Engine
+- [x] 🐦 X Whale Alert Bot
 - [ ] 📱 Mobile App (React Native)
 - [ ] 🌐 Multi-chain (Azuro, Overtime)
 - [ ] 🏪 Whale Marketplace

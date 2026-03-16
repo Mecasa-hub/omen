@@ -38,7 +38,7 @@
   <text x="685" y="125" fill="#9CA3AF" font-family="Arial" font-size="10">whales tracked</text>
   <!-- PnL Chart Area -->
   <rect x="200" y="150" width="380" height="170" rx="10" fill="url(#card)" stroke="#2D2150" stroke-width="1"/>
-  <text x="220" y="175" fill="white" font-family="Arial" font-size="13" font-weight="bold">Profit & Loss (30d)</text>
+  <text x="220" y="175" fill="white" font-family="Arial" font-size="13" font-weight="bold">Profit &amp; Loss (30d)</text>
   <polyline points="220,290 260,280 300,260 340,270 380,240 420,220 460,230 500,200 540,210" fill="none" stroke="#10B981" stroke-width="2"/>
   <line x1="220" y1="300" x2="560" y2="300" stroke="#2D2150" stroke-width="1"/>
   <!-- Recent Trades -->

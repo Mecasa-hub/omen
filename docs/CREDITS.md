@@ -420,3 +420,13 @@ See [API.md](./API.md) for complete endpoint documentation.
 - Currently: Credits never expire
 - Proposed: Credits expire after 365 days of account inactivity
 - Grace period: 30-day warning before expiration
+
+
+## Free Tier
+
+Every new OMEN account includes:
+- **50 welcome credits** to explore all features
+- **10 free AI chat messages** to talk with your personal oracle
+- **1 free daily prediction** — ask the Oracle one question per day, no credits needed
+
+After your free messages are used, each AI chat message costs **1 credit**.
