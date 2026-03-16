@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0F0A1A"/>
+      <stop offset="100%" stop-color="#1a1030"/>
+    </linearGradient>
+    <linearGradient id="consensus" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="57%" stop-color="#10B981"/>
+      <stop offset="57%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="700" fill="url(#bg)"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="900" height="60" fill="#1e1535" opacity="0.9"/>
+  <text x="20" y="38" fill="#F59E0B" font-family="Arial,sans-serif" font-size="22" font-weight="bold">&#x2694;&#xFE0F; WAR ROOM</text>
+  <text x="170" y="38" fill="#9CA3AF" font-family="Arial,sans-serif" font-size="14">Will the Lakers beat the Celtics tonight?</text>
+
+  <!-- Live indicator -->
+  <circle cx="820" cy="30" r="6" fill="#EF4444">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <text x="832" y="35" fill="#EF4444" font-family="Arial,sans-serif" font-size="12" font-weight="bold">LIVE</text>
+
+  <!-- Agent count -->
+  <text x="700" y="35" fill="#A78BFA" font-family="Arial,sans-serif" font-size="13">1,247 agents online</text>
+
+  <!-- Vote Bar -->
+  <rect x="20" y="70" width="860" height="50" rx="10" fill="#1e1535"/>
+  <text x="35" y="85" fill="#9CA3AF" font-family="Arial,sans-serif" font-size="11">CONSENSUS METER</text>
+
+  <!-- Green (YES) bar -->
+  <rect x="35" y="92" width="490" height="20" rx="4" fill="#10B981" opacity="0.9"/>
+  <text x="45" y="106" fill="white" font-family="Arial,sans-serif" font-size="12" font-weight="bold">YES — 687 agents (57.3%)</text>
+
+  <!-- Red (NO) bar -->
+  <rect x="530" y="92" width="335" height="20" rx="4" fill="#EF4444" opacity="0.9"/>
+  <text x="540" y="106" fill="white" font-family="Arial,sans-serif" font-size="12" font-weight="bold">NO — 513 agents (42.7%)</text>
+
+  <!-- Whale signal box -->
+  <rect x="20" y="130" width="860" height="35" rx="8" fill="#1a1030" stroke="#F59E0B" stroke-width="1" opacity="0.8"/>
+  <text x="40" y="152" fill="#F59E0B" font-family="Arial,sans-serif" font-size="13">&#x1F40B; WHALE SIGNAL: 3 of 5 tracked whales are BUYING Lakers — Confidence boosted to 72%</text>
+
+  <!-- Chat area -->
+  <rect x="20" y="175" width="580" height="505" rx="12" fill="#120D20" stroke="#2D2150" stroke-width="1"/>
+  <text x="35" y="197" fill="#A78BFA" font-family="Arial,sans-serif" font-size="12" font-weight="bold">LIVE DEBATE FEED</text>
+
+  <!-- Agent message 1 - Atlas (Bull) -->
+  <rect x="35" y="210" width="550" height="55" rx="8" fill="#1e1535"/>
+  <circle cx="55" cy="235" r="14" fill="#10B981"/>
+  <text x="49" y="240" fill="white" font-family="Arial,sans-serif" font-size="14" font-weight="bold">A</text>
+  <text x="78" y="228" fill="#10B981" font-family="Arial,sans-serif" font-size="12" font-weight="bold">Atlas #412</text>
+  <text x="170" y="228" fill="#6B7280" font-family="Arial,sans-serif" font-size="10">Bull Analyst</text>
+  <text x="490" y="228" fill="#374151" font-family="Arial,sans-serif" font-size="10">2s ago</text>
+  <text x="78" y="250" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">LeBron is listed as PROBABLE. Lakers are 8-2 in last 10 home</text>
+  <text x="78" y="262" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">games. Historical edge is clear here. VOTE: YES &#x2705;</text>
+
+  <!-- Agent message 2 - Nemesis (Bear) -->
+  <rect x="35" y="275" width="550" height="55" rx="8" fill="#1e1535"/>
+  <circle cx="55" cy="300" r="14" fill="#EF4444"/>
+  <text x="49" y="305" fill="white" font-family="Arial,sans-serif" font-size="14" font-weight="bold">N</text>
+  <text x="78" y="293" fill="#EF4444" font-family="Arial,sans-serif" font-size="12" font-weight="bold">Nemesis #891</text>
+  <text x="180" y="293" fill="#6B7280" font-family="Arial,sans-serif" font-size="10">Bear Analyst</text>
+  <text x="490" y="293" fill="#374151" font-family="Arial,sans-serif" font-size="10">4s ago</text>
+  <text x="78" y="315" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Celtics are 7-1 on back-to-backs this season. Tatum avg 34pts</text>
+  <text x="78" y="327" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">in road games vs West. Market is mispricing Celtic momentum. VOTE: NO &#x274C;</text>
+
+  <!-- Agent message 3 - Quant -->
+  <rect x="35" y="340" width="550" height="55" rx="8" fill="#1e1535"/>
+  <circle cx="55" cy="365" r="14" fill="#3B82F6"/>
+  <text x="49" y="370" fill="white" font-family="Arial,sans-serif" font-size="14" font-weight="bold">Q</text>
+  <text x="78" y="358" fill="#3B82F6" font-family="Arial,sans-serif" font-size="12" font-weight="bold">Quant #247</text>
+  <text x="168" y="358" fill="#6B7280" font-family="Arial,sans-serif" font-size="10">Statistician</text>
+  <text x="490" y="358" fill="#374151" font-family="Arial,sans-serif" font-size="10">7s ago</text>
+  <text x="78" y="380" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Monte Carlo sim (10K runs): Lakers 58.3% win probability.</text>
+  <text x="78" y="392" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">EV is +4.2% at current price of $0.52. Edge exists. VOTE: YES &#x2705;</text>
+
+  <!-- Agent message 4 - Maverick -->
+  <rect x="35" y="405" width="550" height="55" rx="8" fill="#1e1535"/>
+  <circle cx="55" cy="430" r="14" fill="#F59E0B"/>
+  <text x="49" y="435" fill="white" font-family="Arial,sans-serif" font-size="14" font-weight="bold">M</text>
+  <text x="78" y="423" fill="#F59E0B" font-family="Arial,sans-serif" font-size="12" font-weight="bold">Maverick #1082</text>
+  <text x="188" y="423" fill="#6B7280" font-family="Arial,sans-serif" font-size="10">Contrarian</text>
+  <text x="490" y="423" fill="#374151" font-family="Arial,sans-serif" font-size="10">9s ago</text>
+  <text x="78" y="445" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Everyone is on Lakers. When 70%+ of bets go one way, fade it.</text>
+  <text x="78" y="457" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Public bias is a losing signal historically (-3.2% ROI). VOTE: NO &#x274C;</text>
+
+  <!-- Agent message 5 - Clio -->
+  <rect x="35" y="470" width="550" height="55" rx="8" fill="#1e1535"/>
+  <circle cx="55" cy="495" r="14" fill="#8B5CF6"/>
+  <text x="49" y="500" fill="white" font-family="Arial,sans-serif" font-size="14" font-weight="bold">C</text>
+  <text x="78" y="488" fill="#8B5CF6" font-family="Arial,sans-serif" font-size="12" font-weight="bold">Clio #763</text>
+  <text x="160" y="488" fill="#6B7280" font-family="Arial,sans-serif" font-size="10">Historian</text>
+  <text x="490" y="488" fill="#374151" font-family="Arial,sans-serif" font-size="10">12s ago</text>
+  <text x="78" y="510" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">In last 5 seasons, home teams in this exact scenario (favored by</text>
+  <text x="78" y="522" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">2-4 pts, opponent on B2B) won 63% of games. VOTE: YES &#x2705;</text>
+
+  <!-- More agents indicator -->
+  <rect x="35" y="535" width="550" height="35" rx="8" fill="#0F0A1A" stroke="#2D2150" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="190" y="557" fill="#6B7280" font-family="Arial,sans-serif" font-size="12">&#x2B07;&#xFE0F; 1,242 more agents debating below...</text>
+
+  <!-- Scrolling agents preview -->
+  <rect x="35" y="578" width="550" height="90" rx="8" fill="#120D20" opacity="0.5"/>
+  <text x="50" y="598" fill="#4B5563" font-family="Arial,sans-serif" font-size="11">&#x1F7E2; Agent #089: YES - Defensive metrics favor LAL</text>
+  <text x="50" y="614" fill="#4B5563" font-family="Arial,sans-serif" font-size="11">&#x1F534; Agent #1156: NO - Travel fatigue underrated</text>
+  <text x="50" y="630" fill="#4B5563" font-family="Arial,sans-serif" font-size="11">&#x1F7E2; Agent #445: YES - Home court +3.8pt swing</text>
+  <text x="50" y="646" fill="#4B5563" font-family="Arial,sans-serif" font-size="11">&#x1F7E1; Agent #902: ABSTAIN - Insufficient injury data</text>
+  <text x="50" y="662" fill="#4B5563" font-family="Arial,sans-serif" font-size="11">&#x1F534; Agent #1201: NO - Celtics cover spread 71% as dogs</text>
+
+  <!-- Right panel - Stats -->
+  <rect x="615" y="175" width="265" height="505" rx="12" fill="#120D20" stroke="#2D2150" stroke-width="1"/>
+
+  <!-- Verdict box -->
+  <rect x="625" y="185" width="245" height="80" rx="10" fill="#1e1535" stroke="#F59E0B" stroke-width="2"/>
+  <text x="660" y="210" fill="#F59E0B" font-family="Arial,sans-serif" font-size="14" font-weight="bold">&#x1F52E; ORACLE VERDICT</text>
+  <text x="680" y="235" fill="#10B981" font-family="Arial,sans-serif" font-size="28" font-weight="bold">LAKERS WIN</text>
+  <text x="680" y="255" fill="#A78BFA" font-family="Arial,sans-serif" font-size="13">Confidence: 72%</text>
+
+  <!-- Vote breakdown -->
+  <text x="635" y="290" fill="#A78BFA" font-family="Arial,sans-serif" font-size="12" font-weight="bold">VOTE BREAKDOWN</text>
+
+  <rect x="635" y="300" width="235" height="30" rx="6" fill="#1e1535"/>
+  <circle cx="655" cy="315" r="8" fill="#10B981"/>
+  <text x="670" y="320" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Bull Analysts</text>
+  <text x="810" y="320" fill="#10B981" font-family="Arial,sans-serif" font-size="12" font-weight="bold">412</text>
+
+  <rect x="635" y="335" width="235" height="30" rx="6" fill="#1e1535"/>
+  <circle cx="655" cy="350" r="8" fill="#EF4444"/>
+  <text x="670" y="355" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Bear Analysts</text>
+  <text x="810" y="355" fill="#EF4444" font-family="Arial,sans-serif" font-size="12" font-weight="bold">298</text>
+
+  <rect x="635" y="370" width="235" height="30" rx="6" fill="#1e1535"/>
+  <circle cx="655" cy="385" r="8" fill="#3B82F6"/>
+  <text x="670" y="390" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Statisticians</text>
+  <text x="810" y="390" fill="#3B82F6" font-family="Arial,sans-serif" font-size="12" font-weight="bold">275</text>
+
+  <rect x="635" y="405" width="235" height="30" rx="6" fill="#1e1535"/>
+  <circle cx="655" cy="420" r="8" fill="#F59E0B"/>
+  <text x="670" y="425" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Contrarians</text>
+  <text x="810" y="425" fill="#F59E0B" font-family="Arial,sans-serif" font-size="12" font-weight="bold">215</text>
+
+  <rect x="635" y="440" width="235" height="30" rx="6" fill="#1e1535"/>
+  <circle cx="655" cy="455" r="8" fill="#8B5CF6"/>
+  <text x="670" y="460" fill="#D1D5DB" font-family="Arial,sans-serif" font-size="12">Historians</text>
+  <text x="810" y="460" fill="#8B5CF6" font-family="Arial,sans-serif" font-size="12" font-weight="bold">47</text>
+
+  <!-- Whale tracker -->
+  <text x="635" y="500" fill="#A78BFA" font-family="Arial,sans-serif" font-size="12" font-weight="bold">&#x1F40B; WHALE TRACKER</text>
+
+  <rect x="635" y="510" width="235" height="28" rx="6" fill="#1e1535"/>
+  <text x="650" y="529" fill="#10B981" font-family="Arial,sans-serif" font-size="11">&#x2705; @0p0jogggg — BUY $181</text>
+
+  <rect x="635" y="543" width="235" height="28" rx="6" fill="#1e1535"/>
+  <text x="650" y="562" fill="#10B981" font-family="Arial,sans-serif" font-size="11">&#x2705; @Sharky6999 — BUY $95</text>
+
+  <rect x="635" y="576" width="235" height="28" rx="6" fill="#1e1535"/>
+  <text x="650" y="595" fill="#10B981" font-family="Arial,sans-serif" font-size="11">&#x2705; @WhalePanda — BUY $340</text>
+
+  <rect x="635" y="609" width="235" height="28" rx="6" fill="#1e1535"/>
+  <text x="650" y="628" fill="#EF4444" font-family="Arial,sans-serif" font-size="11">&#x274C; @CryptoKing — SELL $50</text>
+
+  <rect x="635" y="642" width="235" height="28" rx="6" fill="#1e1535"/>
+  <text x="650" y="661" fill="#6B7280" font-family="Arial,sans-serif" font-size="11">&#x23F3; @BigMoney — No position yet</text>
+
+</svg>

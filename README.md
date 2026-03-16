@@ -76,12 +76,35 @@ The Oracle uses a **5-agent swarm** with distinct personalities:
 
 Agents debate in real-time → Vote → Reach consensus → Generate verdict with confidence score.
 
-### ⚔️ War Room — Watch AI Debate Live
+### ⚔️ War Room — Watch 1,200 AI Agents Debate Live
 
-- See 1,200 agents argue in real-time
-- Live vote counter (Bulls vs Bears)
-- Whale signals overlaid
-- **Screen-record and share on TikTok/X** — built for virality
+> *This is not a chatbot. This is a war room where thousands of AI minds clash in real-time.*
+
+<p align="center">
+  <img src="docs/screenshots/warroom.png" alt="OMEN War Room - AI agents debating live" width="95%">
+</p>
+
+- 🟢 **Bull Analysts** — Find every reason to buy
+- 🔴 **Bear Analysts** — Challenge every assumption
+- 🔵 **Statisticians** — Pure probability and Monte Carlo simulations
+- 🟡 **Contrarians** — Fade the crowd, exploit public bias
+- 🟣 **Historians** — Pattern match against decades of data
+- **Screen-record the debates and share on TikTok/X** — built for virality
+
+#### 🧬 The Swarm Matrix — 1,200 Agents, One Verdict
+
+<p align="center">
+  <img src="docs/screenshots/swarm.png" alt="OMEN Swarm Intelligence Matrix - 1200 agents voting" width="95%">
+</p>
+
+> Each dot is one autonomous AI agent. Green = YES. Red = NO. Yellow = Abstain.
+> Watch consensus form in real-time as 1,200 agents analyze, debate, and vote independently.
+
+**Why swarm intelligence beats single AI models:**
+- Single models hallucinate. **Swarms converge on truth.**
+- 1,200 agents with different strategies cancel out individual bias
+- Whale wallet behavior overlaid as a **confidence multiplier**
+- When the swarm AND whales agree → highest-conviction signals
 
 ### 🐋 Whale Intelligence
 
