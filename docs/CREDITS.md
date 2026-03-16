@@ -109,34 +109,34 @@ User clicks "Predict"  ──────►  Check balance ≥ 1
 
 OMEN charges two types of fees on trades executed through the platform:
 
-### Execution Fee: 2.5%
+### Execution Fee: 1%
 
 Charged on **every trade** at the time of execution.
 
-| Trade Amount | Fee (2.5%) | Fee in Credits |
+| Trade Amount | Fee (1%) | Fee in Credits |
 |-------------|------------|----------------|
 | $10.00 | $0.25 | 3 credits |
 | $25.00 | $0.625 | 7 credits |
 | $50.00 | $1.25 | 13 credits |
-| $100.00 | $2.50 | 25 credits |
-| $500.00 | $12.50 | 125 credits |
+| $100.00 | $1.00 | 10 credits |
+| $500.00 | $5.00 | 50 credits |
 
-**Formula:** `fee_credits = max(1, int(amount_usd × 0.025 × 10))`
+**Formula:** `fee_credits = max(1, int(amount_usd × 0.01 × 10))`
 
 The fee is deducted from the user's credit balance as a `trade_fee` transaction. Minimum fee is 1 credit.
 
-### Profit Fee: 5%
+### Profit Fee: 1%
 
 Charged **only on winning trades** when profits are realized.
 
-| Profit | Fee (5%) | Fee in Credits |
+| Profit | Fee (1%) | Fee in Credits |
 |--------|----------|----------------|
 | $10.00 | $0.50 | 5 credits |
-| $50.00 | $2.50 | 25 credits |
+| $50.00 | $0.50 | 5 credits |
 | $100.00 | $5.00 | 50 credits |
 | $500.00 | $25.00 | 250 credits |
 
-**Formula:** `fee_credits = max(1, int(profit_usd × 0.05 × 10))` (only if profit > 0)
+**Formula:** `fee_credits = max(1, int(profit_usd × 0.01 × 10))` (only if profit > 0)
 
 The profit fee is recorded as a `win_fee` transaction.
 
@@ -144,10 +144,10 @@ The profit fee is recorded as a `win_fee` transaction.
 
 ```
 Trade: BUY $100 on "BTC > $100K" at 0.65
-├── Execution fee: $100 × 2.5% = $2.50 (25 credits)
+├── Execution fee: $100 × 1% = $1.00 (10 credits)
 ├── Market resolves YES → Payout: $100 / 0.65 = $153.85
 ├── Profit: $153.85 - $100 = $53.85
-├── Profit fee: $53.85 × 5% = $2.69 (27 credits)
+├── Profit fee: $53.85 × 1% = $0.54 (6 credits)
 └── Total fees: 52 credits ($5.19)
     Net profit: $53.85 - $5.19 = $48.66
 ```
@@ -338,8 +338,8 @@ ORDER BY created_at;
 |------|-----------|---------|-------------|
 | `purchase` | + (credit) | Stripe payment | User bought credits |
 | `prediction` | - (debit) | POST /oracle/predict | AI prediction consumed |
-| `trade_fee` | - (debit) | POST /trading/execute | 2.5% execution fee |
-| `win_fee` | - (debit) | Trade profit realized | 5% profit sharing |
+| `trade_fee` | - (debit) | POST /trading/execute | 1% execution fee |
+| `win_fee` | - (debit) | Trade profit realized | 1% profit sharing |
 | `referral_bonus` | + (credit) | Referee purchases | 10% of referee's purchase |
 | `admin_adjustment` | ± | Admin action | Manual correction/dispute resolution |
 
@@ -408,7 +408,7 @@ See [API.md](./API.md) for complete endpoint documentation.
 |------|----------|------------|-------|
 | Free | $0 | 5 free predictions | Basic access |
 | Pro | $29/mo | 350 credits | Priority AI, whale alerts |
-| Elite | $99/mo | 1,500 credits | Reduced fees (1.5%), API access |
+| Elite | $99/mo | 1,500 credits | Reduced fees (0.5%), API access |
 
 ### Credit Gifting (Planned)
 

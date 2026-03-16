@@ -240,8 +240,8 @@ def _synthetic_chat_response(messages: list[dict]) -> str:
             "OMEN uses a credit system:\n"
             "- **$5 = 50 credits** ($0.10 per credit)\n"
             "- 1 credit per prediction query\n"
-            "- 2.5% fee on trades placed\n"
-            "- 5% fee on winning profits\n\n"
+            "- 1% fee on trades placed\n"
+            "- 1% fee on winning profits\n\n"
             "Check your balance at `/credits/balance` or purchase more at `/credits/purchase`."
         )
     elif any(w in lower for w in ["help", "what can", "how do"]):

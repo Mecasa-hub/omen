@@ -61,8 +61,8 @@ async def place_order(
     effective_price = price or 0.50  # Default mid-price for market orders
     size = round(amount_usd / effective_price, 4)
 
-    # Calculate platform fee (2.5% of trade amount)
-    fee_usd = round(amount_usd * 0.025, 4)
+    # Calculate platform fee (1% of trade amount)
+    fee_usd = round(amount_usd * 0.01, 4)
 
     # Create trade record
     trade = Trade(

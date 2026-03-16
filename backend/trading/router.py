@@ -38,7 +38,7 @@ async def execute_trade(
 ) -> Trade:
     """Execute a trade on Polymarket.
 
-    Runs risk checks, calculates and deducts the platform fee (2.5%),
+    Runs risk checks, calculates and deducts the platform fee (1%),
     then places the order via the CLOB executor.
     """
     # Run risk checks
@@ -54,7 +54,7 @@ async def execute_trade(
             detail=f"Risk check failed: {risk.reason}",
         )
 
-    # Calculate and deduct platform fee (2.5% of trade amount)
+    # Calculate and deduct platform fee (1% of trade amount)
     fee_usd = await calculate_trade_fee(body.amount_usd)
     fee_credits = max(1, int(fee_usd * 10))  # Convert to credits ($1 = 10 credits)
 

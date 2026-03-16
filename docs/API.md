@@ -408,8 +408,8 @@ Get paginated credit transaction history.
 |------|-------------|
 | `purchase` | Credits purchased via Stripe |
 | `prediction` | Credit deducted for AI prediction |
-| `trade_fee` | 2.5% platform fee on trades |
-| `win_fee` | 5% profit-sharing fee |
+| `trade_fee` | 1% platform fee on trades |
+| `win_fee` | 1% profit-sharing fee |
 | `referral_bonus` | 10% bonus from referee's purchase |
 | `admin_adjustment` | Manual admin adjustment |
 
@@ -802,7 +802,7 @@ Get recent whale movement alerts.
 Execute a trade on Polymarket.
 
 **Authentication:** Required  
-**Fees:** 2.5% of trade amount deducted as credits
+**Fees:** 1% of trade amount deducted as credits
 
 **Request Body:**
 

@@ -22,7 +22,7 @@
 
 ## System Overview
 
-OMEN is an AI-powered Polymarket prediction and copy-trading SaaS platform that combines swarm intelligence debates with whale wallet tracking to deliver high-confidence market predictions. The platform operates on a credit-based revenue model with trade execution fees and profit-sharing.
+OMEN is an AI-powered Polymarket prediction and copy-trading SaaS platform that combines swarm intelligence debates with whale wallet tracking to deliver high-confidence market predictions. The platform operates on a credit-based revenue model with trade execution fees (1%) and profit-sharing (1%).
 
 ### Key Capabilities
 
@@ -271,7 +271,7 @@ User Request          Risk Manager       Credits         Polymarket CLOB
     │                     │◄───────┘       │                    │
     │                     │  PASS           │                    │
     │                     │                 │                    │
-    │                     │  Calc 2.5% fee  │                    │
+    │                     │  Calc 1% fee  │                    │
     │                     ├────────────────►│                    │
     │                     │                 │  Deduct fee credits│
     │                     │                 ├───────┐           │

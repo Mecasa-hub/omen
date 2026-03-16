@@ -68,7 +68,7 @@ async def test_execute_trade_unauthenticated(client: AsyncClient):
 async def test_trade_insufficient_credits(
     client: AsyncClient, db_session: AsyncSession
 ):
-    """Trade fails when user cannot cover the 2.5% execution fee."""
+    """Trade fails when user cannot cover the 1% execution fee."""
     # Create user with minimal credits (0)
     user = User(
         id=uuid.uuid4(),

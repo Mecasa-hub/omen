@@ -72,8 +72,8 @@ class Settings(BaseSettings):
     # ── Credit Pricing ───────────────────────────────────────────────────
     credits_per_dollar: int = 10  # $5 = 50 credits  →  10 credits/$1
     prediction_cost_credits: int = 1
-    trade_fee_pct: float = 0.025  # 2.5 %
-    win_fee_pct: float = 0.05  # 5 %
+    trade_fee_pct: float = 0.01  # 1 %
+    win_fee_pct: float = 0.01  # 1 %
     referral_bonus_pct: float = 0.10  # 10 % of referee purchases
 
     @property

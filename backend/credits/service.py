@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 # Pricing constants
 CREDITS_PER_DOLLAR = 10  # $5 = 50 credits
-TRADE_FEE_PCT = 0.025  # 2.5%
-WIN_FEE_PCT = 0.05  # 5% of profits
+TRADE_FEE_PCT = 0.01  # 1%
+WIN_FEE_PCT = 0.01  # 1% of profits
 REFERRAL_BONUS_PCT = 0.10  # 10% of referee purchases
 
 
@@ -180,12 +180,12 @@ async def process_stripe_payment(
 
 
 async def calculate_trade_fee(amount_usd: float) -> float:
-    """Calculate the platform fee for a trade (2.5% of trade amount)."""
+    """Calculate the platform fee for a trade (1% of trade amount)."""
     return round(amount_usd * TRADE_FEE_PCT, 4)
 
 
 async def calculate_win_fee(profit_usd: float) -> float:
-    """Calculate the platform fee on profits (5% of profit)."""
+    """Calculate the platform fee on profits (1% of profit)."""
     if profit_usd <= 0:
         return 0.0
     return round(profit_usd * WIN_FEE_PCT, 4)

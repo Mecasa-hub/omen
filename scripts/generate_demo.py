@@ -131,7 +131,7 @@ CHAT_CONVERSATIONS = [
     ],
     [
         ("user", "How does the copy trading work?"),
-        ("assistant", "OMEN's copy-trading lets you mirror whale positions automatically. Here's how it works:\n\n1. **Choose a whale** from the leaderboard\n2. **Set your parameters**: max trade size, copy percentage, stop-loss\n3. **Start copying** — when the whale opens a position, we open a proportional one for you\n4. **Auto-exit** option closes your position when the whale exits\n\nFees: 2.5% on each trade + 5% on profits. You'll need sufficient credits for the trade fees."),
+        ("assistant", "OMEN's copy-trading lets you mirror whale positions automatically. Here's how it works:\n\n1. **Choose a whale** from the leaderboard\n2. **Set your parameters**: max trade size, copy percentage, stop-loss\n3. **Start copying** — when the whale opens a position, we open a proportional one for you\n4. **Auto-exit** option closes your position when the whale exits\n\nFees: 1% on each trade + 1% on profits. You'll need sufficient credits for the trade fees."),
     ],
     [
         ("user", "Show me my recent predictions"),
@@ -359,7 +359,7 @@ async def generate_demo_data() -> None:
                 TradeStatus.CANCELLED,
                 TradeStatus.PARTIALLY_FILLED,
             ])
-            fee = round(amount_usd * 0.025, 4)
+            fee = round(amount_usd * 0.01, 4)
             pnl = round(random.uniform(-50, 80), 2) if status == TradeStatus.FILLED else None
             is_copy = random.random() < 0.2  # 20% are copy trades
 
