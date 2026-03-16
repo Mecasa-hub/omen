@@ -555,101 +555,1239 @@ else:
 PLACEHOLDER_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>OMEN — The Oracle Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0F0A1A;color:white;font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.container{max-width:800px;padding:2rem;text-align:center}
-.eye{font-size:80px;margin-bottom:1rem;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:0.8}}
-h1{font-size:3rem;letter-spacing:0.3em;margin-bottom:0.5rem;background:linear-gradient(135deg,#7C3AED,#F59E0B);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{color:#A78BFA;font-size:1.2rem;letter-spacing:0.2em;margin-bottom:2rem}
-.tagline{color:#9CA3AF;font-size:1rem;margin-bottom:3rem}
-.oracle-box{background:#1e1535;border:2px solid #7C3AED;border-radius:16px;padding:2rem;margin:2rem 0}
-.oracle-box h2{color:#F59E0B;margin-bottom:1rem}
-input{width:100%;padding:1rem;border-radius:12px;border:1px solid #2D2150;background:#120D20;color:white;font-size:1rem;margin-bottom:1rem}
-input:focus{outline:none;border-color:#7C3AED}
-.btn{background:linear-gradient(135deg,#7C3AED,#6D28D9);color:white;border:none;padding:1rem 2rem;border-radius:12px;font-size:1rem;cursor:pointer;width:100%;font-weight:bold;transition:transform 0.2s}
-.btn:hover{transform:scale(1.02)}
-.result{margin-top:1.5rem;padding:1.5rem;border-radius:12px;background:#1a1030;border:1px solid #F59E0B;display:none}
-.stats{display:flex;gap:2rem;justify-content:center;margin-top:2rem;flex-wrap:wrap}
-.stat{background:#1e1535;padding:1rem 1.5rem;border-radius:12px;border:1px solid #2D2150}
-.stat-value{font-size:1.5rem;font-weight:bold;color:#10B981}
-.stat-label{color:#9CA3AF;font-size:0.8rem;margin-top:0.3rem}
-.api-link{color:#A78BFA;text-decoration:none;margin-top:2rem;display:inline-block;font-size:0.9rem}
-.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:2rem;text-align:left}
-.feature{background:#1e1535;padding:1rem;border-radius:10px;border:1px solid #2D2150}
-.feature-icon{font-size:1.5rem;margin-bottom:0.5rem}
-.feature-title{color:#A78BFA;font-weight:bold;margin-bottom:0.3rem}
-.feature-desc{color:#9CA3AF;font-size:0.85rem}
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #0d1117;
+  --bg-panel: #0f1218;
+  --bg-terminal: #080b10;
+  --border-glow: #00ff8840;
+  --border-dim: #1a2332;
+  --green: #00ff88;
+  --green-dim: #00cc6a;
+  --cyan: #00ffcc;
+  --neon: #39ff14;
+  --red: #ff3347;
+  --red-dim: #cc2940;
+  --yellow: #ffb800;
+  --blue: #00aaff;
+  --purple: #b44dff;
+  --text-primary: #c9d1d9;
+  --text-dim: #6a737d;
+  --text-bright: #e6edf3;
+  --glow-green: 0 0 10px #00ff8840, 0 0 20px #00ff8820;
+  --glow-cyan: 0 0 10px #00ffcc40, 0 0 20px #00ffcc20;
+  --glow-red: 0 0 10px #ff334740, 0 0 20px #ff334720;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+::selection { background: #00ff8830; color: #00ff88; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #1a2332; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #00ff8840; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Matrix Rain Canvas */
+#matrix-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+/* Scanline overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,255,136,0.015) 2px,
+    rgba(0,255,136,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.main-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ══ HEADER ══ */
+.header {
+  text-align: center;
+  padding: 60px 0 40px;
+  position: relative;
+}
+
+.logo-text {
+  font-size: 4.5rem;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  color: var(--green);
+  text-shadow: var(--glow-green), 0 0 60px #00ff8815;
+  margin-bottom: 4px;
+  animation: logoPulse 4s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% { text-shadow: var(--glow-green), 0 0 60px #00ff8815; }
+  50% { text-shadow: 0 0 15px #00ff8860, 0 0 30px #00ff8830, 0 0 80px #00ff8820; }
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  letter-spacing: 0.5em;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  margin-bottom: 12px;
+  font-weight: 300;
+}
+
+.tagline {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 30px;
+  font-weight: 300;
+}
+
+/* Live stats bar */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  background: var(--bg-terminal);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 0.7rem;
+}
+
+.stats-bar .stat-item {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.stats-bar .stat-item .val {
+  color: var(--green);
+  font-weight: 500;
+}
+
+.stats-bar .stat-item .sep {
+  color: #2a3544;
+  margin: 0 4px;
+}
+
+/* ══ PANELS ══ */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.panel:hover {
+  border-color: var(--border-glow);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-terminal);
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.panel-header .title {
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.panel-header .status {
+  color: var(--green);
+  font-size: 0.65rem;
+}
+
+.panel-header .status::before {
+  content: '●';
+  margin-right: 5px;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.panel-body {
+  padding: 16px;
+}
+
+/* ══ GRID LAYOUT ══ */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .logo-text { font-size: 2.8rem; }
+}
+
+@media (max-width: 600px) {
+  .logo-text { font-size: 2rem; letter-spacing: 0.2em; }
+  .stats-bar { font-size: 0.6rem; gap: 4px; }
+  .panel-body { padding: 12px; }
+}
+
+/* ══ ORACLE TERMINAL ══ */
+.terminal {
+  background: var(--bg-terminal);
+  border-radius: 4px;
+  padding: 20px;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  min-height: 200px;
+}
+
+.terminal-line {
+  margin-bottom: 2px;
+}
+
+.prompt-line {
+  display: flex;
+  align-items: center;
+}
+
+.prompt {
+  color: var(--green);
+  white-space: nowrap;
+  margin-right: 6px;
+  user-select: none;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  flex: 1;
+  caret-color: var(--green);
+}
+
+.cursor-blink {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--green);
+  animation: cursorBlink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+@keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.output-line { color: var(--text-dim); }
+.output-line.green { color: var(--green); }
+.output-line.red { color: var(--red); }
+.output-line.cyan { color: var(--cyan); }
+.output-line.yellow { color: var(--yellow); }
+.output-line.blue { color: var(--blue); }
+.output-line.purple { color: var(--purple); }
+.output-line.bright { color: var(--text-bright); }
+
+/* Loading bar */
+.loading-bar-container {
+  width: 100%;
+  height: 4px;
+  background: #1a2332;
+  border-radius: 2px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.loading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px var(--green);
+}
+
+/* Verdict box */
+.verdict-box {
+  border: 1px solid var(--green);
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 12px;
+  text-align: center;
+  background: #00ff8808;
+  box-shadow: inset 0 0 30px #00ff8805, var(--glow-green);
+}
+
+.verdict-box.no {
+  border-color: var(--red);
+  background: #ff334708;
+  box-shadow: inset 0 0 30px #ff334705, var(--glow-red);
+}
+
+.verdict-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.verdict-text {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: var(--glow-green);
+}
+
+.verdict-text.no { color: var(--red); text-shadow: var(--glow-red); }
+
+.verdict-meta {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+/* ══ WAR ROOM ══ */
+.war-room-feed {
+  background: var(--bg-terminal);
+  border-radius: 4px;
+  padding: 12px;
+  height: 320px;
+  overflow-y: auto;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.war-msg {
+  padding: 3px 0;
+  border-bottom: 1px solid #0d1520;
+  animation: fadeInMsg 0.3s ease-out;
+}
+
+@keyframes fadeInMsg { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+
+.war-msg .ts { color: #3a4a5a; }
+.war-msg .agent-name { font-weight: 500; }
+.war-msg .vote-yes { color: var(--green); font-weight: 700; }
+.war-msg .vote-no { color: var(--red); font-weight: 700; }
+
+/* ══ SWARM MATRIX ══ */
+.swarm-section { text-align: center; }
+
+#swarm-canvas {
+  width: 100%;
+  max-width: 600px;
+  height: 300px;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-terminal);
+  display: block;
+  margin: 0 auto;
+}
+
+.vote-counter {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 12px;
+  font-size: 0.75rem;
+}
+
+.vote-counter .vc-yes { color: var(--green); }
+.vote-counter .vc-no { color: var(--red); }
+.vote-counter .vc-abs { color: var(--yellow); }
+
+.consensus-bar-wrap {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  background: var(--red);
+  border-radius: 4px;
+  margin: 12px auto 0;
+  overflow: hidden;
+  box-shadow: var(--glow-red);
+}
+
+.consensus-bar-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 4px;
+  transition: width 0.5s;
+  box-shadow: var(--glow-green);
+}
+
+/* ══ WHALE CARDS ══ */
+.whale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.whale-card {
+  background: var(--bg-terminal);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 0.72rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.whale-card:hover {
+  border-color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+.whale-card .wc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #1a2332;
+}
+
+.whale-card .wc-name {
+  color: var(--cyan);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.whale-card .wc-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.wc-badge.buy { background: #00ff8820; color: var(--green); border: 1px solid #00ff8840; }
+.wc-badge.sell { background: #ff334720; color: var(--red); border: 1px solid #ff334740; }
+
+.whale-card .wc-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  text-align: center;
+}
+
+.whale-card .wc-stat-label { color: var(--text-dim); font-size: 0.6rem; }
+.whale-card .wc-stat-val { color: var(--text-bright); font-weight: 500; margin-top: 2px; }
+
+/* ══ LEADERBOARD ══ */
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.lb-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.lb-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #0d1520;
+  color: var(--text-primary);
+}
+
+.lb-table tr:hover td { background: #0d151f; }
+
+.lb-rank {
+  color: var(--yellow);
+  font-weight: 700;
+  width: 40px;
+}
+
+.lb-name { color: var(--cyan); font-weight: 500; }
+.lb-wr { color: var(--green); }
+.lb-profit { color: var(--green); font-weight: 500; }
+.lb-profit.neg { color: var(--red); }
+
+/* ══ PRICING ══ */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.price-card {
+  background: var(--bg-terminal);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.price-card:hover {
+  border-color: var(--green);
+  box-shadow: var(--glow-green);
+  transform: translateY(-2px);
+}
+
+.price-card.popular {
+  border-color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+.price-card.popular::before {
+  content: 'POPULAR';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--cyan);
+  color: var(--bg-primary);
+  padding: 2px 12px;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.price-credits {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: var(--glow-green);
+}
+
+.price-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.price-amount {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.price-per {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+
+/* ══ FOOTER ══ */
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid var(--border-dim);
+  margin-top: 20px;
+}
+
+.footer-brand {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.footer-links a {
+  color: var(--cyan);
+  text-decoration: none;
+  font-size: 0.7rem;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--green); text-shadow: var(--glow-green); }
+
+/* ══ SECTION SPACING ══ */
+.section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+/* ══ AGENT DEBATE CARDS (in oracle result) ══ */
+.debate-card {
+  background: var(--bg-terminal);
+  border-left: 3px solid var(--green);
+  padding: 10px 14px;
+  margin: 6px 0;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.75rem;
+}
+
+.debate-card.bear { border-left-color: var(--red); }
+.debate-card .dc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.debate-card .dc-agent { font-weight: 700; }
+.debate-card .dc-role { color: var(--text-dim); font-size: 0.65rem; margin-left: 6px; }
+.debate-card .dc-vote { font-weight: 700; }
+.debate-card .dc-reasoning { color: var(--text-dim); font-size: 0.7rem; }
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--border-dim);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Glow button */
+.glow-btn {
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.glow-btn:hover {
+  background: var(--green);
+  color: var(--bg-primary);
+  box-shadow: var(--glow-green);
+}
+
+.glow-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Paygo note */
+.paygo-note {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-top: 16px;
+  letter-spacing: 0.05em;
+}
 </style>
 </head>
 <body>
-<div class="container">
-<div class="eye">🔮</div>
-<h1>OMEN</h1>
-<p class="subtitle">THE ORACLE MACHINE</p>
-<p class="tagline">Thousands of AI minds debate. One verdict. You profit.</p>
 
-<div class="oracle-box">
-<h2>⚡ Ask the Oracle</h2>
-<input type="text" id="question" placeholder="Will the Lakers beat the Celtics tonight?">
-<button class="btn" onclick="askOracle()">🔮 Consult the Swarm</button>
-<div class="result" id="result"></div>
-</div>
+<canvas id="matrix-canvas"></canvas>
 
-<div class="stats">
-<div class="stat"><div class="stat-value">71.2%</div><div class="stat-label">Accuracy</div></div>
-<div class="stat"><div class="stat-value">1,200</div><div class="stat-label">AI Agents</div></div>
-<div class="stat"><div class="stat-value">50+</div><div class="stat-label">Whales Tracked</div></div>
-<div class="stat"><div class="stat-value">847</div><div class="stat-label">Predictions</div></div>
-</div>
+<div class="main-container">
 
-<div class="features">
-<div class="feature"><div class="feature-icon">🧠</div><div class="feature-title">Swarm AI</div><div class="feature-desc">1,200 agents debate and vote on outcomes</div></div>
-<div class="feature"><div class="feature-icon">🐋</div><div class="feature-title">Whale Tracking</div><div class="feature-desc">Copy the smartest Polymarket wallets</div></div>
-<div class="feature"><div class="feature-icon">⚡</div><div class="feature-title">Auto-Execute</div><div class="feature-desc">One-click betting on Polymarket</div></div>
-<div class="feature"><div class="feature-icon">💰</div><div class="feature-title">Pay-As-You-Go</div><div class="feature-desc">No subscriptions. 1% trade fee. 1% win fee.</div></div>
-</div>
+  <!-- ══ HEADER ══ -->
+  <header class="header">
+    <div class="logo-text">OMEN</div>
+    <div class="subtitle">THE ORACLE MACHINE</div>
+    <div class="tagline">Thousands of AI minds debate. One verdict. You profit.</div>
+    <div class="stats-bar">
+      <span class="stat-item"><span class="val" id="agents-count">1,247</span> agents online</span>
+      <span class="stat-item"><span class="sep">|</span></span>
+      <span class="stat-item"><span class="val" id="ops-count">5,000</span> ops/s</span>
+      <span class="stat-item"><span class="sep">|</span></span>
+      <span class="stat-item"><span class="val" id="latency-count">23</span>ms latency</span>
+      <span class="stat-item"><span class="sep">|</span></span>
+      <span class="stat-item"><span class="val" id="tokens-count">2.1M</span> tokens/cycle</span>
+    </div>
+  </header>
 
-<a href="/api/docs" class="api-link">📚 API Documentation →</a>
-<br>
-<a href="/api/whales" class="api-link">🐋 View Whale Leaderboard →</a>
+  <!-- ══ ORACLE TERMINAL ══ -->
+  <section class="section">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title">&#x1F52E; ORACLE TERMINAL</span>
+        <span class="status">CONNECTED</span>
+      </div>
+      <div class="panel-body">
+        <div class="terminal" id="oracle-terminal">
+          <div class="terminal-line output-line green">OMEN Oracle v1.0 — Swarm Intelligence Engine</div>
+          <div class="terminal-line output-line">1,200 agents loaded. Awaiting query...</div>
+          <div class="terminal-line output-line">&nbsp;</div>
+          <div id="oracle-output"></div>
+          <div class="prompt-line">
+            <span class="prompt">omen@oracle:~$&nbsp;</span>
+            <input type="text" class="terminal-input" id="oracle-input" placeholder="Ask any prediction question..." autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ WAR ROOM + SWARM MATRIX ══ -->
+  <div class="grid-2 section">
+    <!-- War Room -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title">&#x2694;&#xFE0F; WAR ROOM &mdash; LIVE AGENT FEED</span>
+        <span class="status">STREAMING</span>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div class="war-room-feed" id="war-feed"></div>
+      </div>
+    </div>
+
+    <!-- Swarm Matrix -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title">&#x1F9EC; SWARM MATRIX &mdash; 1,200 AGENTS</span>
+        <span class="status">LIVE</span>
+      </div>
+      <div class="panel-body swarm-section">
+        <canvas id="swarm-canvas" width="600" height="300"></canvas>
+        <div class="vote-counter">
+          <span class="vc-yes">YES: <strong id="swarm-yes">687</strong> (<span id="swarm-yes-pct">57.3</span>%)</span>
+          <span class="vc-no">NO: <strong id="swarm-no">453</strong> (<span id="swarm-no-pct">37.8</span>%)</span>
+          <span class="vc-abs">ABSTAIN: <strong id="swarm-abs">60</strong> (<span id="swarm-abs-pct">5.0</span>%)</span>
+        </div>
+        <div class="consensus-bar-wrap">
+          <div class="consensus-bar-fill" id="consensus-fill" style="width:57.3%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ WHALE TRACKER ══ -->
+  <section class="section">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title">&#x1F40B; WHALE INTELLIGENCE</span>
+        <span class="status">TRACKING</span>
+      </div>
+      <div class="panel-body">
+        <div class="whale-grid" id="whale-grid">
+          <div style="color:var(--text-dim);font-size:0.7rem;">Loading whale data...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ LEADERBOARD ══ -->
+  <section class="section">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title">&#x1F3C6; LEADERBOARD</span>
+        <span class="status">UPDATED</span>
+      </div>
+      <div class="panel-body" style="overflow-x:auto">
+        <table class="lb-table" id="lb-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Specialty</th>
+              <th>Win Rate</th>
+              <th>30d Profit</th>
+              <th>Followers</th>
+            </tr>
+          </thead>
+          <tbody id="lb-body">
+            <tr><td colspan="6" style="color:var(--text-dim);font-size:0.7rem;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PRICING ══ -->
+  <section class="section">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title">&#x1F4B3; CREDIT PACKAGES</span>
+        <span class="status">AVAILABLE</span>
+      </div>
+      <div class="panel-body">
+        <div class="pricing-grid" id="pricing-grid">
+          <div style="color:var(--text-dim);font-size:0.7rem;">Loading packages...</div>
+        </div>
+        <div class="paygo-note">No subscriptions. Pay as you go. 1 credit = 1 oracle query.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="footer">
+    <div class="footer-brand">OMEN v1.0 &mdash; THE SWARM HAS SPOKEN</div>
+    <div class="footer-links">
+      <a href="/api/docs">API Docs</a>
+      <a href="/api/whales">Whales API</a>
+      <a href="/api/health">Health</a>
+      <a href="#" onclick="document.getElementById('oracle-input').focus();return false;">Ask Oracle</a>
+    </div>
+  </footer>
+
 </div>
 
 <script>
-async function askOracle() {
-    const q = document.getElementById("question").value;
-    if (!q) return;
-    const resultDiv = document.getElementById("result");
-    resultDiv.style.display = "block";
-    resultDiv.innerHTML = "<p style=\"color:#F59E0B\">⏳ The Swarm is deliberating...</p>";
-    try {
-        const res = await fetch("/api/oracle/predict", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({question: q})
-        });
-        const data = await res.json();
-        let debateHtml = data.debates ? data.debates.map(d => 
-            `<div style="background:#1a1535;padding:0.8rem;border-radius:8px;margin:0.5rem 0;border-left:3px solid ${d.color}">
-                <span style="color:${d.color};font-weight:bold">${d.agent} (${d.role})</span>
-                <span style="color:${d.vote==='YES'?'#10B981':'#EF4444'};float:right">${d.vote}</span>
-                <p style="color:#9CA3AF;font-size:0.85rem;margin-top:0.3rem">${d.reasoning}</p>
-            </div>`
-        ).join("") : "";
-        resultDiv.innerHTML = `
-            ${debateHtml}
-            <div style="background:#1a1030;border:2px solid #F59E0B;border-radius:10px;padding:1rem;margin-top:1rem;text-align:center">
-                <div style="color:#F59E0B;font-weight:bold">🔮 ORACLE VERDICT</div>
-                <div style="font-size:1.5rem;font-weight:bold;margin:0.5rem 0">${data.verdict} — ${data.confidence}% Confidence</div>
-                <div style="color:#10B981;font-size:0.9rem">🐋 Whale Agreement: ${data.whale_agreement?.agree}/${data.whale_agreement?.total} | Swarm: ${data.swarm_votes?.yes}/${data.swarm_votes?.total}</div>
-            </div>`;
-    } catch(e) {
-        resultDiv.innerHTML = "<p style=\"color:#EF4444\">Error consulting the Oracle</p>";
+/* ══════════════════════════════════════════════
+   MATRIX RAIN
+   ══════════════════════════════════════════════ */
+(function() {
+  const c = document.getElementById('matrix-canvas');
+  const ctx = c.getContext('2d');
+  let w, h, cols, drops;
+  const chars = 'OMEN01ABCDEFアカサタナハマヤラワ';
+  function resize() {
+    w = c.width = window.innerWidth;
+    h = c.height = window.innerHeight;
+    const fs = 14;
+    cols = Math.floor(w / fs);
+    drops = new Array(cols).fill(1).map(() => Math.random() * h / fs | 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function draw() {
+    ctx.fillStyle = 'rgba(10,10,15,0.05)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = '14px monospace';
+    for (let i = 0; i < cols; i++) {
+      const ch = chars[Math.random() * chars.length | 0];
+      ctx.fillText(ch, i * 14, drops[i] * 14);
+      if (drops[i] * 14 > h && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
     }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ══════════════════════════════════════════════
+   LIVE STATS JITTER
+   ══════════════════════════════════════════════ */
+setInterval(() => {
+  document.getElementById('agents-count').textContent = (1200 + Math.floor(Math.random()*100)).toLocaleString();
+  document.getElementById('ops-count').textContent = (4800 + Math.floor(Math.random()*400)).toLocaleString();
+  document.getElementById('latency-count').textContent = 18 + Math.floor(Math.random()*12);
+  const t = [1.8,1.9,2.0,2.1,2.2,2.3][Math.floor(Math.random()*6)];
+  document.getElementById('tokens-count').textContent = t.toFixed(1) + 'M';
+}, 3000);
+
+/* ══════════════════════════════════════════════
+   ORACLE TERMINAL
+   ══════════════════════════════════════════════ */
+const oracleInput = document.getElementById('oracle-input');
+const oracleOutput = document.getElementById('oracle-output');
+
+function addLine(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'terminal-line output-line' + (cls ? ' ' + cls : '');
+  div.innerHTML = text;
+  oracleOutput.appendChild(div);
+  const term = document.getElementById('oracle-terminal');
+  term.scrollTop = term.scrollHeight;
 }
+
+oracleInput.addEventListener('keydown', async function(e) {
+  if (e.key !== 'Enter') return;
+  const q = this.value.trim();
+  if (!q) return;
+  this.value = '';
+  this.disabled = true;
+
+  addLine('<span style="color:var(--green)">omen@oracle:~$</span> ' + escapeHtml(q), 'bright');
+  addLine('&nbsp;');
+  addLine('<span class="spinner"></span> SWARM DELIBERATING...', 'cyan');
+
+  // Add loading bar
+  const barWrap = document.createElement('div');
+  barWrap.className = 'loading-bar-container';
+  barWrap.innerHTML = '<div class="loading-bar" id="load-bar"></div>';
+  oracleOutput.appendChild(barWrap);
+
+  let pct = 0;
+  const barEl = document.getElementById('load-bar');
+  const barInt = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 15, 90);
+    barEl.style.width = pct + '%';
+  }, 200);
+
+  try {
+    const res = await fetch('/api/oracle/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: q})
+    });
+    const data = await res.json();
+    clearInterval(barInt);
+    barEl.style.width = '100%';
+
+    if (data.error) {
+      addLine('ERROR: ' + data.error, 'red');
+      this.disabled = false;
+      return;
+    }
+
+    setTimeout(() => {
+      barWrap.remove();
+      // Remove "SWARM DELIBERATING" line
+      const lines = oracleOutput.querySelectorAll('.terminal-line');
+      for (let l of lines) { if (l.innerHTML.includes('DELIBERATING')) l.remove(); }
+
+      addLine('─── AGENT DEBATE LOG ───', 'cyan');
+      if (data.debates) {
+        data.debates.forEach(d => {
+          const voteColor = d.vote === 'YES' ? 'var(--green)' : 'var(--red)';
+          const voteIcon = d.vote === 'YES' ? '✅' : '❌';
+          addLine(
+            '<span style="color:' + d.color + ';font-weight:700">' + d.agent.toUpperCase() + '</span>' +
+            ' <span style="color:var(--text-dim)">(' + d.role + ')</span> → ' +
+            '<span style="color:var(--text-dim)">' + d.reasoning + '</span> ' +
+            '<span style="color:' + voteColor + ';font-weight:700">VOTE: ' + d.vote + ' ' + voteIcon + '</span>'
+          );
+        });
+      }
+
+      addLine('&nbsp;');
+
+      // Verdict
+      const isYes = data.verdict === 'YES';
+      const vCol = isYes ? 'var(--green)' : 'var(--red)';
+      const boxDiv = document.createElement('div');
+      boxDiv.className = 'verdict-box' + (isYes ? '' : ' no');
+      boxDiv.innerHTML =
+        '<div class="verdict-label">── ORACLE VERDICT ──</div>' +
+        '<div class="verdict-text' + (isYes ? '' : ' no') + '">' + data.verdict + ' &mdash; ' + data.confidence + '% Confidence</div>' +
+        '<div class="verdict-meta">' +
+        '🐋 Whale Agreement: ' + (data.whale_agreement ? data.whale_agreement.agree + '/' + data.whale_agreement.total : 'N/A') +
+        ' &nbsp;|&nbsp; Swarm: ' + (data.swarm_votes ? data.swarm_votes.yes + '/' + data.swarm_votes.total : 'N/A') +
+        '</div>';
+      oracleOutput.appendChild(boxDiv);
+      addLine('&nbsp;');
+
+      // Update swarm matrix
+      if (data.swarm_votes) {
+        updateSwarmVotes(data.swarm_votes.yes, data.swarm_votes.total - data.swarm_votes.yes - 60, 60);
+      }
+
+      this.disabled = false;
+      this.focus();
+    }, 500);
+
+  } catch(err) {
+    clearInterval(barInt);
+    barWrap.remove();
+    addLine('NETWORK ERROR: ' + err.message, 'red');
+    this.disabled = false;
+  }
+});
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════════
+   WAR ROOM — SIMULATED LIVE FEED
+   ══════════════════════════════════════════════ */
+const warFeed = document.getElementById('war-feed');
+const agentTypes = [
+  { name: 'ATLAS', type: 'BULL', color: 'var(--green)', questions: [
+    'Momentum indicators bullish. Historical win rate supports this.',
+    'Public sentiment aligns with fundamentals. Strong probability.',
+    'Key players healthy. Home advantage significant. Trend is clear.',
+    'Market underpricing this outcome. Smart money accumulating.',
+  ]},
+  { name: 'NEMESIS', type: 'BEAR', color: 'var(--red)', questions: [
+    'Contrarian signal detected. Market overpricing the favorite.',
+    'Back-to-back schedule is brutal. Fatigue factor underweighted.',
+    'Historical upset rate is 34% in these conditions. Caution advised.',
+    'Injury reports not yet priced in. Expected correction incoming.',
+  ]},
+  { name: 'QUANT', type: 'STATS', color: 'var(--blue)', questions: [
+    'Monte Carlo sim: 58.3% probability. EV +4.2%. Within error margin.',
+    'Bayesian update: posterior probability shifted 3.2% after new data.',
+    'Kelly criterion suggests 0.12 fractional bet size. Moderate edge.',
+    'Regression model R-squared: 0.74. Significant predictive power.',
+  ]},
+  { name: 'MAVERICK', type: 'CONTRARIAN', color: 'var(--yellow)', questions: [
+    '70%+ public on one side = fade signal. Taking the opposite.',
+    'Sharp money diverging from public. Classic trap setup forming.',
+    'Recency bias driving this line. True odds are different.',
+    'Market has overcorrected. Value on the contrarian play.',
+  ]},
+  { name: 'CLIO', type: 'HISTORIAN', color: 'var(--purple)', questions: [
+    'Similar matchups since 2019: 62% for the underdog in this spot.',
+    'Historical pattern: teams in this situation cover 58% of the time.',
+    'Last 5 years of data show clear seasonal trend favoring this outcome.',
+    'Precedent analysis: 7 of 10 comparable situations resolved YES.',
+  ]},
+];
+
+function genWarMsg() {
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const agent = agentTypes[Math.random() * agentTypes.length | 0];
+  const id = 100 + Math.floor(Math.random() * 900);
+  const msg = agent.questions[Math.random() * agent.questions.length | 0];
+  const isYes = Math.random() > 0.45;
+  const voteSpan = isYes
+    ? '<span class="vote-yes">VOTE: YES ✅</span>'
+    : '<span class="vote-no">VOTE: NO ❌</span>';
+
+  const div = document.createElement('div');
+  div.className = 'war-msg';
+  div.innerHTML =
+    '<span class="ts">[' + ts + ']</span> ' +
+    '<span class="agent-name" style="color:' + agent.color + '">' + agent.name + ' #' + id + '</span> ' +
+    '<span style="color:var(--text-dim)">(' + agent.type + ')</span> → ' +
+    '<span style="color:var(--text-dim)">' + msg + '</span> ' + voteSpan;
+
+  warFeed.appendChild(div);
+  if (warFeed.children.length > 80) warFeed.removeChild(warFeed.firstChild);
+  warFeed.scrollTop = warFeed.scrollHeight;
+}
+
+// Initial burst
+for (let i = 0; i < 15; i++) genWarMsg();
+setInterval(genWarMsg, 2200 + Math.random() * 1800);
+
+/* ══════════════════════════════════════════════
+   SWARM MATRIX CANVAS
+   ══════════════════════════════════════════════ */
+const swarmCanvas = document.getElementById('swarm-canvas');
+const sCtx = swarmCanvas.getContext('2d');
+const TOTAL_DOTS = 1200;
+let yesCount = 687, noCount = 453, absCount = 60;
+const dots = [];
+
+function initDots() {
+  dots.length = 0;
+  const cw = swarmCanvas.width, ch = swarmCanvas.height;
+  const cols = 48, rows = 25;
+  const gapX = cw / (cols + 1), gapY = ch / (rows + 1);
+  let idx = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (idx >= TOTAL_DOTS) break;
+      let type;
+      if (idx < yesCount) type = 'yes';
+      else if (idx < yesCount + noCount) type = 'no';
+      else type = 'abs';
+      dots.push({
+        x: gapX * (c + 1),
+        y: gapY * (r + 1),
+        type: type,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.5 + Math.random() * 1.5,
+        baseR: 3
+      });
+      idx++;
+    }
+  }
+  // Shuffle for visual variety
+  for (let i = dots.length - 1; i > 0; i--) {
+    const j = Math.random() * (i + 1) | 0;
+    [dots[i].type, dots[j].type] = [dots[j].type, dots[i].type];
+  }
+}
+
+function updateSwarmVotes(y, n, a) {
+  yesCount = y; noCount = n; absCount = a;
+  const total = y + n + a;
+  document.getElementById('swarm-yes').textContent = y;
+  document.getElementById('swarm-no').textContent = n;
+  document.getElementById('swarm-abs').textContent = a;
+  document.getElementById('swarm-yes-pct').textContent = (y/total*100).toFixed(1);
+  document.getElementById('swarm-no-pct').textContent = (n/total*100).toFixed(1);
+  document.getElementById('swarm-abs-pct').textContent = (a/total*100).toFixed(1);
+  document.getElementById('consensus-fill').style.width = (y/total*100).toFixed(1) + '%';
+  // Reassign types
+  let idx = 0;
+  const shuffled = dots.slice().sort(() => Math.random() - 0.5);
+  shuffled.forEach(d => {
+    if (idx < y) d.type = 'yes';
+    else if (idx < y + n) d.type = 'no';
+    else d.type = 'abs';
+    idx++;
+  });
+}
+
+function drawSwarm(time) {
+  const cw = swarmCanvas.width, ch = swarmCanvas.height;
+  sCtx.clearRect(0, 0, cw, ch);
+
+  dots.forEach(d => {
+    const pulse = Math.sin(time * 0.001 * d.speed + d.phase) * 0.8;
+    const r = d.baseR + pulse;
+    let color;
+    switch(d.type) {
+      case 'yes': color = '#00ff88'; break;
+      case 'no': color = '#ff3347'; break;
+      default: color = '#ffb800'; break;
+    }
+    sCtx.beginPath();
+    sCtx.arc(d.x, d.y, Math.max(1, r), 0, Math.PI * 2);
+    sCtx.fillStyle = color;
+    sCtx.globalAlpha = 0.6 + pulse * 0.15;
+    sCtx.fill();
+    // Glow
+    sCtx.beginPath();
+    sCtx.arc(d.x, d.y, r * 2, 0, Math.PI * 2);
+    sCtx.fillStyle = color;
+    sCtx.globalAlpha = 0.08;
+    sCtx.fill();
+    sCtx.globalAlpha = 1;
+  });
+
+  requestAnimationFrame(drawSwarm);
+}
+
+initDots();
+requestAnimationFrame(drawSwarm);
+
+// Periodically shift votes slightly for live feel
+setInterval(() => {
+  const dy = Math.floor(Math.random() * 7) - 3;
+  const newYes = Math.max(400, Math.min(800, yesCount + dy));
+  const newAbs = 50 + Math.floor(Math.random() * 20);
+  const newNo = TOTAL_DOTS - newYes - newAbs;
+  updateSwarmVotes(newYes, newNo, newAbs);
+}, 4000);
+
+/* ══════════════════════════════════════════════
+   WHALE TRACKER
+   ══════════════════════════════════════════════ */
+fetch('/api/whales').then(r => r.json()).then(whales => {
+  const grid = document.getElementById('whale-grid');
+  grid.innerHTML = '';
+  whales.forEach(w => {
+    const isBuy = w.profit_30d > 30000;
+    const card = document.createElement('div');
+    card.className = 'whale-card';
+    card.innerHTML =
+      '<div class="wc-top">' +
+        '<span class="wc-name">' + escapeHtml(w.name) + '</span>' +
+        '<span class="wc-badge ' + (isBuy ? 'buy' : 'sell') + '">' + (isBuy ? '🟢 BUY' : '🔴 SELL') + '</span>' +
+      '</div>' +
+      '<div class="wc-stats">' +
+        '<div><div class="wc-stat-label">WIN RATE</div><div class="wc-stat-val" style="color:var(--green)">' + w.win_rate.toFixed(1) + '%</div></div>' +
+        '<div><div class="wc-stat-label">30D PnL</div><div class="wc-stat-val" style="color:' + (w.profit_30d >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + (w.profit_30d / 1000).toFixed(0) + 'K</div></div>' +
+        '<div><div class="wc-stat-label">FOLLOWERS</div><div class="wc-stat-val">' + w.followers + '</div></div>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+}).catch(() => {
+  document.getElementById('whale-grid').innerHTML = '<div style="color:var(--red);font-size:0.7rem;">Failed to load whale data</div>';
+});
+
+/* ══════════════════════════════════════════════
+   LEADERBOARD
+   ══════════════════════════════════════════════ */
+fetch('/api/leaderboard').then(r => r.json()).then(lb => {
+  const tbody = document.getElementById('lb-body');
+  tbody.innerHTML = '';
+  lb.forEach(entry => {
+    const tr = document.createElement('tr');
+    const profitStr = entry.profit_30d >= 0
+      ? '+$' + (entry.profit_30d / 1000).toFixed(0) + 'K'
+      : '-$' + (Math.abs(entry.profit_30d) / 1000).toFixed(0) + 'K';
+    tr.innerHTML =
+      '<td class="lb-rank">#' + entry.rank + '</td>' +
+      '<td class="lb-name">' + escapeHtml(entry.name) + '</td>' +
+      '<td style="color:var(--text-dim)">' + escapeHtml(entry.specialty) + '</td>' +
+      '<td class="lb-wr">' + entry.win_rate.toFixed(1) + '%</td>' +
+      '<td class="lb-profit' + (entry.profit_30d < 0 ? ' neg' : '') + '">' + profitStr + '</td>' +
+      '<td style="color:var(--text-dim)">' + entry.followers + '</td>';
+    tbody.appendChild(tr);
+  });
+}).catch(() => {
+  document.getElementById('lb-body').innerHTML = '<tr><td colspan="6" style="color:var(--red);font-size:0.7rem;">Failed to load</td></tr>';
+});
+
+/* ══════════════════════════════════════════════
+   PRICING
+   ══════════════════════════════════════════════ */
+fetch('/api/credits/packages').then(r => r.json()).then(pkgs => {
+  const grid = document.getElementById('pricing-grid');
+  grid.innerHTML = '';
+  pkgs.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'price-card' + (p.popular ? ' popular' : '');
+    card.innerHTML =
+      '<div class="price-credits">' + p.credits + '</div>' +
+      '<div class="price-label">CREDITS</div>' +
+      '<div class="price-amount">$' + p.price_usd.toFixed(2) + '</div>' +
+      '<div class="price-per">$' + p.per_credit.toFixed(3) + ' / credit</div>';
+    grid.appendChild(card);
+  });
+}).catch(() => {
+  document.getElementById('pricing-grid').innerHTML = '<div style="color:var(--red);font-size:0.7rem;">Failed to load packages</div>';
+});
+
+/* Focus oracle on load */
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('oracle-input').focus(), 500);
+});
 </script>
 </body>
 </html>"""
