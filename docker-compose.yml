@@ -1,0 +1,101 @@
+# ============================================================
+# OMEN — The Oracle Machine | Docker Compose Stack
+# ============================================================
+# Usage: docker-compose up -d
+# Dashboard: http://localhost:3000
+# API Docs:  http://localhost:8000/docs
+# ============================================================
+
+version: "3.9"
+
+services:
+  # ---- PostgreSQL Database ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: omen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-omen}
+      POSTGRES_USER: ${POSTGRES_USER:-omen_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-production}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-omen_user} -d ${POSTGRES_DB:-omen}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - omen-network
+
+  # ---- Redis Cache ----
+  redis:
+    image: redis:7-alpine
+    container_name: omen-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - omen-network
+
+  # ---- FastAPI Backend ----
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: omen-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-omen_user}:${POSTGRES_PASSWORD:-change-me-in-production}@postgres:5432/${POSTGRES_DB:-omen}
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - omen-network
+
+  # ---- Vue.js Frontend (Nginx in production) ----
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: omen-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - omen-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  omen-network:
+    driver: bridge
