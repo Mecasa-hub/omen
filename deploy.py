@@ -903,6 +903,138 @@ async def check_payment(payment_id: str):
     """Check status of a specific payment."""
     return await payments_mod.get_payment_status(payment_id)
 
+
+
+@app.post("/api/payments/verify")
+async def verify_payment(request: Request):
+    """Manually verify payment status via NOWPayments API.
+
+    Called when user returns from NOWPayments checkout, or clicks 'Verify Payment'.
+    This polls NOWPayments directly - doesn't rely on IPN webhook.
+    """
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Login required"}, status_code=401)
+
+    body = await request.json()
+    order_id = body.get("order_id", "")
+
+    if not order_id:
+        # Try to find the most recent pending order for this user
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            cursor = await db.execute(
+                "SELECT order_id FROM payment_orders WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1",
+                (user["id"],)
+            )
+            row = await cursor.fetchone()
+            if row:
+                order_id = row[0]
+            else:
+                return {"error": "No pending orders found", "status": "no_orders"}
+
+    # Poll NOWPayments API
+    result = await payments_mod.check_and_verify_payment(order_id)
+
+    if result.get("should_credit") and result.get("credits", 0) > 0:
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            # Check if already credited
+            cursor = await db.execute(
+                "SELECT status FROM payment_orders WHERE order_id = ?", (order_id,)
+            )
+            row = await cursor.fetchone()
+            if row and row[0] == "completed":
+                return {"status": "already_credited", "credits": result["credits"]}
+
+            # Award credits
+            credits = result["credits"]
+            await db.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (credits, user["id"]))
+            await db.execute(
+                "UPDATE payment_orders SET status = 'completed', payment_id = ?, pay_currency = ?, credits_awarded = ? WHERE order_id = ?",
+                (str(result.get("payment_id", "")), result.get("pay_currency", ""), credits, order_id)
+            )
+            await db.commit()
+
+            # Get new balance
+            cursor = await db.execute("SELECT credits FROM users WHERE id = ?", (user["id"],))
+            bal = await cursor.fetchone()
+
+            logger.info(f"Payment verified & credited: {credits} credits to user {user['id']} for order {order_id}")
+            return {
+                "status": "credited",
+                "credits_awarded": credits,
+                "new_balance": bal[0] if bal else 0,
+                "tier": result.get("tier", ""),
+                "payment_status": result.get("status", "")
+            }
+    elif result.get("found"):
+        # Payment found but not yet confirmed
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            await db.execute(
+                "UPDATE payment_orders SET status = ? WHERE order_id = ?",
+                (result.get("status", "pending"), order_id)
+            )
+            await db.commit()
+        return {
+            "status": result.get("status", "pending"),
+            "message": f"Payment is {result.get('status', 'pending')}. Please wait for confirmation.",
+            "credits_preview": result.get("credits", 0)
+        }
+    else:
+        return {
+            "status": "not_found",
+            "message": "Payment not found on NOWPayments. It may take a few minutes to appear.",
+            "order_id": order_id
+        }
+
+@app.post("/api/payments/verify-all")
+async def verify_all_pending(request: Request):
+    """Verify all pending payments for current user."""
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Login required"}, status_code=401)
+
+    async with aiosqlite.connect(str(DB_PATH)) as db:
+        cursor = await db.execute(
+            "SELECT order_id FROM payment_orders WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC",
+            (user["id"],)
+        )
+        rows = await cursor.fetchall()
+
+    results = []
+    total_credited = 0
+    for row in rows:
+        oid = row[0]
+        result = await payments_mod.check_and_verify_payment(oid)
+        if result.get("should_credit") and result.get("credits", 0) > 0:
+            credits = result["credits"]
+            async with aiosqlite.connect(str(DB_PATH)) as db:
+                cursor = await db.execute("SELECT status FROM payment_orders WHERE order_id = ?", (oid,))
+                existing = await cursor.fetchone()
+                if existing and existing[0] != "completed":
+                    await db.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (credits, user["id"]))
+                    await db.execute(
+                        "UPDATE payment_orders SET status = 'completed', credits_awarded = ? WHERE order_id = ?",
+                        (credits, oid)
+                    )
+                    await db.commit()
+                    total_credited += credits
+                    results.append({"order_id": oid, "status": "credited", "credits": credits})
+                else:
+                    results.append({"order_id": oid, "status": "already_credited"})
+        else:
+            results.append({"order_id": oid, "status": result.get("status", "pending")})
+
+    async with aiosqlite.connect(str(DB_PATH)) as db:
+        cursor = await db.execute("SELECT credits FROM users WHERE id = ?", (user["id"],))
+        bal = await cursor.fetchone()
+
+    return {
+        "verified": len(results),
+        "total_credited": total_credited,
+        "new_balance": bal[0] if bal else 0,
+        "details": results
+    }
+
 @app.get("/api/payments/balance")
 async def get_credit_balance(request: Request):
     user = await get_current_user(request)
@@ -980,10 +1112,23 @@ async def gv_agent_stats(codename: str):
         return {"total_predictions": 0, "correct": 0, "win_rate": 0, "current_streak": 0}
 
 @app.post("/api/godview/predict")
-async def gv_predict(req: GVPredictRequest):
-    """Run a full swarm prediction with memory-aware agents."""
+async def gv_predict(req: GVPredictRequest, request: Request):
+    """Run a full swarm prediction with memory-aware agents. Costs 2 credits."""
+    GODVIEW_COST = 2
+    user = await get_current_user(request)
+    if user:
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            cursor = await db.execute("SELECT credits FROM users WHERE id=?", (user["id"],))
+            row = await cursor.fetchone()
+            if row and row[0] < GODVIEW_COST:
+                return JSONResponse(status_code=402, content={"error": f"Insufficient credits. God View costs {GODVIEW_COST} credits.", "credits": row[0], "cost": GODVIEW_COST})
     try:
         result = await godview_mod.run_godview_prediction(req.question)
+        # Deduct credits after successful prediction
+        if user:
+            async with aiosqlite.connect(str(DB_PATH)) as db:
+                await db.execute("UPDATE users SET credits = credits - ? WHERE id = ? AND credits >= ?", (GODVIEW_COST, user["id"], GODVIEW_COST))
+                await db.commit()
         return result
     except Exception as e:
         logger.error("God View prediction error: %s", e)

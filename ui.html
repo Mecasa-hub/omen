@@ -455,8 +455,8 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
   <div style="padding:8px 0 24px 0">
     <div style="font-size:.75rem;color:#666;margin-bottom:4px">Credits</div>
     <div style="display:flex;align-items:baseline;gap:4px">
-      <span style="font-size:.9rem;color:#999;font-family:'JetBrains Mono',monospace">$</span>
-      <span id="credit-balance" style="font-size:3.5rem;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-2px">0.00</span>
+      <span id="credit-balance" style="font-size:3.5rem;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-2px">0</span>
+      <span style="font-size:1rem;color:#999;font-family:'JetBrains Mono',monospace;margin-left:8px">credits</span>
     </div>
     <div id="credit-account" style="font-size:.75rem;color:#666;margin-top:4px"></div>
   </div>
@@ -501,6 +501,9 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
       <!-- Purchase Button -->
       <button class="purchase-btn" id="purchase-btn" onclick="purchaseCredits()">
         Purchase
+      </button>
+      <button class="purchase-btn" id="verify-btn" onclick="verifyPayments()" style="margin-top:8px;background:#F59E0B;color:#000;font-size:.8rem">
+        🔄 Verify Pending Payments
       </button>
 
       <div style="text-align:center;margin-top:12px;font-size:.7rem;color:#555">
@@ -1092,6 +1095,17 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script>
+
+function showToast(msg, type){
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:20px;right:20px;padding:12px 24px;border-radius:8px;z-index:99999;font-size:.85rem;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:opacity .5s;max-width:400px';
+  if(type==='success'){t.style.background='#10B981';t.style.color='#fff'}
+  else if(type==='error'){t.style.background='#EF4444';t.style.color='#fff'}
+  else{t.style.background='#F59E0B';t.style.color='#000'}
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove()},500)},4000);
+}
     // Global fetch wrapper with error handling
     async function safeFetch(url, options = {}) {
         try {
@@ -1805,6 +1819,9 @@ document.addEventListener('DOMContentLoaded', function(){
   if(amtInput) amtInput.addEventListener('input', updateTotal);
 });
 
+let _pendingOrderId = null;
+let _pollInterval = null;
+
 async function purchaseCredits(){
   const amt = parseFloat(document.getElementById('credit-amount').value);
   if(!amt || amt < 1 || amt > 500){alert('Amount must be between $1 and $500');return}
@@ -1816,7 +1833,7 @@ async function purchaseCredits(){
   const statusLink = document.getElementById('purchase-status-link');
   btn.disabled = true; btn.textContent = 'Creating invoice...';
   status.style.display = 'block';
-  statusIcon.textContent = '...';
+  statusIcon.textContent = '⏳';
   statusText.textContent = 'Creating payment invoice...';
   statusLink.innerHTML = '';
   try{
@@ -1827,52 +1844,115 @@ async function purchaseCredits(){
     });
     const d = await r.json();
     if(d.error){
-      statusIcon.textContent = 'Error';
-      statusIcon.style.color = '#EF4444';
+      statusIcon.textContent = '❌';
       statusText.textContent = d.error;
       btn.disabled = false; btn.textContent = 'Purchase';
       return;
     }
-    // Got invoice URL - redirect user to NOWPayments checkout
     const invoiceUrl = d.invoice_url;
     if(invoiceUrl){
-      statusIcon.textContent = 'Redirecting';
-      statusIcon.style.color = '#10B981';
+      statusIcon.textContent = '🔗';
       statusText.textContent = 'Opening payment page for $' + amt.toFixed(2) + ' (' + (d.credits_preview||'') + ' credits)...';
       statusLink.innerHTML = '<a href="'+invoiceUrl+'" target="_blank" style="color:#10B981;text-decoration:underline">Click here if not redirected</a>';
-      // Open in new tab
       window.open(invoiceUrl, '_blank');
-      // After redirect, show waiting message
+      // Start auto-polling for payment confirmation
       setTimeout(()=>{
-        statusText.textContent = 'Waiting for payment confirmation. Credits will be added automatically when payment is confirmed.';
-        statusIcon.textContent = 'Waiting';
-        statusIcon.style.color = '#F59E0B';
+        statusText.textContent = 'Waiting for payment confirmation... (auto-checking every 30s)';
+        statusIcon.textContent = '🔄';
         btn.disabled = false; btn.textContent = 'Purchase';
+        startPaymentPolling();
       }, 3000);
     } else {
-      statusIcon.textContent = 'Error';
+      statusIcon.textContent = '❌';
       statusText.textContent = 'Could not create invoice. Try again.';
     }
   }catch(e){
-    statusIcon.textContent = 'Error';
-    statusIcon.style.color = '#EF4444';
+    statusIcon.textContent = '❌';
     statusText.textContent = 'Network error: ' + e.message;
   }
   btn.disabled = false; btn.textContent = 'Purchase';
 }
 
+function startPaymentPolling(){
+  if(_pollInterval) clearInterval(_pollInterval);
+  let attempts = 0;
+  _pollInterval = setInterval(async ()=>{
+    attempts++;
+    if(attempts > 20){clearInterval(_pollInterval);return;} // Stop after 10 min
+    try{
+      const r = await fetch('/api/payments/verify-all', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token}
+      });
+      const d = await r.json();
+      if(d.total_credited > 0){
+        clearInterval(_pollInterval);
+        document.getElementById('purchase-status-icon').textContent = '✅';
+        document.getElementById('purchase-status-text').textContent = 
+          'Payment confirmed! +' + d.total_credited + ' credits added. New balance: ' + d.new_balance + ' credits';
+        document.getElementById('credit-balance').textContent = d.new_balance;
+        loadTransactionHistory();
+      }
+    }catch(e){}
+  }, 30000); // Check every 30 seconds
+}
+
+async function verifyPayments(){
+  if(!token){alert('Please login first');return}
+  const btn = document.getElementById('verify-btn');
+  btn.disabled = true; btn.textContent = '🔄 Checking...';
+  try{
+    const r = await fetch('/api/payments/verify-all', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token}
+    });
+    const d = await r.json();
+    if(d.total_credited > 0){
+      btn.textContent = '✅ +' + d.total_credited + ' credits!';
+      btn.style.background = '#10B981';
+      document.getElementById('credit-balance').textContent = d.new_balance;
+      loadTransactionHistory();
+    } else if(d.verified === 0){
+      btn.textContent = '✅ No pending payments';
+    } else {
+      btn.textContent = '⏳ ' + d.verified + ' payments still pending';
+      btn.style.background = '#F59E0B';
+    }
+    setTimeout(()=>{
+      btn.disabled = false;
+      btn.textContent = '🔄 Verify Pending Payments';
+      btn.style.background = '#F59E0B';
+    }, 5000);
+  }catch(e){
+    btn.textContent = '❌ Error checking';
+    setTimeout(()=>{btn.disabled = false; btn.textContent = '🔄 Verify Pending Payments';}, 3000);
+  }
+}
+
 async function loadCreditBalance(){
   if(!token){
-    document.getElementById('credit-balance').textContent = '0.00';
+    document.getElementById('credit-balance').textContent = '0';
     document.getElementById('credit-account').textContent = 'Login to view balance';
     return;
   }
   try{
+    // First verify any pending payments
+    try{
+      const vr = await fetch('/api/payments/verify-all', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token}
+      });
+      const vd = await vr.json();
+      if(vd.total_credited > 0){
+        showToast('✅ Payment confirmed! +' + vd.total_credited + ' credits added', 'success');
+      }
+    }catch(e){}
+    // Then load fresh balance
     const r = await fetch('/api/payments/balance', {headers:{'Authorization':'Bearer '+token}});
     const d = await r.json();
     if(d.credits !== undefined){
-      document.getElementById('credit-balance').textContent = d.credits.toFixed ? d.credits.toFixed(2) : d.credits;
-      document.getElementById('credit-account').textContent = 'Account: ' + (d.email || '');
+      document.getElementById('credit-balance').textContent = Math.floor(d.credits || 0);
+      document.getElementById('credit-account').textContent = 'Account: ' + (d.username || d.email || '');
     }
   }catch(e){}
 }
@@ -1890,12 +1970,16 @@ async function loadTransactionHistory(){
     tbody.innerHTML = d.transactions.map(t=>{
       const date = t.date ? new Date(t.date).toLocaleDateString() : '--';
       const statusColor = t.status === 'completed' ? '#10B981' : t.status === 'pending' ? '#F59E0B' : '#EF4444';
+      const creditsText = t.status === 'completed' ? '+' + (t.credits||0) : (t.status === 'pending' ? '<span style="color:#F59E0B">pending</span>' : '0');
+      const statusHtml = t.status === 'pending' 
+        ? '<button onclick="verifyPayments()" style="background:#F59E0B;color:#000;border:none;border-radius:4px;padding:2px 8px;font-size:.7rem;cursor:pointer">Verify</button>'
+        : '<span style="color:'+statusColor+'">'+t.status+'</span>';
       return '<tr>'+
         '<td class="mono" style="font-size:.75rem">'+date+'</td>'+
         '<td class="mono" style="font-size:.8rem">$'+((t.amount_usd||0).toFixed(2))+'</td>'+
-        '<td class="mono" style="font-size:.8rem;color:#10B981">+'+(t.credits||0)+'</td>'+
+        '<td class="mono" style="font-size:.8rem;color:#10B981">'+creditsText+'</td>'+
         '<td class="mono" style="font-size:.75rem">'+(t.currency||'--')+'</td>'+
-        '<td style="font-size:.75rem;color:'+statusColor+'">'+t.status+'</td></tr>';
+        '<td style="font-size:.75rem">'+statusHtml+'</td></tr>';
     }).join('');
   }catch(e){}
 }

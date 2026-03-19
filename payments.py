@@ -119,7 +119,7 @@ async def create_invoice(amount_usd: float, order_id: str, order_description: st
             "price_currency": "usd",
             "order_id": order_id,
             "order_description": f"{order_description} - {credits} credits ({tier} tier)",
-            "ipn_callback_url": None,  # Uses dashboard-configured IPN URL
+            "ipn_callback_url": os.environ.get("OMEN_PUBLIC_URL", "") + "/api/payments/nowpayments-webhook" if os.environ.get("OMEN_PUBLIC_URL") else None,
             "success_url": None,  # Will be set by frontend
             "cancel_url": None,
             "is_fixed_rate": True,
@@ -251,6 +251,60 @@ def process_ipn_data(data: dict) -> dict:
         "tier": tier,
         "rate": rate
     }
+
+
+
+
+async def check_and_verify_payment(order_id: str) -> dict:
+    """Poll NOWPayments API to check payment status.
+
+    This is the fallback when IPN webhook doesn't fire.
+    Called by frontend after user completes payment.
+    """
+    try:
+        # First try to find the payment by order_id via list endpoint
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Search payments by order_id
+            resp = await client.get(
+                f"{NOWPAYMENTS_API}/payment/",
+                params={"limit": 20, "orderBy": "created_at", "sortBy": "desc"},
+                headers=_headers()
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                payments = data.get("data", [])
+                for payment in payments:
+                    if payment.get("order_id") == order_id:
+                        status = payment.get("payment_status", "")
+                        price_amount = float(payment.get("price_amount", 0))
+                        pay_currency = payment.get("pay_currency", "")
+                        payment_id = str(payment.get("payment_id", ""))
+
+                        should_credit = status in ["finished", "confirmed"]
+                        credits = 0
+                        tier = ""
+                        rate = 0
+                        if should_credit and price_amount > 0:
+                            credits, tier, rate = calculate_credits(price_amount)
+
+                        return {
+                            "found": True,
+                            "payment_id": payment_id,
+                            "order_id": order_id,
+                            "status": status,
+                            "should_credit": should_credit,
+                            "price_usd": price_amount,
+                            "pay_currency": pay_currency,
+                            "credits": credits,
+                            "tier": tier,
+                        }
+
+                return {"found": False, "order_id": order_id, "status": "not_found", "should_credit": False}
+            else:
+                return {"found": False, "error": f"API returned {resp.status_code}", "status": "api_error"}
+    except Exception as e:
+        logger.error(f"Payment verification failed: {e}")
+        return {"found": False, "error": str(e), "status": "error"}
 
 
 def get_payment_info() -> dict:
