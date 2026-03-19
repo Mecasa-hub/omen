@@ -560,40 +560,84 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 <!-- AUTO-PILOT PAGE -->
 
 <div class="page" id="page-leaderboard">
-  <h2 class="section-title" style="margin-bottom:8px">🏆 Leaderboard</h2>
-  <p style="color:#999;font-size:.75rem;margin-bottom:20px">Top predictors ranked by accuracy and streak</p>
-
-  <div class="stats-row" id="lb-stats" style="margin-bottom:20px">
-    <div class="stat-card"><div class="stat-value" id="lb-total-users">—</div><div class="stat-label">Total Predictors</div></div>
-    <div class="stat-card"><div class="stat-value" id="lb-top-accuracy">—</div><div class="stat-label">Top Accuracy</div></div>
-    <div class="stat-card"><div class="stat-value" id="lb-top-streak">—</div><div class="stat-label">Longest Streak</div></div>
-    <div class="stat-card"><div class="stat-value" id="lb-your-rank">—</div><div class="stat-label">Your Rank</div></div>
-  </div>
-
-  <div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-weight:700;font-size:.85rem">Top Predictors</span>
-      <button class="btn-sm" onclick="loadLeaderboard()" style="font-size:.65rem">Refresh</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:50px">#</th>
-            <th>Predictor</th>
-            <th>Win Rate</th>
-            <th>Trades</th>
-            <th>Specialty</th>
-            <th>Profit (30d)</th>
-            <th>Followers</th>
-          </tr>
-        </thead>
-        <tbody id="lb-tbody">
-          <tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">Loading leaderboard...</td></tr>
-        </tbody>
-      </table>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <h2 class="section-title" style="margin:0">🏆 Live Leaderboard</h2>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="lb-live-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10B981;animation:lb-pulse 2s infinite"></span>
+      <span style="font-size:.65rem;color:#999;font-family:monospace" id="lb-update-time">—</span>
     </div>
   </div>
+  <p style="color:#999;font-size:.7rem;margin-bottom:16px">Real Polymarket traders · Top 100 by profit (30d) · PnL updates every 5s</p>
+
+  <style>
+    @keyframes lb-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes lb-flash-green { 0%{background:rgba(16,185,129,.15)} 100%{background:transparent} }
+    @keyframes lb-flash-red { 0%{background:rgba(239,68,68,.15)} 100%{background:transparent} }
+    .lb-row-up { animation: lb-flash-green .8s ease-out; }
+    .lb-row-down { animation: lb-flash-red .8s ease-out; }
+    .lb-pnl-tick { transition: all 0.4s ease; }
+    .lb-pnl-up { color: #10B981 !important; }
+    .lb-pnl-down { color: #EF4444 !important; }
+    .lb-delta { font-size:.55rem; font-family:monospace; padding:2px 5px; border-radius:3px; display:inline-block; min-width:60px; text-align:right; }
+    .lb-delta-up { background:rgba(16,185,129,.1); color:#10B981; }
+    .lb-delta-down { background:rgba(239,68,68,.1); color:#EF4444; }
+    .lb-bar { height:3px; border-radius:2px; background:#e5e7eb; overflow:hidden; width:80px; display:inline-block; vertical-align:middle; margin-left:6px; }
+    .lb-bar-fill { height:100%; border-radius:2px; transition:width .4s ease; }
+    .lb-active-dot { display:inline-block; width:5px; height:5px; border-radius:50%; margin-right:4px; }
+    .lb-tabs { display:flex; gap:0; border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; margin-bottom:16px; }
+    .lb-tab { padding:6px 14px; font-size:.7rem; font-weight:600; cursor:pointer; border:none; background:#fff; color:#666; transition:all .2s; font-family:inherit; }
+    .lb-tab.active { background:#000; color:#fff; }
+    .lb-avatar { width:24px; height:24px; border-radius:50%; object-fit:cover; margin-right:8px; vertical-align:middle; border:1px solid #eee; }
+    .lb-wins-card { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+    #lb-table-wrap { max-height:600px; overflow-y:auto; }
+    #lb-table-wrap::-webkit-scrollbar { width:4px; }
+    #lb-table-wrap::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
+  </style>
+
+  <div class="stats-row" id="lb-stats" style="margin-bottom:16px">
+    <div class="stat-card"><div class="stat-value" id="lb-total-traders">—</div><div class="stat-label">Traders</div></div>
+    <div class="stat-card"><div class="stat-value" id="lb-top-pnl">—</div><div class="stat-label">Top PnL (30d)</div></div>
+    <div class="stat-card"><div class="stat-value" id="lb-total-volume">—</div><div class="stat-label">Total Volume</div></div>
+    <div class="stat-card"><div class="stat-value" id="lb-avg-winrate">—</div><div class="stat-label">Avg Win Rate</div></div>
+  </div>
+
+  <div class="lb-tabs">
+    <button class="lb-tab active" onclick="switchLbTab('profit')">💰 By Profit</button>
+    <button class="lb-tab" onclick="switchLbTab('volume')">📊 By Volume</button>
+    <button class="lb-tab" onclick="switchLbTab('wins')">🎯 Biggest Wins</button>
+  </div>
+
+  <div id="lb-profit-view">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:12px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:.8rem">Top 100 Polymarket Traders</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm" onclick="refreshLeaderboard()" style="font-size:.6rem">🔄 Refresh Data</button>
+        </div>
+      </div>
+      <div id="lb-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>Trader</th>
+              <th style="text-align:right">PnL (30d)</th>
+              <th style="text-align:right">Live Δ</th>
+              <th style="text-align:right">Volume</th>
+              <th style="text-align:center">Win Rate</th>
+              <th style="text-align:center;width:50px">Active</th>
+            </tr>
+          </thead>
+          <tbody id="lb-tbody">
+            <tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">Loading live data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="lb-volume-view" style="display:none"></div>
+  <div id="lb-wins-view" style="display:none"></div>
 </div>
 
 <div class="page" id="page-autopilot">
@@ -1237,9 +1281,7 @@ async function loadPolygonStatus(){
   try{const r=await fetch('/api/polygon/status');const d=await r.json();if($('poly-block')&&d.block_number)$('poly-block').textContent='#'+d.block_number.toLocaleString()}catch(e){}
 }
 function dashPredict(){const q=$('dash-oracle-input').value.trim();if(q){navigate('oracle');$('oracle-input').value=q;askOracle()}}
-async 
-
-function testBubbleMap(){
+async function testBubbleMap(){
     $('war-room').classList.add('active');
     void document.body.offsetHeight;
   $('agents-grid').innerHTML='';
@@ -1752,73 +1794,166 @@ document.addEventListener('click',function(e){
 });
 
   // ===== LEADERBOARD =====
+  var lbData = null;
+  var lbPrevPnl = {};
+  var lbInterval = null;
+  var lbCurrentTab = 'profit';
+
+  function switchLbTab(tab) {
+    lbCurrentTab = tab;
+    document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('lb-profit-view').style.display = tab === 'profit' ? '' : 'none';
+    document.getElementById('lb-volume-view').style.display = tab === 'volume' ? '' : 'none';
+    document.getElementById('lb-wins-view').style.display = tab === 'wins' ? '' : 'none';
+    if (tab === 'volume') renderVolumeView();
+    if (tab === 'wins') renderWinsView();
+  }
+
+  function fmtUSD(n) {
+    if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'k';
+    return n.toFixed(0);
+  }
+
   async function loadLeaderboard() {
     try {
-      const resp = await fetch('/api/leaderboard');
+      const resp = await safeFetch('/api/leaderboard');
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const users = await resp.json();
-
-      // Stats
-      const list = Array.isArray(users) ? users : [];
-      $('lb-total-users').textContent = list.length;
-      if (list.length > 0) {
-        var topAcc = 0, topFollow = 0;
-        for (var k = 0; k < list.length; k++) {
-          var wr = list[k].win_rate || 0;
-          var fl = list[k].followers || 0;
-          if (wr > topAcc) topAcc = wr;
-          if (fl > topFollow) topFollow = fl;
-        }
-        $('lb-top-accuracy').textContent = topAcc.toFixed(1) + '%';
-        $('lb-top-streak').textContent = topFollow + '🔥';
+      lbData = await resp.json();
+      renderLeaderboard();
+      if (!lbInterval) {
+        lbInterval = setInterval(pollLbUpdate, 5000);
       }
-      if (typeof currentUser !== 'undefined' && currentUser) {
-        var found = -1;
-        for (var k = 0; k < list.length; k++) {
-          if (list[k].name === currentUser) { found = k; break; }
-        }
-        $('lb-your-rank').textContent = found >= 0 ? '#' + (found + 1) : 'Unranked';
-      }
-
-      // Table
-      var tbody = $('lb-tbody');
-      if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">No predictions yet</td></tr>';
-        return;
-      }
-      var html = '';
-      for (var i = 0; i < list.length && i < 50; i++) {
-        var u = list[i];
-        var rank = i + 1;
-        var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank);
-        var name = u.name || u.address || 'Anon';
-        var acc = Number(u.win_rate || 0).toFixed(1);
-        var preds = Number(u.total_trades || 0);
-        var profit = Number(u.profit_30d || 0);
-        var followers = Number(u.followers || 0);
-        var specialty = u.specialty || '-';
-        var isYou = (typeof currentUser !== 'undefined') && currentUser && (name === currentUser);
-        var bg = isYou ? 'background:rgba(16,185,129,.08)' : '';
-        var accN = Number(acc);
-        var ac = accN >= 70 ? '#10B981' : accN >= 50 ? '#F59E0B' : '#EF4444';
-        var pStr = profit >= 0 ? '+$' + (profit/1000).toFixed(1) + 'k' : '-$' + (Math.abs(profit)/1000).toFixed(1) + 'k';
-        var pc = profit >= 0 ? '#10B981' : '#EF4444';
-        html += '<tr style="' + bg + '">';
-        html += '<td style="font-weight:700">' + medal + '</td>';
-        html += '<td style="font-weight:600">' + name + (isYou ? ' <span style="color:#627EEA;font-size:.6rem">(you)</span>' : '') + '</td>';
-        html += '<td style="color:' + ac + ';font-weight:700">' + acc + '%</td>';
-        html += '<td>' + preds.toLocaleString() + '</td>';
-        html += '<td>' + specialty + '</td>';
-        html += '<td style="color:' + pc + ';font-weight:600">' + pStr + '</td>';
-        html += '<td style="color:#F59E0B">' + followers + '</td>';
-        html += '</tr>';
-      }
-      tbody.innerHTML = html;
-    } catch (e) {
+    } catch(e) {
       console.error('Leaderboard error:', e);
       $('lb-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#EF4444;padding:40px;font-size:.75rem">Failed to load leaderboard</td></tr>';
     }
   }
+
+  async function pollLbUpdate() {
+    try {
+      const resp = await fetch('/api/leaderboard');
+      if (!resp.ok) return;
+      lbData = await resp.json();
+      renderLeaderboard();
+    } catch(e) {}
+  }
+
+  async function refreshLeaderboard() {
+    $('lb-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">Refreshing from Polymarket...</td></tr>';
+    try {
+      await fetch('/api/leaderboard/refresh');
+      await loadLeaderboard();
+    } catch(e) {
+      await loadLeaderboard();
+    }
+  }
+
+  function renderLeaderboard() {
+    if (!lbData || !lbData.traders) return;
+    const traders = lbData.traders;
+    const now = new Date().toLocaleTimeString();
+    $('lb-update-time').textContent = 'Updated ' + now;
+
+    // Stats
+    $('lb-total-traders').textContent = traders.length;
+    if (traders.length > 0) {
+      $('lb-top-pnl').textContent = '$' + fmtUSD(traders[0].pnl);
+      var totalVol = 0, totalWr = 0;
+      for (var i = 0; i < traders.length; i++) {
+        totalVol += traders[i].volume || 0;
+        totalWr += traders[i].win_rate || 0;
+      }
+      $('lb-total-volume').textContent = '$' + fmtUSD(totalVol);
+      $('lb-avg-winrate').textContent = (totalWr / traders.length).toFixed(1) + '%';
+    }
+
+    // Table
+    var html = '';
+    var limit = Math.min(traders.length, 100);
+    for (var i = 0; i < limit; i++) {
+      var t = traders[i];
+      var rank = t.rank || (i + 1);
+      var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+      var name = t.name || 'Anon';
+      var wallet = (t.wallet || '').substring(0, 8);
+      var pnl = t.live_pnl || t.pnl;
+      var delta = t.pnl_delta || 0;
+      var dir = t.pnl_direction || (delta >= 0 ? 'up' : 'down');
+      var prevPnl = lbPrevPnl[t.wallet] || pnl;
+      var changed = Math.abs(pnl - prevPnl) > 0.01;
+      var rowClass = changed ? (pnl > prevPnl ? 'lb-row-up' : 'lb-row-down') : '';
+      lbPrevPnl[t.wallet] = pnl;
+
+      var pnlColor = pnl >= 0 ? '#10B981' : '#EF4444';
+      var pnlStr = (pnl >= 0 ? '+$' : '-$') + fmtUSD(Math.abs(pnl));
+      var deltaStr = (delta >= 0 ? '+$' : '-$') + Math.abs(delta).toFixed(0);
+      var deltaClass = delta >= 0 ? 'lb-delta-up' : 'lb-delta-down';
+      var volStr = '$' + fmtUSD(t.volume || 0);
+      var wr = (t.win_rate || 50).toFixed(1);
+      var wrColor = wr >= 70 ? '#10B981' : wr >= 50 ? '#F59E0B' : '#EF4444';
+      var wrPct = Math.min(100, Math.max(0, wr));
+      var activeDots = t.active_trades || 0;
+      var activeColor = activeDots > 3 ? '#10B981' : activeDots > 0 ? '#F59E0B' : '#ccc';
+
+      var img = t.profileImage && !t.profileImage.includes('fallback') 
+        ? '<img class="lb-avatar" src="' + t.profileImage + '" onerror="this.hidden=true"/>'
+        : '<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#f3f4f6;text-align:center;line-height:24px;font-size:.6rem;margin-right:8px;vertical-align:middle;border:1px solid #eee">' + (name[0] || '?').toUpperCase() + '</span>';
+
+      html += '<tr class="' + rowClass + '" style="transition:background .3s">';
+      html += '<td style="font-weight:700;font-size:.8rem">' + medal + '</td>';
+      html += '<td>' + img + '<span style="font-weight:600;font-size:.78rem">' + name + '</span>';
+      if (wallet) html += '<br><span style="font-size:.55rem;color:#aaa;font-family:monospace;margin-left:32px">' + wallet + '...</span>';
+      html += '</td>';
+      html += '<td style="text-align:right;font-weight:700;color:' + pnlColor + ';font-family:monospace;font-size:.8rem" class="lb-pnl-tick">' + pnlStr + '</td>';
+      html += '<td style="text-align:right"><span class="lb-delta ' + deltaClass + '">' + (delta >= 0 ? '▲' : '▼') + ' ' + deltaStr + '</span></td>';
+      html += '<td style="text-align:right;font-family:monospace;font-size:.72rem;color:#666">' + volStr + '</td>';
+      html += '<td style="text-align:center"><span style="font-weight:600;color:' + wrColor + ';font-size:.75rem">' + wr + '%</span><div class="lb-bar"><div class="lb-bar-fill" style="width:' + wrPct + '%;background:' + wrColor + '"></div></div></td>';
+      html += '<td style="text-align:center"><span class="lb-active-dot" style="background:' + activeColor + '"></span><span style="font-size:.65rem;color:#888">' + activeDots + '</span></td>';
+      html += '</tr>';
+    }
+    $('lb-tbody').innerHTML = html;
+  }
+
+  function renderVolumeView() {
+    if (!lbData || !lbData.traders) return;
+    var sorted = [...lbData.traders].sort((a,b) => (b.volume||0) - (a.volume||0));
+    var html = '<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 20px;border-bottom:1px solid #eee"><span style="font-weight:700;font-size:.8rem">Top 100 by Volume</span></div><div style="max-height:600px;overflow-y:auto"><table><thead><tr><th style="width:40px">#</th><th>Trader</th><th style="text-align:right">Volume</th><th style="text-align:right">PnL</th><th style="text-align:center">ROI</th></tr></thead><tbody>';
+    for (var i = 0; i < Math.min(sorted.length, 100); i++) {
+      var t = sorted[i];
+      var roi = t.volume > 0 ? ((t.pnl / t.volume) * 100).toFixed(2) : '0.00';
+      var roiColor = roi >= 0 ? '#10B981' : '#EF4444';
+      html += '<tr>';
+      html += '<td style="font-weight:700">' + (i+1) + '</td>';
+      html += '<td style="font-weight:600">' + (t.name||'Anon') + '</td>';
+      html += '<td style="text-align:right;font-family:monospace;font-size:.78rem">$' + fmtUSD(t.volume||0) + '</td>';
+      html += '<td style="text-align:right;color:' + (t.pnl>=0?'#10B981':'#EF4444') + ';font-weight:600;font-family:monospace">' + (t.pnl>=0?'+$':'-$') + fmtUSD(Math.abs(t.pnl||0)) + '</td>';
+      html += '<td style="text-align:center;color:' + roiColor + ';font-weight:600">' + roi + '%</td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div></div>';
+    document.getElementById('lb-volume-view').innerHTML = html;
+  }
+
+  function renderWinsView() {
+    if (!lbData || !lbData.biggest_wins) return;
+    var wins = lbData.biggest_wins;
+    var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+    for (var i = 0; i < wins.length; i++) {
+      var w = wins[i];
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
+      html += '<div class="lb-wins-card">';
+      html += '<div><span style="font-weight:700;margin-right:8px">' + medal + '</span>';
+      html += '<span style="font-weight:600">' + (w.name||'Anon') + '</span>';
+      html += '<div style="font-size:.7rem;color:#888;margin-top:2px">' + (w.event||'—') + '</div></div>';
+      html += '<div style="text-align:right"><div style="font-weight:700;color:#10B981;font-family:monospace">+$' + fmtUSD(w.pnl||0) + '</div></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    document.getElementById('lb-wins-view').innerHTML = html;
+  }
+
 
 </script>
 </body>

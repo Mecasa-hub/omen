@@ -3,6 +3,7 @@
 import asyncio, json, logging, os, sys, hashlib, secrets, time, random
 from datetime import datetime, timezone
 from pathlib import Path
+import leaderboard as lb_module
 from contextlib import asynccontextmanager
 
 BASE_DIR = Path(__file__).parent
@@ -554,11 +555,21 @@ async def oracle_streak():
     return {"streak":random.randint(5,15),"last_10":[random.choice([True,False]) for _ in range(10)]}
 
 @app.get("/api/leaderboard")
-async def leaderboard():
-    async with aiosqlite.connect(str(DB_PATH)) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute("SELECT * FROM whales ORDER BY win_rate DESC LIMIT 20")
-        return [dict(r) for r in await cursor.fetchall()]
+async def leaderboard_endpoint():
+    """Live Polymarket leaderboard with real trader data."""
+    return lb_module.get_live_snapshot()
+
+@app.get("/api/leaderboard/refresh")
+async def leaderboard_refresh():
+    """Force refresh leaderboard data from Polymarket."""
+    import asyncio
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, lb_module.scrape_polymarket_leaderboard)
+    if data:
+        lb_module._cache["data"] = data
+        lb_module._cache["ts"] = __import__("time").time()
+        return {"status": "refreshed", "count": data.get("count", 0)}
+    return {"status": "failed", "message": "Could not scrape Polymarket"}
 
 @app.websocket("/ws/war-room")
 async def war_room(websocket: WebSocket):
