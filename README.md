@@ -327,15 +327,15 @@ omen/
 - [x] 🔐 Per-user encrypted API credential storage
 - [x] 📜 Trade history logging
 
-### 🔨 Phase 3 — Intelligence (Complete)
-- [ ] 🧬 Advanced swarm — 50+ agent personas with specialized strategies
-- [ ] 📊 Backtesting engine — test strategies against historical data
-- [ ] 🐋 Whale discovery — auto-detect new profitable wallets
-- [ ] 📈 Portfolio tracker — aggregate positions, PnL, win rate
-- [ ] 🔔 Alert system — whale moves, Oracle streaks, market events
+### ✅ Phase 3 — Intelligence (Complete)
+- [x] 🧬 Advanced swarm — 50+ agent personas with specialized strategies
+- [x] 📊 Backtesting engine — test strategies against historical data
+- [x] 🐋 Whale discovery — auto-detect new profitable wallets
+- [x] 📈 Portfolio tracker — aggregate positions, PnL, win rate
+- [x] 🔔 Alert system — whale moves, Oracle streaks, market events
 
-### 🔮 Phase 4 — Scale
-- [ ] 🤖 Auto-pilot mode — fully automated trading based on Oracle + whales
+### ✅ Phase 4 — Auto-Pilot (Complete)
+- [x] 🤖 Auto-pilot mode — fully automated trading based on Oracle + whales
 - [ ] 📱 Mobile app (React Native)
 - [ ] 🌐 Multi-chain support (Azuro, Overtime Markets)
 - [ ] 💬 AI chat assistant with memory per user
