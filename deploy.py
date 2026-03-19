@@ -57,6 +57,7 @@ import autopilot as autopilot_mod
 import whale_discovery as whale_disc_mod
 import backtest as backtest_mod
 import mirofish_bridge
+import godview as godview_mod
 load_dotenv(BASE_DIR / ".env")
 
 API_KEY = os.getenv("OPENROUTER_API_KEY", "")
@@ -953,6 +954,41 @@ async def polygon_status():
     return await whale_tracker_mod.get_polygon_block_info()
 
 # ── Frontend ─────────────────────────────────────────────────────────────
+
+
+# ─── GOD VIEW TERMINAL API ─────────────────────────────────────────────
+class GVPredictRequest(BaseModel):
+    question: str
+
+@app.get("/api/godview/agents")
+async def gv_list_agents():
+    """Return all 45 agent profiles for the God View terminal."""
+    try:
+        agents = godview_mod.load_all_agents()
+        return agents
+    except Exception as e:
+        logger.error("God View agents error: %s", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/godview/agent/{codename}/stats")
+async def gv_agent_stats(codename: str):
+    """Return prediction stats for a specific agent."""
+    try:
+        stats = godview_mod.get_agent_stats(codename.upper())
+        return stats
+    except Exception as e:
+        return {"total_predictions": 0, "correct": 0, "win_rate": 0, "current_streak": 0}
+
+@app.post("/api/godview/predict")
+async def gv_predict(req: GVPredictRequest):
+    """Run a full swarm prediction with memory-aware agents."""
+    try:
+        result = await godview_mod.run_godview_prediction(req.question)
+        return result
+    except Exception as e:
+        logger.error("God View prediction error: %s", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.get("/")
 async def index():
     return HTMLResponse(_get_html())

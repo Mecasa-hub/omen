@@ -268,6 +268,82 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.8; transform: scale(1.05); }
     }
+
+/* ============ GOD VIEW TERMINAL ============ */
+#page-godview{background:#000 !important;color:#00ff41;padding:0 !important;max-width:100% !important;overflow:hidden;font-family:'JetBrains Mono',monospace}
+#page-godview *{font-family:'JetBrains Mono',monospace}
+.gv-terminal{width:100%;height:calc(100vh - 56px);display:flex;flex-direction:column;background:#000;position:relative}
+.gv-topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-bottom:1px solid #1a3a1a;font-size:.7rem;flex-shrink:0}
+.gv-logo{display:flex;align-items:center;gap:8px}
+.gv-logo-dot{width:8px;height:8px;border-radius:50%;background:#00ff41;box-shadow:0 0 8px #00ff41;animation:gv-pulse 2s infinite}
+.gv-logo-text{color:#00ff41;font-weight:700;font-size:.8rem;letter-spacing:2px}
+.gv-sysinfo{display:flex;gap:16px;color:#666}
+.gv-sysinfo span{color:#888}
+.gv-sysinfo .gv-val{color:#00ff41}
+.gv-metrics{display:flex;align-items:center;gap:12px;padding:6px 16px;background:#050505;border-bottom:1px solid #1a3a1a;flex-shrink:0;overflow-x:auto}
+.gv-metric{display:flex;align-items:center;gap:6px;font-size:.65rem}
+.gv-metric-label{color:#555;text-transform:uppercase}
+.gv-metric-val{color:#00ff41;font-weight:700}
+.gv-metric-bar{width:60px;height:6px;background:#111;border-radius:3px;overflow:hidden}
+.gv-metric-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.gv-metric-bar-fill.green{background:#00ff41}
+.gv-metric-bar-fill.yellow{background:#ffaa00}
+.gv-metric-bar-fill.red{background:#ff4444}
+.gv-main{display:flex;flex:1;overflow:hidden}
+.gv-events{width:280px;border-right:1px solid #1a3a1a;display:flex;flex-direction:column;flex-shrink:0}
+.gv-events-header{padding:8px 12px;font-size:.65rem;color:#555;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #111}
+.gv-events-list{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#1a3a1a #000}
+.gv-event{padding:3px 12px;font-size:.6rem;color:#444;border-left:2px solid transparent;transition:all .3s}
+.gv-event.new{color:#00ff41;border-left-color:#00ff41;background:rgba(0,255,65,0.03)}
+.gv-event .gv-etime{color:#333}
+.gv-event .gv-eid{color:#00aa33;font-weight:700}
+.gv-event .gv-eaction{color:#666}
+.gv-event.highlight .gv-eaction{color:#00ff41}
+.gv-graph{flex:1;position:relative;overflow:hidden}
+.gv-graph svg{width:100%;height:100%}
+.gv-node rect{fill:#0d0d0d;stroke:#1a3a1a;stroke-width:1;rx:4;cursor:pointer;transition:all .3s}
+.gv-node:hover rect{stroke:#00ff41;fill:#0a1a0a}
+.gv-node.active rect{stroke:#00ff41;fill:#0a1a0a;stroke-width:2;filter:drop-shadow(0 0 6px rgba(0,255,65,0.4))}
+.gv-node .gv-ndot{fill:#333}
+.gv-node.online .gv-ndot{fill:#00ff41;filter:drop-shadow(0 0 4px #00ff41)}
+.gv-node .gv-nname{fill:#888;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.gv-node.online .gv-nname{fill:#00ff41}
+.gv-node .gv-nrole{fill:#444;font-size:7px;font-family:'JetBrains Mono',monospace}
+.gv-node.voting .gv-nname{fill:#ffaa00}
+.gv-node.voted-yes rect{stroke:#00ff41;stroke-width:2}
+.gv-node.voted-no rect{stroke:#ff4444;stroke-width:2}
+.gv-link{stroke:#111;stroke-width:1}
+.gv-link.active{stroke:#00ff41;stroke-width:1.5;stroke-dasharray:4 2;animation:gv-dash 1s linear infinite}
+.gv-link-label{fill:#333;font-size:7px;font-family:'JetBrains Mono',monospace}
+.gv-link.active .gv-link-label{fill:#00ff41}
+.gv-bottombar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-top:1px solid #1a3a1a;font-size:.65rem;flex-shrink:0}
+.gv-cmd{display:flex;align-items:center;gap:8px;flex:1}
+.gv-cmd-prompt{color:#00ff41}
+.gv-cmd-input{background:transparent;border:none;color:#00ff41;font-family:'JetBrains Mono',monospace;font-size:.7rem;flex:1;outline:none;caret-color:#00ff41}
+.gv-cmd-input::placeholder{color:#333}
+.gv-status{display:flex;gap:16px;color:#555}
+.gv-status .gv-active{color:#00ff41}
+.gv-detail-panel{position:absolute;right:0;top:0;width:300px;height:100%;background:#0a0a0a;border-left:1px solid #1a3a1a;transform:translateX(100%);transition:transform .3s;z-index:10;overflow-y:auto;padding:16px}
+.gv-detail-panel.open{transform:translateX(0)}
+.gv-detail-panel h3{color:#00ff41;font-size:.8rem;margin:0 0 12px;letter-spacing:1px}
+.gv-detail-panel .gv-dp-field{margin-bottom:8px}
+.gv-detail-panel .gv-dp-label{color:#555;font-size:.6rem;text-transform:uppercase;letter-spacing:1px}
+.gv-detail-panel .gv-dp-value{color:#ccc;font-size:.7rem;margin-top:2px}
+.gv-detail-panel .gv-dp-trait-bar{width:100%;height:4px;background:#111;border-radius:2px;margin-top:4px}
+.gv-detail-panel .gv-dp-trait-fill{height:100%;border-radius:2px;background:#00ff41}
+.gv-detail-panel .gv-dp-close{position:absolute;top:8px;right:8px;color:#555;cursor:pointer;background:none;border:none;font-size:1rem}
+.gv-detail-panel .gv-dp-close:hover{color:#00ff41}
+.gv-boot-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;transition:opacity .5s}
+.gv-boot-overlay.hidden{opacity:0;pointer-events:none}
+.gv-boot-text{color:#00ff41;font-size:.7rem;max-width:600px;text-align:left;line-height:1.8}
+.gv-boot-text .gv-boot-line{opacity:0;animation:gv-bootline .3s forwards}
+.gv-boot-counter{color:#00ff41;font-size:2rem;font-weight:700;margin-top:20px}
+@keyframes gv-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes gv-dash{to{stroke-dashoffset:-6}}
+@keyframes gv-bootline{to{opacity:1}}
+@keyframes gv-scanline{0%{top:-100%}100%{top:100%}}
+.gv-scanline{position:absolute;top:-100%;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(0,255,65,0.1),transparent);z-index:5;animation:gv-scanline 4s linear infinite;pointer-events:none}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 </head>
@@ -284,6 +360,8 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <button class="nav-link" data-page="leaderboard" onclick="navigate('leaderboard')">Leaderboard</button>
     <button class="nav-link" data-page="autopilot" onclick="navigate('autopilot')">Auto-Pilot</button>
     <button class="nav-link" data-page="backtest" onclick="navigate('backtest')">Backtest</button>
+    <button class="nav-link" data-page="godview" onclick="navigate('godview')">⚡ God View</button>
+
   </div>
   <div class="nav-right">
     <span class="alert-bell" id="alert-bell" onclick="toggleAlerts()" title="Alerts">&#128276;<span class="alert-badge" id="alert-badge" style="display:none">0</span></span>
@@ -649,7 +727,83 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     #lb-table-wrap { max-height:600px; overflow-y:auto; }
     #lb-table-wrap::-webkit-scrollbar { width:4px; }
     #lb-table-wrap::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
-  </style>
+  
+/* ============ GOD VIEW TERMINAL ============ */
+#page-godview{background:#000 !important;color:#00ff41;padding:0 !important;max-width:100% !important;overflow:hidden;font-family:'JetBrains Mono',monospace}
+#page-godview *{font-family:'JetBrains Mono',monospace}
+.gv-terminal{width:100%;height:calc(100vh - 56px);display:flex;flex-direction:column;background:#000;position:relative}
+.gv-topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-bottom:1px solid #1a3a1a;font-size:.7rem;flex-shrink:0}
+.gv-logo{display:flex;align-items:center;gap:8px}
+.gv-logo-dot{width:8px;height:8px;border-radius:50%;background:#00ff41;box-shadow:0 0 8px #00ff41;animation:gv-pulse 2s infinite}
+.gv-logo-text{color:#00ff41;font-weight:700;font-size:.8rem;letter-spacing:2px}
+.gv-sysinfo{display:flex;gap:16px;color:#666}
+.gv-sysinfo span{color:#888}
+.gv-sysinfo .gv-val{color:#00ff41}
+.gv-metrics{display:flex;align-items:center;gap:12px;padding:6px 16px;background:#050505;border-bottom:1px solid #1a3a1a;flex-shrink:0;overflow-x:auto}
+.gv-metric{display:flex;align-items:center;gap:6px;font-size:.65rem}
+.gv-metric-label{color:#555;text-transform:uppercase}
+.gv-metric-val{color:#00ff41;font-weight:700}
+.gv-metric-bar{width:60px;height:6px;background:#111;border-radius:3px;overflow:hidden}
+.gv-metric-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.gv-metric-bar-fill.green{background:#00ff41}
+.gv-metric-bar-fill.yellow{background:#ffaa00}
+.gv-metric-bar-fill.red{background:#ff4444}
+.gv-main{display:flex;flex:1;overflow:hidden}
+.gv-events{width:280px;border-right:1px solid #1a3a1a;display:flex;flex-direction:column;flex-shrink:0}
+.gv-events-header{padding:8px 12px;font-size:.65rem;color:#555;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #111}
+.gv-events-list{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#1a3a1a #000}
+.gv-event{padding:3px 12px;font-size:.6rem;color:#444;border-left:2px solid transparent;transition:all .3s}
+.gv-event.new{color:#00ff41;border-left-color:#00ff41;background:rgba(0,255,65,0.03)}
+.gv-event .gv-etime{color:#333}
+.gv-event .gv-eid{color:#00aa33;font-weight:700}
+.gv-event .gv-eaction{color:#666}
+.gv-event.highlight .gv-eaction{color:#00ff41}
+.gv-graph{flex:1;position:relative;overflow:hidden}
+.gv-graph svg{width:100%;height:100%}
+.gv-node rect{fill:#0d0d0d;stroke:#1a3a1a;stroke-width:1;rx:4;cursor:pointer;transition:all .3s}
+.gv-node:hover rect{stroke:#00ff41;fill:#0a1a0a}
+.gv-node.active rect{stroke:#00ff41;fill:#0a1a0a;stroke-width:2;filter:drop-shadow(0 0 6px rgba(0,255,65,0.4))}
+.gv-node .gv-ndot{fill:#333}
+.gv-node.online .gv-ndot{fill:#00ff41;filter:drop-shadow(0 0 4px #00ff41)}
+.gv-node .gv-nname{fill:#888;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.gv-node.online .gv-nname{fill:#00ff41}
+.gv-node .gv-nrole{fill:#444;font-size:7px;font-family:'JetBrains Mono',monospace}
+.gv-node.voting .gv-nname{fill:#ffaa00}
+.gv-node.voted-yes rect{stroke:#00ff41;stroke-width:2}
+.gv-node.voted-no rect{stroke:#ff4444;stroke-width:2}
+.gv-link{stroke:#111;stroke-width:1}
+.gv-link.active{stroke:#00ff41;stroke-width:1.5;stroke-dasharray:4 2;animation:gv-dash 1s linear infinite}
+.gv-link-label{fill:#333;font-size:7px;font-family:'JetBrains Mono',monospace}
+.gv-link.active .gv-link-label{fill:#00ff41}
+.gv-bottombar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-top:1px solid #1a3a1a;font-size:.65rem;flex-shrink:0}
+.gv-cmd{display:flex;align-items:center;gap:8px;flex:1}
+.gv-cmd-prompt{color:#00ff41}
+.gv-cmd-input{background:transparent;border:none;color:#00ff41;font-family:'JetBrains Mono',monospace;font-size:.7rem;flex:1;outline:none;caret-color:#00ff41}
+.gv-cmd-input::placeholder{color:#333}
+.gv-status{display:flex;gap:16px;color:#555}
+.gv-status .gv-active{color:#00ff41}
+.gv-detail-panel{position:absolute;right:0;top:0;width:300px;height:100%;background:#0a0a0a;border-left:1px solid #1a3a1a;transform:translateX(100%);transition:transform .3s;z-index:10;overflow-y:auto;padding:16px}
+.gv-detail-panel.open{transform:translateX(0)}
+.gv-detail-panel h3{color:#00ff41;font-size:.8rem;margin:0 0 12px;letter-spacing:1px}
+.gv-detail-panel .gv-dp-field{margin-bottom:8px}
+.gv-detail-panel .gv-dp-label{color:#555;font-size:.6rem;text-transform:uppercase;letter-spacing:1px}
+.gv-detail-panel .gv-dp-value{color:#ccc;font-size:.7rem;margin-top:2px}
+.gv-detail-panel .gv-dp-trait-bar{width:100%;height:4px;background:#111;border-radius:2px;margin-top:4px}
+.gv-detail-panel .gv-dp-trait-fill{height:100%;border-radius:2px;background:#00ff41}
+.gv-detail-panel .gv-dp-close{position:absolute;top:8px;right:8px;color:#555;cursor:pointer;background:none;border:none;font-size:1rem}
+.gv-detail-panel .gv-dp-close:hover{color:#00ff41}
+.gv-boot-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;transition:opacity .5s}
+.gv-boot-overlay.hidden{opacity:0;pointer-events:none}
+.gv-boot-text{color:#00ff41;font-size:.7rem;max-width:600px;text-align:left;line-height:1.8}
+.gv-boot-text .gv-boot-line{opacity:0;animation:gv-bootline .3s forwards}
+.gv-boot-counter{color:#00ff41;font-size:2rem;font-weight:700;margin-top:20px}
+@keyframes gv-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes gv-dash{to{stroke-dashoffset:-6}}
+@keyframes gv-bootline{to{opacity:1}}
+@keyframes gv-scanline{0%{top:-100%}100%{top:100%}}
+.gv-scanline{position:absolute;top:-100%;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(0,255,65,0.1),transparent);z-index:5;animation:gv-scanline 4s linear infinite;pointer-events:none}
+
+</style>
 
   <div class="stats-row" id="lb-stats" style="margin-bottom:16px">
     <div class="stat-card"><div class="stat-value" id="lb-total-traders">—</div><div class="stat-label">Traders</div></div>
@@ -825,6 +979,135 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <div class="form-error" id="wallet-error" style="margin-top:8px"></div>
     <div style="text-align:center;margin-top:12px"><a style="font-size:.7rem;color:#999;cursor:pointer" onclick="closeAuth()">Close</a></div>
   </div>
+</div>
+
+
+<!-- ============ GOD VIEW TERMINAL ============ -->
+<div class="page" id="page-godview">
+<div class="gv-terminal" id="gv-terminal">
+  <!-- Boot overlay -->
+  <div class="gv-boot-overlay" id="gv-boot">
+    <div class="gv-boot-text" id="gv-boot-text"></div>
+    <div class="gv-boot-counter" id="gv-boot-counter">0 / 45</div>
+  </div>
+
+  <!-- Scanline effect -->
+  <div class="gv-scanline"></div>
+
+  <!-- Top bar -->
+  <div class="gv-topbar">
+    <div class="gv-logo">
+      <div class="gv-logo-dot"></div>
+      <span class="gv-logo-text">OMEN ORACLE</span>
+      <span style="color:#333;margin-left:8px">GOD VIEW</span>
+    </div>
+    <div class="gv-sysinfo">
+      <span>SYS <span class="gv-val">v2.0.1</span></span>
+      <span>PID <span class="gv-val" id="gv-pid">--</span></span>
+      <span>UPTIME <span class="gv-val" id="gv-uptime">00:00:00</span></span>
+      <span>AGENTS <span class="gv-val" id="gv-agent-count">0/45</span></span>
+      <span>NET <span class="gv-val" id="gv-net">Connecting</span></span>
+      <span>UTC <span class="gv-val" id="gv-utc">--:--:--</span></span>
+    </div>
+  </div>
+
+  <!-- Metrics bar -->
+  <div class="gv-metrics">
+    <div class="gv-metric">
+      <span class="gv-metric-label">THROUGHPUT</span>
+      <div class="gv-metric-bar"><div class="gv-metric-bar-fill green" id="gv-throughput-bar" style="width:0%"></div></div>
+      <span class="gv-metric-val" id="gv-throughput">0%</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">LATENCY</span>
+      <span class="gv-metric-val" id="gv-latency">--ms</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">OPS/S</span>
+      <span class="gv-metric-val" id="gv-ops">0</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">MEM</span>
+      <div class="gv-metric-bar"><div class="gv-metric-bar-fill green" id="gv-mem-bar" style="width:0%"></div></div>
+      <span class="gv-metric-val" id="gv-mem">0%</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">CPU</span>
+      <div class="gv-metric-bar"><div class="gv-metric-bar-fill green" id="gv-cpu-bar" style="width:0%"></div></div>
+      <span class="gv-metric-val" id="gv-cpu">0%</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">QUEUE</span>
+      <span class="gv-metric-val" id="gv-queue">0</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">ERRORS</span>
+      <span class="gv-metric-val" id="gv-errors" style="color:#00ff41">0</span>
+    </div>
+    <div class="gv-metric">
+      <span class="gv-metric-label">TOKENS</span>
+      <span class="gv-metric-val" id="gv-tokens">0</span>
+    </div>
+  </div>
+
+  <!-- Main area -->
+  <div class="gv-main">
+    <!-- Left: Event stream -->
+    <div class="gv-events">
+      <div class="gv-events-header">⚡ EVENT STREAM</div>
+      <div class="gv-events-list" id="gv-events-list"></div>
+    </div>
+
+    <!-- Center: Agent network graph -->
+    <div class="gv-graph" id="gv-graph">
+      <!-- D3 renders here -->
+    </div>
+
+    <!-- Right: Agent detail panel (hidden by default) -->
+    <div class="gv-detail-panel" id="gv-detail-panel">
+      <button class="gv-dp-close" onclick="closeGVDetail()">&times;</button>
+      <h3 id="gv-dp-name">AGENT</h3>
+      <div class="gv-dp-field"><div class="gv-dp-label">Role</div><div class="gv-dp-value" id="gv-dp-role">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Status</div><div class="gv-dp-value" id="gv-dp-status">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Personality</div><div class="gv-dp-value" id="gv-dp-personality" style="font-size:.6rem;color:#999">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Catchphrase</div><div class="gv-dp-value" id="gv-dp-catchphrase" style="color:#00ff41;font-style:italic">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Backstory</div><div class="gv-dp-value" id="gv-dp-backstory" style="font-size:.55rem;color:#888">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Risk Tolerance</div><div class="gv-dp-value" id="gv-dp-risk">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Expertise</div><div class="gv-dp-value" id="gv-dp-expertise">--</div></div>
+      <div class="gv-dp-field">
+        <div class="gv-dp-label">Behavioral Traits</div>
+        <div id="gv-dp-traits"></div>
+      </div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Allies</div><div class="gv-dp-value" id="gv-dp-allies" style="color:#00aa33">--</div></div>
+      <div class="gv-dp-field"><div class="gv-dp-label">Rivals</div><div class="gv-dp-value" id="gv-dp-rivals" style="color:#ff4444">--</div></div>
+      <div class="gv-dp-field">
+        <div class="gv-dp-label">Track Record</div>
+        <div class="gv-dp-value" id="gv-dp-stats">No predictions yet</div>
+      </div>
+      <div class="gv-dp-field">
+        <div class="gv-dp-label">Current Vote</div>
+        <div class="gv-dp-value" id="gv-dp-vote" style="font-size:.9rem;font-weight:700">--</div>
+      </div>
+      <div class="gv-dp-field">
+        <div class="gv-dp-label">Reasoning</div>
+        <div class="gv-dp-value" id="gv-dp-reasoning" style="font-size:.55rem;color:#aaa;max-height:150px;overflow-y:auto">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="gv-bottombar">
+    <div class="gv-cmd">
+      <span class="gv-cmd-prompt">&gt;</span>
+      <input class="gv-cmd-input" id="gv-cmd-input" placeholder="omen.oracle.predict &quot;your question here&quot;" onkeydown="if(event.key==='Enter')gvSubmitQuestion()">
+    </div>
+    <div class="gv-status">
+      <span>POOL <span class="gv-active" id="gv-pool">Idle</span></span>
+      <span>SWARM <span class="gv-active" id="gv-swarm">Ready</span></span>
+      <span>TX <span class="gv-active" id="gv-tx">0</span></span>
+    </div>
+  </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
@@ -1298,6 +1581,7 @@ function navigate(page){
   if(page==='portfolio')loadPortfolio();
   if(page==='autopilot')loadAutopilot();
   if(page==='backtest')loadBacktestHistory();
+  if(page==='godview')initGodView();
 }
 function updateAuth(){
   if(token&&username){$('nav-user').textContent=username;const w=localStorage.getItem('omen_wallet');if(w&&$('wallet-addr'))$('wallet-addr').textContent=w.slice(0,6)+'...'+w.slice(-4);$('auth-btn').textContent='Logout';$('auth-btn').onclick=()=>{token=null;username=null;localStorage.removeItem('omen_token');localStorage.removeItem('omen_user');localStorage.removeItem('omen_wallet');if($('wallet-addr'))$('wallet-addr').textContent='';updateAuth()}}
@@ -2189,6 +2473,572 @@ function loadTags() {
     }).catch(function(){});
 }
 
+
+
+
+// ============ GOD VIEW TERMINAL ============
+var gvInitialized = false;
+var gvAgents = [];
+var gvSimulation = null;
+var gvEventTimer = null;
+var gvMetricsTimer = null;
+var gvUptimeTimer = null;
+var gvStartTime = null;
+var gvTxCount = 0;
+var gvTokensProcessed = 0;
+var gvRunning = false;
+var gvCurrentQuestion = null;
+var gvAgentVotes = {};
+
+var GV_OPERATIONS = ['SYNC','JOIN','FORK','SEAL','PULL','ACK','PIPE','AGREE','COUNTER','FLIP','RELAY','SIGN','MERGE','SPLIT','VOTE','QUERY','INDEX','CACHE','EMIT','PROBE'];
+var GV_ACTIONS = ['consensus reached','data recv','token gen','prompt tokenized','encrypt done','shard balanced','cache hit 98%','route found','schema valid','rebalance complete','fork detected','anomaly flag','heartbeat ok','merge complete','opinion locked','vote cast','confidence updated','memory recalled','pattern matched','signal detected','reasoning chain built','bias check passed','calibration ok'];
+
+function initGodView() {
+  if (gvInitialized) return;
+  gvInitialized = true;
+  gvStartTime = Date.now();
+  document.getElementById('gv-pid').textContent = Math.floor(10000 + Math.random() * 89999);
+  loadGVAgents();
+}
+
+async function loadGVAgents() {
+  try {
+    var resp = await fetch('/api/godview/agents');
+    if (resp.ok) {
+      gvAgents = await resp.json();
+    } else {
+      gvAgents = generateDefaultAgents();
+    }
+  } catch(e) {
+    gvAgents = generateDefaultAgents();
+  }
+  runBootSequence();
+}
+
+function generateDefaultAgents() {
+  var names = ['ORCHESTRATOR','SENTINEL','VECTOR','SYNAPSE','CIPHER','DISPATCH','BEACON','MIRROR','FLUX','PRISM','NEXUS','VORTEX','RAVEN','ANCHOR','TORCH','ATLAS','EMBER','FROST','QUILL','ORBIT','BOLT','REEF','CROWN','DELTA','ECHO','FLINT','GLYPH','HELIX','ION','JADE','KNOT','LOOM','MIST','NOVA','ONYX','PINE','QUARTZ','SLATE','THORN','UMBRA','VALVE','WREN','XENON','YIELD','ZEPHYR'];
+  var roles = ['MASTER CTRL','TRAVERSE','EMBED ORD','NEURAL ORG','ENCRYPT','TASK ROUTE','DISCOVERY','STATE REP','MOMENTUM','SPLIT BEAM','HUB LINK','AGGREGATOR','SCOUT','CONSENSUS','ILLUMINATE','GEOPOLITICS','SLOW BURN','COLD LOGIC','NARRATIVE','MACRO ECON','SPEED TRADE','MKT DEPTH','WHALE TRACK','SHIFT DETECT','SENTIMENT','CATALYST','PATTERN','COMPLEXITY','ENERGY','ASIA MKT','CORRELATION','STORY WEAVE','UNCERTAINTY','BREAKOUT','DARK POOL','STEADY HAND','SIMPLIFIER','FUNDAMENTALS','CONTRARIAN','SHADOW','RISK MGMT','MICRO ALPHA','EXOTIC MKT','YIELD SEEK','FINAL ARBITER'];
+  return names.map(function(n, i) {
+    return {
+      id: i + 1, codename: n, role: roles[i] || 'AGENT',
+      risk_tolerance: Math.floor(Math.random() * 8) + 2,
+      allies: [], rivals: [],
+      personality: '', catchphrase: '', backstory: '',
+      expertise: [], behavioral_traits: {}
+    };
+  });
+}
+
+function runBootSequence() {
+  var bootEl = document.getElementById('gv-boot');
+  var textEl = document.getElementById('gv-boot-text');
+  var counterEl = document.getElementById('gv-boot-counter');
+  bootEl.classList.remove('hidden');
+  textEl.innerHTML = '';
+
+  var bootLines = [
+    '> omen.sys.init()',
+    'Loading OMEN Oracle Machine v2.0.1...',
+    'Initializing memory vault: /agents/vault/',
+    'Loading behavioral profiles... 45 agents found',
+    'Connecting to Gemini 2.0 Flash engine...',
+    'Neural pathways established',
+    'Mounting Obsidian knowledge graph...',
+    'Autoresearch loop: STANDBY',
+    'Initializing agent swarm...'
+  ];
+
+  var lineDelay = 180;
+  var agentDelay = 80;
+
+  bootLines.forEach(function(line, i) {
+    setTimeout(function() {
+      var span = document.createElement('div');
+      span.className = 'gv-boot-line';
+      span.style.animationDelay = '0s';
+      span.textContent = line;
+      if (line.startsWith('>')) span.style.color = '#00ff41';
+      else span.style.color = '#666';
+      textEl.appendChild(span);
+      textEl.scrollTop = textEl.scrollHeight;
+    }, i * lineDelay);
+  });
+
+  var bootStart = bootLines.length * lineDelay;
+
+  gvAgents.forEach(function(agent, i) {
+    setTimeout(function() {
+      counterEl.textContent = (i + 1) + ' / 45';
+      document.getElementById('gv-agent-count').textContent = (i + 1) + '/45';
+
+      var span = document.createElement('div');
+      span.className = 'gv-boot-line';
+      span.style.color = '#00aa33';
+      span.textContent = '  [A' + String(i+1).padStart(2,'0') + '] ' + agent.codename + ' — ' + (agent.role || 'ONLINE');
+      textEl.appendChild(span);
+      textEl.scrollTop = textEl.scrollHeight;
+
+      if (i === gvAgents.length - 1) {
+        setTimeout(function() {
+          var done = document.createElement('div');
+          done.className = 'gv-boot-line';
+          done.style.color = '#00ff41';
+          done.style.fontWeight = '700';
+          done.textContent = '✓ ALL 45 AGENTS ONLINE - SWARM READY';
+          textEl.appendChild(done);
+
+          setTimeout(function() {
+            bootEl.classList.add('hidden');
+            startGodView();
+          }, 800);
+        }, 300);
+      }
+    }, bootStart + i * agentDelay);
+  });
+}
+
+function startGodView() {
+  gvRunning = true;
+  document.getElementById('gv-net').textContent = 'Synced';
+  document.getElementById('gv-pool').textContent = 'Active';
+  document.getElementById('gv-swarm').textContent = 'Healthy';
+  buildGVGraph();
+  startGVEvents();
+  startGVMetrics();
+  startGVUptime();
+}
+
+function buildGVGraph() {
+  var container = document.getElementById('gv-graph');
+  var w = container.clientWidth;
+  var h = container.clientHeight;
+
+  container.innerHTML = '';
+
+  var svg = d3.select('#gv-graph').append('svg')
+    .attr('width', w).attr('height', h)
+    .style('background', '#000');
+
+  // Build nodes
+  var nodes = gvAgents.map(function(a, i) {
+    return {
+      id: a.codename,
+      role: a.role || 'AGENT',
+      index: i,
+      agentData: a,
+      x: w/2 + (Math.random() - 0.5) * w * 0.6,
+      y: h/2 + (Math.random() - 0.5) * h * 0.6
+    };
+  });
+
+  // Build links based on allies/rivals
+  var links = [];
+  var nodeMap = {};
+  nodes.forEach(function(n) { nodeMap[n.id] = n; });
+
+  gvAgents.forEach(function(a) {
+    (a.allies || []).forEach(function(ally) {
+      if (nodeMap[ally]) {
+        links.push({ source: a.codename, target: ally, type: 'ally' });
+      }
+    });
+  });
+
+  // Deduplicate links
+  var seen = {};
+  links = links.filter(function(l) {
+    var key = [l.source, l.target].sort().join('-');
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+
+  // Force simulation
+  gvSimulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(function(d){return d.id}).distance(100).strength(0.3))
+    .force('charge', d3.forceManyBody().strength(-200))
+    .force('center', d3.forceCenter(w/2, h/2))
+    .force('collision', d3.forceCollide().radius(45))
+    .force('x', d3.forceX(w/2).strength(0.05))
+    .force('y', d3.forceY(h/2).strength(0.05));
+
+  // Draw links
+  var linkGroup = svg.append('g');
+  var linkEls = linkGroup.selectAll('line')
+    .data(links).enter().append('line')
+    .attr('class', 'gv-link')
+    .attr('stroke', function(d) { return d.type === 'ally' ? '#0a2a0a' : '#2a0a0a'; });
+
+  // Draw link labels
+  var linkLabels = linkGroup.selectAll('text')
+    .data(links).enter().append('text')
+    .attr('class', 'gv-link-label')
+    .text(function() { return GV_OPERATIONS[Math.floor(Math.random() * GV_OPERATIONS.length)]; })
+    .attr('text-anchor', 'middle');
+
+  // Draw nodes
+  var nodeGroup = svg.append('g');
+  var nodeEls = nodeGroup.selectAll('g')
+    .data(nodes).enter().append('g')
+    .attr('class', 'gv-node online')
+    .attr('id', function(d) { return 'gv-node-' + d.id; })
+    .style('cursor', 'pointer')
+    .on('click', function(event, d) { showGVDetail(d); })
+    .call(d3.drag()
+      .on('start', function(event, d) { if (!event.active) gvSimulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', function(event, d) { d.fx = event.x; d.fy = event.y; })
+      .on('end', function(event, d) { if (!event.active) gvSimulation.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
+
+  // Node background rect
+  nodeEls.append('rect')
+    .attr('width', 80).attr('height', 32)
+    .attr('x', -40).attr('y', -16)
+    .attr('rx', 4);
+
+  // Status dot
+  nodeEls.append('circle')
+    .attr('class', 'gv-ndot')
+    .attr('cx', -32).attr('cy', -4)
+    .attr('r', 3);
+
+  // Agent name
+  nodeEls.append('text')
+    .attr('class', 'gv-nname')
+    .attr('x', -22).attr('y', -3)
+    .text(function(d) { return d.id; });
+
+  // Agent role
+  nodeEls.append('text')
+    .attr('class', 'gv-nrole')
+    .attr('x', -22).attr('y', 8)
+    .text(function(d) { return d.role.substring(0, 12); });
+
+  // Simulation tick
+  gvSimulation.on('tick', function() {
+    linkEls
+      .attr('x1', function(d){return d.source.x})
+      .attr('y1', function(d){return d.source.y})
+      .attr('x2', function(d){return d.target.x})
+      .attr('y2', function(d){return d.target.y});
+
+    linkLabels
+      .attr('x', function(d){return (d.source.x + d.target.x)/2})
+      .attr('y', function(d){return (d.source.y + d.target.y)/2});
+
+    nodeEls.attr('transform', function(d) {
+      d.x = Math.max(45, Math.min(w - 45, d.x));
+      d.y = Math.max(20, Math.min(h - 20, d.y));
+      return 'translate(' + d.x + ',' + d.y + ')';
+    });
+  });
+}
+
+function startGVEvents() {
+  if (gvEventTimer) clearInterval(gvEventTimer);
+  var list = document.getElementById('gv-events-list');
+
+  function addEvent(text, highlight) {
+    var now = new Date();
+    var time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+    var agentIdx = Math.floor(Math.random() * gvAgents.length);
+    var agent = gvAgents[agentIdx];
+
+    var div = document.createElement('div');
+    div.className = 'gv-event new' + (highlight ? ' highlight' : '');
+    div.innerHTML = '<span class="gv-etime">' + time + '</span> <span class="gv-eid">A' + String(agentIdx+1).padStart(2,'0') + '</span> <span class="gv-eaction">' + (text || GV_ACTIONS[Math.floor(Math.random() * GV_ACTIONS.length)]) + '</span>';
+
+    list.insertBefore(div, list.firstChild);
+
+    // Keep max 100 events
+    while (list.children.length > 100) list.removeChild(list.lastChild);
+
+    // Remove 'new' class after animation
+    setTimeout(function() { div.classList.remove('new'); }, 2000);
+
+    // Flash the corresponding node
+    var nodeEl = document.getElementById('gv-node-' + agent.codename);
+    if (nodeEl) {
+      nodeEl.classList.add('active');
+      setTimeout(function() { nodeEl.classList.remove('active'); }, 1500);
+    }
+
+    gvTxCount++;
+    document.getElementById('gv-tx').textContent = gvTxCount;
+  }
+
+  // Initial burst
+  for (var i = 0; i < 5; i++) {
+    setTimeout(function() { addEvent(); }, i * 200);
+  }
+
+  // Ongoing events
+  gvEventTimer = setInterval(function() {
+    addEvent();
+    gvTokensProcessed += Math.floor(1000 + Math.random() * 5000);
+  }, 800 + Math.random() * 1200);
+}
+
+function startGVMetrics() {
+  if (gvMetricsTimer) clearInterval(gvMetricsTimer);
+
+  gvMetricsTimer = setInterval(function() {
+    var throughput = 60 + Math.random() * 30;
+    var latency = 18 + Math.random() * 12;
+    var ops = 3800 + Math.floor(Math.random() * 2000);
+    var mem = 55 + Math.random() * 20;
+    var cpu = 45 + Math.random() * 30;
+    var queue = 80 + Math.floor(Math.random() * 80);
+
+    document.getElementById('gv-throughput').textContent = Math.floor(throughput) + '%';
+    document.getElementById('gv-throughput-bar').style.width = throughput + '%';
+    document.getElementById('gv-latency').textContent = Math.floor(latency) + 'ms';
+    document.getElementById('gv-ops').textContent = ops.toLocaleString();
+    document.getElementById('gv-mem').textContent = Math.floor(mem) + '%';
+    document.getElementById('gv-mem-bar').style.width = mem + '%';
+    document.getElementById('gv-cpu').textContent = Math.floor(cpu) + '%';
+    document.getElementById('gv-cpu-bar').style.width = cpu + '%';
+    document.getElementById('gv-queue').textContent = queue;
+    document.getElementById('gv-errors').textContent = '0';
+
+    // Format tokens
+    var tokenStr = gvTokensProcessed > 1000000 ?
+      (gvTokensProcessed / 1000000).toFixed(1) + 'M' :
+      gvTokensProcessed > 1000 ?
+      (gvTokensProcessed / 1000).toFixed(0) + 'K' : gvTokensProcessed;
+    document.getElementById('gv-tokens').textContent = tokenStr;
+
+    // Color bars based on value
+    var cpuBar = document.getElementById('gv-cpu-bar');
+    cpuBar.className = 'gv-metric-bar-fill ' + (cpu > 80 ? 'red' : cpu > 60 ? 'yellow' : 'green');
+    var memBar = document.getElementById('gv-mem-bar');
+    memBar.className = 'gv-metric-bar-fill ' + (mem > 80 ? 'red' : mem > 60 ? 'yellow' : 'green');
+  }, 2000);
+}
+
+function startGVUptime() {
+  if (gvUptimeTimer) clearInterval(gvUptimeTimer);
+  gvUptimeTimer = setInterval(function() {
+    var elapsed = Math.floor((Date.now() - gvStartTime) / 1000);
+    var h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    var m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    var s = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('gv-uptime').textContent = h + ':' + m + ':' + s;
+
+    var now = new Date();
+    document.getElementById('gv-utc').textContent =
+      String(now.getUTCHours()).padStart(2,'0') + ':' +
+      String(now.getUTCMinutes()).padStart(2,'0') + ':' +
+      String(now.getUTCSeconds()).padStart(2,'0');
+  }, 1000);
+}
+
+function showGVDetail(node) {
+  var panel = document.getElementById('gv-detail-panel');
+  var agent = node.agentData || {};
+  var traits = agent.behavioral_traits || {};
+
+  document.getElementById('gv-dp-name').textContent = node.id;
+  document.getElementById('gv-dp-role').textContent = agent.role || node.role || '--';
+  document.getElementById('gv-dp-status').innerHTML = '<span style="color:#00ff41">● ONLINE</span>';
+  document.getElementById('gv-dp-personality').textContent = agent.personality || 'Standard agent profile';
+  document.getElementById('gv-dp-catchphrase').textContent = '"' + (agent.catchphrase || '...') + '"';
+  document.getElementById('gv-dp-backstory').textContent = agent.backstory || 'No backstory loaded';
+  document.getElementById('gv-dp-risk').textContent = (agent.risk_tolerance || 5) + '/10 ' + '█'.repeat(agent.risk_tolerance || 5) + '░'.repeat(10 - (agent.risk_tolerance || 5));
+  document.getElementById('gv-dp-expertise').textContent = (agent.expertise || []).join(', ') || '--';
+  document.getElementById('gv-dp-allies').textContent = (agent.allies || []).join(', ') || 'None';
+  document.getElementById('gv-dp-rivals').textContent = (agent.rivals || []).join(', ') || 'None';
+
+  // Trait bars
+  var traitsEl = document.getElementById('gv-dp-traits');
+  traitsEl.innerHTML = '';
+  var traitNames = {'contrarian_score':'Contrarian','memory_weight':'Memory','herd_susceptibility':'Herd Follow','overconfidence':'Overconfidence','recency_bias':'Recency Bias','anchoring_strength':'Anchoring'};
+  Object.keys(traitNames).forEach(function(key) {
+    var val = traits[key] || 0;
+    var div = document.createElement('div');
+    div.style.marginBottom = '6px';
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:.55rem"><span style="color:#555">' + traitNames[key] + '</span><span style="color:#00ff41">' + (val * 100).toFixed(0) + '%</span></div><div class="gv-dp-trait-bar"><div class="gv-dp-trait-fill" style="width:' + (val * 100) + '%;background:' + (val > 0.7 ? '#ff4444' : val > 0.4 ? '#ffaa00' : '#00ff41') + '"></div></div>';
+    traitsEl.appendChild(div);
+  });
+
+  // Current vote
+  var vote = gvAgentVotes[node.id];
+  if (vote) {
+    document.getElementById('gv-dp-vote').innerHTML = '<span style="color:' + (vote.vote === 'YES' ? '#00ff41' : '#ff4444') + '">' + vote.vote + ' (' + vote.confidence.toFixed(0) + '%)</span>';
+    document.getElementById('gv-dp-reasoning').textContent = vote.reasoning || '--';
+  } else {
+    document.getElementById('gv-dp-vote').textContent = 'Awaiting input';
+    document.getElementById('gv-dp-reasoning').textContent = 'No active prediction';
+  }
+
+  // Stats
+  document.getElementById('gv-dp-stats').textContent = 'Loading...';
+  fetch('/api/godview/agent/' + node.id + '/stats').then(function(r){return r.json()}).then(function(s) {
+    document.getElementById('gv-dp-stats').innerHTML =
+      'Predictions: ' + (s.total_predictions || 0) +
+      ' | Win Rate: ' + ((s.win_rate || 0) * 100).toFixed(1) + '%' +
+      ' | Streak: ' + (s.current_streak || 0);
+  }).catch(function() {
+    document.getElementById('gv-dp-stats').textContent = 'No data yet';
+  });
+
+  panel.classList.add('open');
+
+  // Highlight node
+  document.querySelectorAll('.gv-node').forEach(function(n) { n.classList.remove('active'); });
+  var nodeEl = document.getElementById('gv-node-' + node.id);
+  if (nodeEl) nodeEl.classList.add('active');
+}
+
+function closeGVDetail() {
+  document.getElementById('gv-detail-panel').classList.remove('open');
+}
+
+async function gvSubmitQuestion() {
+  var input = document.getElementById('gv-cmd-input');
+  var question = input.value.trim();
+  if (!question) return;
+
+  // Clean up command-style input
+  question = question.replace(/^omen\.oracle\.predict\s*["']?/i, '').replace(/["']$/, '');
+  if (!question) return;
+
+  gvCurrentQuestion = question;
+  gvAgentVotes = {};
+  input.value = '';
+  input.placeholder = 'Processing: ' + question.substring(0, 40) + '...';
+
+  document.getElementById('gv-pool').textContent = 'Processing';
+  document.getElementById('gv-swarm').textContent = 'Voting';
+
+  // Add event
+  addGVEvent('> SCENARIO INJECTED: "' + question.substring(0, 50) + '"', true);
+
+  // Reset all nodes
+  document.querySelectorAll('.gv-node').forEach(function(n) {
+    n.classList.remove('voted-yes', 'voted-no', 'voting');
+  });
+
+  // Activate links
+  document.querySelectorAll('.gv-link').forEach(function(l) {
+    l.classList.add('active');
+  });
+
+  // Start streaming agent votes
+  try {
+    var resp = await fetch('/api/godview/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: question})
+    });
+
+    if (resp.ok) {
+      var data = await resp.json();
+      if (data.votes) {
+        simulateVoteStream(data.votes, data.consensus);
+      }
+    } else {
+      // Simulate if API not ready
+      simulateLocalVotes(question);
+    }
+  } catch(e) {
+    simulateLocalVotes(question);
+  }
+}
+
+function simulateVoteStream(votes, consensus) {
+  var delay = 0;
+  var sortedVotes = votes.sort(function() { return Math.random() - 0.5; });
+
+  sortedVotes.forEach(function(v, i) {
+    delay += 100 + Math.random() * 300;
+    setTimeout(function() {
+      gvAgentVotes[v.codename] = v;
+      var nodeEl = document.getElementById('gv-node-' + v.codename);
+      if (nodeEl) {
+        nodeEl.classList.remove('voting');
+        nodeEl.classList.add(v.vote === 'YES' ? 'voted-yes' : 'voted-no');
+      }
+      addGVEvent('A' + String(v.id || i+1).padStart(2,'0') + ' ' + v.codename + ' → ' + v.vote + ' (' + v.confidence.toFixed(0) + '%)', true);
+
+      gvTokensProcessed += Math.floor(2000 + Math.random() * 8000);
+
+      if (i === sortedVotes.length - 1) {
+        setTimeout(function() { showGVConsensus(consensus || calculateConsensus(sortedVotes)); }, 500);
+      }
+    }, delay);
+
+    // Show voting state
+    setTimeout(function() {
+      var nodeEl = document.getElementById('gv-node-' + v.codename);
+      if (nodeEl) nodeEl.classList.add('voting');
+    }, delay - 100);
+  });
+}
+
+function simulateLocalVotes(question) {
+  var votes = gvAgents.map(function(a) {
+    var isYes = Math.random() > 0.4;
+    var conf = 45 + Math.random() * 50;
+    return {
+      codename: a.codename,
+      id: a.id,
+      vote: isYes ? 'YES' : 'NO',
+      confidence: conf,
+      reasoning: a.codename + ' analyzed the scenario based on ' + (a.expertise ? a.expertise[0] : 'general knowledge')
+    };
+  });
+  simulateVoteStream(votes, null);
+}
+
+function calculateConsensus(votes) {
+  var yes = votes.filter(function(v){return v.vote === 'YES'}).length;
+  var total = votes.length;
+  var pct = (yes / total * 100).toFixed(1);
+  var avgConf = votes.reduce(function(s,v){return s + v.confidence}, 0) / total;
+  return {
+    direction: yes > total/2 ? 'YES' : 'NO',
+    percentage: pct,
+    yes_count: yes,
+    no_count: total - yes,
+    avg_confidence: avgConf.toFixed(1)
+  };
+}
+
+function showGVConsensus(consensus) {
+  document.getElementById('gv-pool').textContent = 'Active';
+  document.getElementById('gv-swarm').textContent = 'Consensus';
+
+  addGVEvent('═══════════════════════════', false);
+  addGVEvent('CONSENSUS: ' + consensus.direction + ' (' + consensus.percentage + '% of agents)', true);
+  addGVEvent('YES: ' + consensus.yes_count + ' | NO: ' + consensus.no_count + ' | Avg Conf: ' + consensus.avg_confidence + '%', true);
+  addGVEvent('═══════════════════════════', false);
+
+  // Deactivate link animations
+  setTimeout(function() {
+    document.querySelectorAll('.gv-link').forEach(function(l) {
+      l.classList.remove('active');
+    });
+  }, 3000);
+
+  document.getElementById('gv-cmd-input').placeholder = 'omen.oracle.predict "your question here"';
+}
+
+function addGVEvent(text, highlight) {
+  var list = document.getElementById('gv-events-list');
+  var now = new Date();
+  var time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+
+  var div = document.createElement('div');
+  div.className = 'gv-event new' + (highlight ? ' highlight' : '');
+  div.innerHTML = '<span class="gv-etime">' + time + '</span> <span class="gv-eaction">' + text + '</span>';
+  list.insertBefore(div, list.firstChild);
+
+  while (list.children.length > 150) list.removeChild(list.lastChild);
+  setTimeout(function() { div.classList.remove('new'); }, 2000);
+  gvTxCount++;
+  document.getElementById('gv-tx').textContent = gvTxCount;
+}
 
 </script>
 </body>
