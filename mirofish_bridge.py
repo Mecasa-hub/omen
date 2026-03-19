@@ -37,6 +37,21 @@ GEMINI_KEY = _load_api_key()
 GEMINI_MODEL = "google/gemini-2.0-flash-001"
 
 
+async def _retry_async(coro_fn, max_retries=2, delay=2.0, label=""):
+    """Retry an async function with exponential backoff."""
+    for attempt in range(max_retries + 1):
+        try:
+            return await coro_fn()
+        except Exception as e:
+            if attempt < max_retries:
+                wait = delay * (attempt + 1)
+                logger.warning(f"Retry {attempt+1}/{max_retries} for {label}: {e}. Waiting {wait}s...")
+                await asyncio.sleep(wait)
+            else:
+                raise
+
+
+
 async def check_mirofish_health() -> bool:
     """Check if MiroFish backend is running."""
     try:
@@ -270,12 +285,12 @@ async def run_mirofish_prediction(question: str, mode: str = "fast") -> dict:
 
         # ===== STEP 1: Generate research document =====
         logger.info("Step 1: Generating research document...")
-        research_text = await _generate_research_document(question)
+        research_text = await _retry_async(lambda: _generate_research_document(question), max_retries=2, label="research_doc")
         logger.info(f"Research doc: {len(research_text)} chars")
 
         # ===== STEP 2: Upload to MiroFish for ontology analysis =====
         logger.info("Step 2: MiroFish ontology generation...")
-        ontology_result = await _upload_to_mirofish(session, question, research_text)
+        ontology_result = await _retry_async(lambda: _upload_to_mirofish(session, question, research_text), max_retries=1, label="mirofish_ontology")
 
         if not ontology_result.get("success"):
             raise Exception(f"MiroFish ontology failed: {ontology_result.get('error', 'Unknown')}")
