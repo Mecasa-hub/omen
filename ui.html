@@ -1772,7 +1772,7 @@ document.addEventListener('click',function(e){
         $('lb-top-accuracy').textContent = topAcc.toFixed(1) + '%';
         $('lb-top-streak').textContent = topFollow + '🔥';
       }
-      if (currentUser) {
+      if (typeof currentUser !== 'undefined' && currentUser) {
         var found = -1;
         for (var k = 0; k < list.length; k++) {
           if (list[k].name === currentUser) { found = k; break; }
@@ -1797,7 +1797,7 @@ document.addEventListener('click',function(e){
         var profit = Number(u.profit_30d || 0);
         var followers = Number(u.followers || 0);
         var specialty = u.specialty || '-';
-        var isYou = currentUser && (name === currentUser);
+        var isYou = (typeof currentUser !== 'undefined') && currentUser && (name === currentUser);
         var bg = isYou ? 'background:rgba(16,185,129,.08)' : '';
         var accN = Number(acc);
         var ac = accN >= 70 ? '#10B981' : accN >= 50 ? '#F59E0B' : '#EF4444';
