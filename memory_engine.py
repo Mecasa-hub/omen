@@ -299,8 +299,8 @@ class AutoResearchLoop:
     def _init_log(self):
         if not self.experiments_log.exists():
             with open(self.experiments_log, "w") as f:
-                f.write("timestamp	codename	experiment	trait	old_val	new_val	accuracy_before	accuracy_after	status
-")
+                f.write("timestamp\tcodename\texperiment\ttrait\told_val\tnew_val\taccuracy_before\taccuracy_after\tstatus\n")
+
 
     def propose_experiment(self, codename: str) -> dict:
         """Propose a trait modification experiment for an agent.
@@ -433,11 +433,8 @@ class AutoResearchLoop:
             content = profile_md.read_text()
             date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             new_entry = f"| {date_str} | {trait}: {experiment['old_value']} → {new_value} | {experiment.get('hypothesis', 'auto-experiment')} |"
-            content = content.replace(
-                "| 2026-03-20 | Agent created | Initial personality profile |",
-                f"| 2026-03-20 | Agent created | Initial personality profile |
-{new_entry}"
-            )
+            old_line = "| 2026-03-20 | Agent created | Initial personality profile |"
+            content = content.replace(old_line, old_line + "\n" + new_entry)
             profile_md.write_text(content)
 
         return True
@@ -605,20 +602,15 @@ Predictions: {stats.get('total_predictions', 0)} | Win Rate: {stats.get('win_rat
 """
         traits = profile.get("behavioral_traits", {})
         for t, v in traits.items():
-            context += f"- {t}: {v}
-"
+            context += f"- {t}: {v}\n"
 
         if memories:
-            context += "
-## Relevant Past Predictions
-"
+            context += "\n## Relevant Past Predictions\n"
             for m in memories[:3]:
                 result = "✅" if m.get("correct") else "❌" if m.get("correct") is not None else "⏳"
-                context += f"- {m.get('question', '?')[:60]}... → Voted {m.get('vote', '?')} ({m.get('confidence', 0):.0f}%) {result}
-"
+                context += f"- {m.get('question', '?')[:60]}... → Voted {m.get('vote', '?')} ({m.get('confidence', 0):.0f}%) {result}\n"
                 if m.get("lesson"):
-                    context += f"  Lesson: {m['lesson']}
-"
+                    context += f"  Lesson: {m['lesson']}\n"
 
         context += f"""
 ## Trust Network
@@ -638,6 +630,5 @@ if __name__ == "__main__":
     smm = SwarmMemoryManager()
     print(f"Loaded {len(smm.agents)} agents")
     ctx = smm.build_context_for_agent("SENTINEL", "Will BTC hit 200k?")
-    print(f"
-Context length for SENTINEL: {len(ctx)} chars")
+    print(f"\nContext length for SENTINEL: {len(ctx)} chars")
     print(ctx[:500])

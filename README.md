@@ -379,3 +379,57 @@ MIT License — see [LICENSE](LICENSE) for details.
   <a href="https://github.com/Mecasa-hub/omen/issues">🐛 Report Bug</a> •
   <a href="https://github.com/Mecasa-hub/omen/issues">💡 Request Feature</a>
 </p>
+
+
+## ⚡ God View Terminal (MiroFish-Inspired)
+
+A dark hacker-style terminal interface inspired by the MiroFish God View for real-time swarm intelligence visualization.
+
+### Features
+- **45 Named AI Agents** — Each with unique personality, backstory, cognitive biases, and expertise
+- **Research-Informed Predictions** — Agents receive real-time research context via Gemini 2.0 Flash before voting
+- **Multi-Round Debate System:**
+  - **Round 1**: All 45 agents vote independently with research context
+  - **Round 2**: Top 15 most confident agents re-evaluate after seeing Round 1 results
+  - **Faction Formation**: Agents cluster into Strong Bulls, Cautious Bulls, Strong Bears, Cautious Bears
+  - **Vote Flips**: Track which agents changed their minds during debate and why
+- **Real-Time Event Stream** — Scrolling terminal log of agent activities
+- **Performance Metrics** — Throughput, latency, OPS/s, memory, CPU, queue, errors, tokens
+- **D3.js Force Graph** — 45 agent nodes with connections and operation labels
+- **Boot Animation** — Agents come online 0/45 → 45/45 with status messages
+- **Obsidian-Style Memory Vault** — Each agent has persistent memory stored in markdown files
+- **Autoresearch-Inspired Learning** — Agents track hypotheses, evidence, and post-mortems
+
+### Agent Personalities (45 Unique Agents)
+| Agent | Role | Personality | Risk |
+|-------|------|-------------|------|
+| ORCHESTRATOR | Master Controller | Neutral coordinator | 5/10 |
+| SENTINEL | Risk Scanner | Cautious, threat-focused | 2/10 |
+| VECTOR | Data Embedder | Pure quantitative | 5/10 |
+| CIPHER | Encryption/Privacy | Paranoid analyst | 3/10 |
+| BEACON | Trend Discoverer | Optimistic spotter | 7/10 |
+| FLUX | Momentum Trader | Aggressive trend follower | 8/10 |
+| FROST | Cold Logic | Zero emotion, pure probability | 4/10 |
+| BOLT | Speed Trader | First to react | 9/10 |
+| THORN | Contrarian | Bets against the crowd | 7/10 |
+| RAVEN | Intelligence Scout | Obscure data sources | 6/10 |
+| *...and 35 more* | *Each uniquely crafted* | | |
+
+### API Endpoints
+- `GET /api/godview/agents` — List all 45 agents with full profiles
+- `POST /api/godview/predict` — Run full research-informed multi-round prediction
+- `GET /api/godview/stats` — Real-time system metrics
+- `GET /api/godview/agent/{id}/stats` — Individual agent stats and vote history
+
+### Prediction Response
+```json
+{
+  "question": "Will Bitcoin exceed $150k by end of 2026?",
+  "votes": [...],
+  "consensus": {"direction": "NO", "percentage": "37.8", "yes_count": 17, "no_count": 28},
+  "research_context": "## Research Brief: Bitcoin $150k...",
+  "rounds": [{"round": 1, "name": "Initial Vote", "yes": 17, "no": 28}, {"round": 2, "name": "Debate", "yes": 17, "no": 28, "changes": 4}],
+  "factions": [{"name": "Strong Bulls", "count": 9, "leader": "FLUX"}, ...],
+  "vote_changes": [{"codename": "DELTA", "from": "NO", "to": "YES", "reason": "..."}, ...]
+}
+```

@@ -731,6 +731,35 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 /* ============ GOD VIEW TERMINAL ============ */
 #page-godview{background:#000 !important;color:#00ff41;padding:0 !important;max-width:100% !important;overflow:hidden;font-family:'JetBrains Mono',monospace}
 #page-godview *{font-family:'JetBrains Mono',monospace}
+
+/* God View: Research Panel */
+.gv-research{background:#0a0f0a;border:1px solid #1a3a1a;border-radius:4px;padding:8px;margin-top:4px;max-height:120px;overflow-y:auto;font-size:.55rem;color:#7a9f7a;line-height:1.4}
+.gv-research-title{color:#00ff41;font-size:.65rem;font-weight:700;margin-bottom:4px}
+
+/* God View: Factions Panel */
+.gv-factions{display:none;position:absolute;right:10px;top:110px;width:220px;background:#0a0a0a;border:1px solid #1a3a1a;border-radius:6px;padding:10px;z-index:20;max-height:400px;overflow-y:auto}
+.gv-factions.visible{display:block}
+.gv-faction{padding:8px;margin-bottom:6px;border-radius:4px;border:1px solid #1a3a1a}
+.gv-faction.bulls{border-color:#1a5a1a;background:#0a1a0a}
+.gv-faction.bears{border-color:#5a1a1a;background:#1a0a0a}
+.gv-faction-name{font-size:.7rem;font-weight:700;color:#00ff41;margin-bottom:3px}
+.gv-faction.bears .gv-faction-name{color:#ff4444}
+.gv-faction-meta{font-size:.5rem;color:#888;margin-bottom:4px}
+.gv-faction-leader{font-size:.55rem;color:#ffaa00;margin-bottom:2px}
+.gv-faction-members{font-size:.45rem;color:#555;line-height:1.3}
+
+/* God View: Round Indicator */
+.gv-rounds{display:flex;gap:8px;align-items:center;padding:0 15px;height:24px;background:#050a05;border-bottom:1px solid #0f1f0f}
+.gv-round{font-size:.55rem;color:#333;padding:2px 8px;border-radius:10px;border:1px solid #1a1a1a}
+.gv-round.active{color:#00ff41;border-color:#00ff41;background:#0a1a0a}
+.gv-round.complete{color:#007711;border-color:#007711}
+.gv-round-label{font-size:.5rem;color:#444;margin-right:4px}
+
+/* God View: Vote Changes */
+.gv-changes{margin-top:6px}
+.gv-change{font-size:.5rem;padding:3px 6px;margin:2px 0;border-radius:3px;background:#1a1a0a;border-left:2px solid #ffaa00;color:#cca}
+.gv-change .flip-from{color:#ff4444;text-decoration:line-through}
+.gv-change .flip-to{color:#00ff41;font-weight:700}
 .gv-terminal{width:100%;height:calc(100vh - 56px);display:flex;flex-direction:column;background:#000;position:relative}
 .gv-topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-bottom:1px solid #1a3a1a;font-size:.7rem;flex-shrink:0}
 .gv-logo{display:flex;align-items:center;gap:8px}
@@ -1050,11 +1079,25 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     </div>
   </div>
 
-  <!-- Main area -->
+    <!-- Round Indicator -->
+  <div class="gv-rounds" id="gv-rounds" style="display:none">
+    <span class="gv-round-label">PHASE:</span>
+    <span class="gv-round" id="gv-round-research">RESEARCH</span>
+    <span class="gv-round" id="gv-round-1">ROUND 1</span>
+    <span class="gv-round" id="gv-round-2">DEBATE</span>
+    <span class="gv-round" id="gv-round-factions">FACTIONS</span>
+    <span class="gv-round" id="gv-round-consensus">CONSENSUS</span>
+  </div>
+
+<!-- Main area -->
   <div class="gv-main">
     <!-- Left: Event stream -->
     <div class="gv-events">
       <div class="gv-events-header">⚡ EVENT STREAM</div>
+      <div class="gv-research" id="gv-research" style="display:none">
+        <div class="gv-research-title">📋 RESEARCH CONTEXT</div>
+        <div id="gv-research-text">Generating research briefing...</div>
+      </div>
       <div class="gv-events-list" id="gv-events-list"></div>
     </div>
 
@@ -1092,7 +1135,17 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
         <div class="gv-dp-label">Reasoning</div>
         <div class="gv-dp-value" id="gv-dp-reasoning" style="font-size:.55rem;color:#aaa;max-height:150px;overflow-y:auto">--</div>
       </div>
+        <!-- Factions Panel -->
+    <div class="gv-factions" id="gv-factions">
+      <div style="color:#00ff41;font-size:.7rem;font-weight:700;margin-bottom:8px">⚔ FACTIONS</div>
+      <div id="gv-factions-list"></div>
+      <div class="gv-changes" id="gv-changes" style="display:none">
+        <div style="color:#ffaa00;font-size:.6rem;font-weight:700;margin-top:8px;margin-bottom:4px">🔄 VOTE FLIPS</div>
+        <div id="gv-changes-list"></div>
+      </div>
     </div>
+
+</div>
   </div>
 
   <!-- Bottom bar -->
@@ -2935,10 +2988,18 @@ async function gvSubmitQuestion() {
     if (resp.ok) {
       var data = await resp.json();
       if (data.votes) {
-        simulateVoteStream(data.votes, data.consensus);
+        // Show research context
+        if (data.research_context) {
+          showResearchContext(data.research_context, data.research_time_ms);
+        }
+        // Show rounds
+        if (data.rounds) {
+          showRoundIndicators(data.rounds);
+        }
+        // Stream votes with round awareness
+        simulateVoteStream(data.votes, data.consensus, data);
       }
     } else {
-      // Simulate if API not ready
       simulateLocalVotes(question);
     }
   } catch(e) {
@@ -2946,12 +3007,115 @@ async function gvSubmitQuestion() {
   }
 }
 
-function simulateVoteStream(votes, consensus) {
+function showResearchContext(research, timeMs) {
+  var el = document.getElementById('gv-research');
+  var textEl = document.getElementById('gv-research-text');
+  if (el && textEl) {
+    el.style.display = 'block';
+    // Truncate and format
+    var text = research.substring(0, 500);
+    textEl.innerHTML = text.replace(/
+/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<span style="color:#00ff41">$1</span>');
+    if (timeMs) {
+      var titleEl = el.querySelector('.gv-research-title');
+      if (titleEl) titleEl.textContent = 'RESEARCH CONTEXT (' + (timeMs/1000).toFixed(1) + 's)';
+    }
+    addGVEvent('RESEARCH briefing loaded (' + (timeMs/1000).toFixed(1) + 's)', false);
+  }
+}
+
+function showRoundIndicators(rounds) {
+  var container = document.getElementById('gv-rounds');
+  if (container) {
+    container.style.display = 'flex';
+    // Mark research as complete
+    var researchEl = document.getElementById('gv-round-research');
+    if (researchEl) researchEl.classList.add('complete');
+  }
+}
+
+function activateRound(roundId) {
+  var el = document.getElementById('gv-round-' + roundId);
+  if (el) {
+    // Deactivate all
+    document.querySelectorAll('.gv-round').forEach(function(r) { r.classList.remove('active'); });
+    el.classList.add('active');
+  }
+}
+
+function completeRound(roundId) {
+  var el = document.getElementById('gv-round-' + roundId);
+  if (el) {
+    el.classList.remove('active');
+    el.classList.add('complete');
+  }
+}
+
+function showFactions(factions, voteChanges) {
+  var panel = document.getElementById('gv-factions');
+  var list = document.getElementById('gv-factions-list');
+  if (!panel || !list) return;
+  panel.classList.add('visible');
+  list.innerHTML = '';
+  factions.forEach(function(f) {
+    var isBull = f.stance === 'YES';
+    var div = document.createElement('div');
+    div.className = 'gv-faction ' + (isBull ? 'bulls' : 'bears');
+    div.innerHTML = '<div class="gv-faction-name">' + (isBull ? '🟢 ' : '🔴 ') + f.name + '</div>' +
+      '<div class="gv-faction-meta">' + f.count + ' agents | Avg conf: ' + f.avg_confidence + '%</div>' +
+      '<div class="gv-faction-leader">👑 Leader: ' + f.leader + '</div>' +
+      '<div class="gv-faction-members">' + f.members.slice(0, 8).join(', ') + (f.members.length > 8 ? '...' : '') + '</div>';
+    list.appendChild(div);
+  });
+
+  // Show vote changes
+  if (voteChanges && voteChanges.length > 0) {
+    var changesContainer = document.getElementById('gv-changes');
+    var changesList = document.getElementById('gv-changes-list');
+    if (changesContainer && changesList) {
+      changesContainer.style.display = 'block';
+      changesList.innerHTML = '';
+      voteChanges.forEach(function(vc) {
+        var div = document.createElement('div');
+        div.className = 'gv-change';
+        div.innerHTML = '<strong>' + vc.codename + '</strong> <span class="flip-from">' + vc.from + '</span> → <span class="flip-to">' + vc.to + '</span>';
+        changesList.appendChild(div);
+      });
+    }
+  }
+}
+
+function simulateVoteStream(votes, consensus, fullData) {
   var delay = 0;
   var sortedVotes = votes.sort(function() { return Math.random() - 0.5; });
 
-  sortedVotes.forEach(function(v, i) {
-    delay += 100 + Math.random() * 300;
+  // Separate round 1 and round 2 votes
+  var round1Votes = sortedVotes.filter(function(v) { return (v.round || 1) === 1; });
+  var round2Votes = sortedVotes.filter(function(v) { return (v.round || 1) === 2; });
+  var allVotes = round1Votes.concat(round2Votes);
+  if (allVotes.length === 0) allVotes = sortedVotes;
+
+  // Activate Round 1
+  activateRound('1');
+  addGVEvent('ROUND 1: Initial vote — ' + sortedVotes.length + ' agents', false);
+
+  var round2Started = false;
+
+  allVotes.forEach(function(v, i) {
+    delay += 80 + Math.random() * 200;
+
+    // Check if we crossed into round 2
+    if (!round2Started && (v.round || 1) === 2) {
+      round2Started = true;
+      delay += 800; // Pause between rounds
+      setTimeout(function() {
+        completeRound('1');
+        activateRound('2');
+        addGVEvent('━━━ ROUND 2: DEBATE PHASE ━━━', false);
+        addGVEvent(round2Votes.length + ' agents re-evaluating positions...', false);
+      }, delay - 400);
+    }
+
     setTimeout(function() {
       gvAgentVotes[v.codename] = v;
       var nodeEl = document.getElementById('gv-node-' + v.codename);
@@ -2959,12 +3123,38 @@ function simulateVoteStream(votes, consensus) {
         nodeEl.classList.remove('voting');
         nodeEl.classList.add(v.vote === 'YES' ? 'voted-yes' : 'voted-no');
       }
-      addGVEvent('A' + String(v.id || i+1).padStart(2,'0') + ' ' + v.codename + ' → ' + v.vote + ' (' + v.confidence.toFixed(0) + '%)', true);
+
+      var roundTag = (v.round || 1) === 2 ? ' [R2]' : '';
+      addGVEvent('A' + String(v.id || i+1).padStart(2,'0') + ' ' + v.codename + ' → ' + v.vote + ' (' + v.confidence.toFixed(0) + '%)' + roundTag, true);
 
       gvTokensProcessed += Math.floor(2000 + Math.random() * 8000);
 
-      if (i === sortedVotes.length - 1) {
-        setTimeout(function() { showGVConsensus(consensus || calculateConsensus(sortedVotes)); }, 500);
+      if (i === allVotes.length - 1) {
+        setTimeout(function() {
+          completeRound('2');
+          // Show factions
+          if (fullData && fullData.factions) {
+            activateRound('factions');
+            showFactions(fullData.factions, fullData.vote_changes);
+            addGVEvent('━━━ FACTIONS FORMED ━━━', false);
+            fullData.factions.forEach(function(f) {
+              addGVEvent(f.name + ': ' + f.count + ' agents (leader: ' + f.leader + ')', false);
+            });
+            if (fullData.vote_changes && fullData.vote_changes.length > 0) {
+              addGVEvent('━━━ VOTE FLIPS: ' + fullData.vote_changes.length + ' agents changed ━━━', false);
+              fullData.vote_changes.forEach(function(vc) {
+                addGVEvent(vc.codename + ' flipped ' + vc.from + ' → ' + vc.to, true);
+              });
+            }
+            completeRound('factions');
+          }
+
+          setTimeout(function() {
+            activateRound('consensus');
+            showGVConsensus(consensus || calculateConsensus(sortedVotes));
+            completeRound('consensus');
+          }, 1000);
+        }, 500);
       }
     }, delay);
 
@@ -2972,7 +3162,7 @@ function simulateVoteStream(votes, consensus) {
     setTimeout(function() {
       var nodeEl = document.getElementById('gv-node-' + v.codename);
       if (nodeEl) nodeEl.classList.add('voting');
-    }, delay - 100);
+    }, delay - 80);
   });
 }
 
@@ -2985,10 +3175,11 @@ function simulateLocalVotes(question) {
       id: a.id,
       vote: isYes ? 'YES' : 'NO',
       confidence: conf,
-      reasoning: a.codename + ' analyzed the scenario based on ' + (a.expertise ? a.expertise[0] : 'general knowledge')
+      reasoning: a.codename + ' analyzed the scenario based on ' + (a.expertise ? a.expertise[0] : 'general knowledge'),
+      round: 1
     };
   });
-  simulateVoteStream(votes, null);
+  simulateVoteStream(votes, null, null);
 }
 
 function calculateConsensus(votes) {
