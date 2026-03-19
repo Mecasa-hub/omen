@@ -1085,6 +1085,33 @@ async def backtest_history(request: Request):
 
 
 # ── MiroFish Premium Oracle ──────────────────────────────────────────────
+
+@app.get("/api/oracle/free-daily-status")
+async def free_daily_status(request: Request):
+    """Check if user has their free daily deep dive available."""
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"available": False, "reason": "Login required"})
+
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    try:
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            await db.execute("""CREATE TABLE IF NOT EXISTS free_daily_usage (
+                user_id INTEGER, feature TEXT, used_date TEXT,
+                UNIQUE(user_id, feature, used_date))""")
+            await db.commit()
+            cursor = await db.execute(
+                "SELECT 1 FROM free_daily_usage WHERE user_id=? AND feature='deep_dive' AND used_date=?",
+                (user["id"], today_str))
+            free_used = await cursor.fetchone()
+        return JSONResponse({
+            "available": not bool(free_used),
+            "resets_at": "00:00 UTC",
+            "today": today_str
+        })
+    except Exception as e:
+        return JSONResponse({"available": True, "resets_at": "00:00 UTC", "today": today_str})
+
 @app.get("/api/mirofish/status")
 async def mirofish_status():
     """Check if MiroFish backend is available."""
@@ -1108,16 +1135,41 @@ async def oracle_premium(request: Request):
     if not user:
         return JSONResponse({"error": "Login required"}, status_code=401)
 
-    # Check credits (fast=5, deep=10)
-    PREMIUM_COST = 5 if mode == "fast" else 10
+    # Check for free daily deep dive (1 per day per user)
+
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    is_free_daily = False
+
     async with aiosqlite.connect(str(DB_PATH)) as db:
+        # Create table if needed
+        await db.execute("""CREATE TABLE IF NOT EXISTS free_daily_usage (
+            user_id INTEGER, feature TEXT, used_date TEXT,
+            UNIQUE(user_id, feature, used_date))""")
+        await db.commit()
+
+        # Check if user already used free daily
+        cursor = await db.execute(
+            "SELECT 1 FROM free_daily_usage WHERE user_id=? AND feature='deep_dive' AND used_date=?",
+            (user["id"], today_str))
+        free_used = await cursor.fetchone()
+        if not free_used:
+            is_free_daily = True
+
+        # Calculate cost (free daily = 0 credits)
+        PREMIUM_COST = 0 if is_free_daily else (5 if mode == "fast" else 10)
+
+        # Check credits
         cursor = await db.execute("SELECT credits FROM users WHERE id=?", (user["id"],))
         row = await cursor.fetchone()
-        if not row or row[0] < PREMIUM_COST:
-            return JSONResponse({"error": f"Need {PREMIUM_COST} credits. You have {row[0] if row else 0}."}, status_code=402)
+        if PREMIUM_COST > 0 and (not row or row[0] < PREMIUM_COST):
+            return JSONResponse({"error": f"Need {PREMIUM_COST} credits. You have {row[0] if row else 0}.", "cost": PREMIUM_COST}, status_code=402)
 
-        # Deduct credits
-        await db.execute("UPDATE users SET credits = credits - ? WHERE id=?", (PREMIUM_COST, user["id"]))
+        # Deduct credits OR record free daily usage
+        if is_free_daily:
+            await db.execute("INSERT OR IGNORE INTO free_daily_usage (user_id, feature, used_date) VALUES (?, 'deep_dive', ?)",
+                           (user["id"], today_str))
+        else:
+            await db.execute("UPDATE users SET credits = credits - ? WHERE id=?", (PREMIUM_COST, user["id"]))
         await db.commit()
 
     # Check MiroFish availability
@@ -1140,6 +1192,7 @@ async def oracle_premium(request: Request):
             "question": question,
             "tier": "premium",
             "mode": mode,
+            "free_daily": is_free_daily,
             "credits_used": PREMIUM_COST,
             "verdict": core_result["verdict"],
             "confidence": core_result["confidence"],

@@ -188,6 +188,28 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 #tier-btn-fast.tier-active { border-color:#F59E0B;color:#F59E0B;background:#F59E0B12 }
 #tier-btn-fast.tier-active .tier-sub { color:#F59E0B99 }
 #tier-btn-fast:hover { border-color:#F59E0B66 }
+
+    .free-daily-badge {
+      display:inline-block;
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #fff;
+      font-size: .55rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 3px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      animation: pulse-badge 2s infinite;
+    }
+    .free-daily-used {
+      background: #374151 !important;
+      color: #6B7280 !important;
+      animation: none !important;
+    }
+    @keyframes pulse-badge {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 </head>
@@ -244,6 +266,8 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <button id="tier-btn-deep" class="tier-btn" onclick="selectTier('deep')">
       <span class="tier-icon">&#x1F9E0;</span> DEEP DIVE
       <span class="tier-sub">10 credits &middot; ~3min</span>
+    
+      <span id="free-daily-badge" class="free-daily-badge" style="display:none">1 FREE today</span>
     </button>
     <span id="tier-desc" style="margin-left:12px;font-size:.65rem;font-family:'JetBrains Mono',monospace;color:#888">Real-time AI swarm &mdash; 45 parallel Gemini agents</span>
     <span id="mf-status" style="margin-left:auto;font-size:.6rem;font-family:'JetBrains Mono',monospace;color:#555"></span>
@@ -1182,6 +1206,31 @@ var tierDescs={
   fast:'MiroFish Ontology — entity-based agents from knowledge graph (~30s)',
   deep:'MiroFish Deep Dive — full knowledge graph construction (~3-5 min)'
 };
+
+    // Free daily deep dive check
+    async function checkFreeDaily() {
+      try {
+        const token = localStorage.getItem('omen_token');
+        if (!token) return;
+        const resp = await fetch('/api/oracle/free-daily-status', {
+          headers: {'Authorization': 'Bearer ' + token}
+        });
+        const data = await resp.json();
+        const badge = document.getElementById('free-daily-badge');
+        if (badge) {
+          badge.style.display = 'inline-block';
+          if (data.available) {
+            badge.textContent = '1 FREE today';
+            badge.classList.remove('free-daily-used');
+          } else {
+            badge.textContent = 'Used today';
+            badge.classList.add('free-daily-used');
+          }
+        }
+        window._freeDailyAvailable = data.available;
+      } catch(e) { console.log('Free daily check:', e); }
+    }
+
 function selectTier(tier){
   currentTier=(tier==='free')?'free':'premium';
   currentMode=tier;
@@ -1288,6 +1337,7 @@ function updateTotal(){
 
 // Update total on input change
 document.addEventListener('DOMContentLoaded', function(){
+        checkFreeDaily();
   const amtInput = document.getElementById('credit-amount');
   if(amtInput) amtInput.addEventListener('input', updateTotal);
 });
