@@ -814,7 +814,11 @@ async def list_discovered():
 @app.get("/api/backtest/markets")
 async def backtest_markets_route(limit: int = 30):
     try:
-        markets = await backtest_mod.get_resolved_markets(limit=limit)
+        all_markets = await backtest_mod.get_resolved_markets(limit=limit * 3)
+        # Prefer binary Yes/No markets for Oracle compatibility
+        binary = [m for m in all_markets if m.get("is_binary", False)]
+        non_binary = [m for m in all_markets if not m.get("is_binary", False)]
+        markets = (binary + non_binary)[:limit]  # Binary first
         return JSONResponse({"count": len(markets), "markets": markets})
     except Exception as e:
         return JSONResponse({"count": 0, "markets": [], "error": str(e)})
@@ -829,31 +833,15 @@ async def run_backtest_route(request: Request):
     limit = body.get("limit", 10)
 
     async def quick_oracle(question):
-        personas = swarm_engine.get_personas(count=min(agent_count, 5))
-        debates = []
-        for p in personas:
-            try:
-                prompt = p["prompt"] + "\nQuestion: " + question + "\nRespond: VERDICT: YES or NO, CONFIDENCE: 0-100, then 1-2 sentences why."
-                async with httpx.AsyncClient(timeout=30) as client:
-                    resp = await client.post(OPENROUTER_URL,
-                        headers={"Authorization": "Bearer " + OPENROUTER_API_KEY, "Content-Type": "application/json"},
-                        json={"model": LLM_MODEL, "messages": [{"role": "user", "content": prompt}], "max_tokens": 150})
-                    if resp.status_code == 200:
-                        text = resp.json()["choices"][0]["message"]["content"]
-                        vote = "YES" if "YES" in text.upper().split("VERDICT")[-1][:20] else "NO"
-                        conf_part = text.upper().split("CONFIDENCE")[-1][:10] if "CONFIDENCE" in text.upper() else "65"
-                        conf = int("".join(c for c in conf_part if c.isdigit())[:2] or "65")
-                        debates.append({"name": p["name"], "vote": vote, "confidence": min(99, max(1, conf)), "reasoning": text[:200]})
-            except Exception:
-                debates.append({"name": p["name"], "vote": "YES", "confidence": 55, "reasoning": "Analysis unavailable"})
-        yes_w = sum(d["confidence"] for d in debates if d["vote"]=="YES")
-        no_w = sum(d["confidence"] for d in debates if d["vote"]=="NO")
-        verdict = "YES" if yes_w >= no_w else "NO"
-        confidence = int(max(yes_w, no_w) / (yes_w + no_w) * 100) if (yes_w+no_w) > 0 else 50
-        return {"verdict": verdict, "confidence": confidence, "debates": debates}
+        result = await run_oracle(question)
+        return {"verdict": result.get("verdict", "YES"), "confidence": result.get("confidence", 50)}
 
     try:
-        markets = await backtest_mod.get_resolved_markets(limit=limit)
+        all_markets = await backtest_mod.get_resolved_markets(limit=limit * 3)
+        # Prefer binary Yes/No markets for Oracle compatibility
+        binary = [m for m in all_markets if m.get("is_binary", False)]
+        non_binary = [m for m in all_markets if not m.get("is_binary", False)]
+        markets = (binary + non_binary)[:limit]  # Binary first
         results = await backtest_mod.run_backtest(quick_oracle, markets=markets,
             agent_count=agent_count, min_confidence=min_confidence)
         async with aiosqlite.connect(str(DB_PATH)) as db:
