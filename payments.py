@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 """NOWPayments Gateway Integration for OMEN.
 
 OpenRouter-style credits page with hosted crypto checkout.
@@ -14,7 +17,7 @@ from typing import Optional, Dict
 logger = logging.getLogger("omen.payments")
 
 # NOWPayments configuration
-NOWPAYMENTS_API_KEY = "26HA9ZR-BDN4KS3-MYCMWSA-3ANR82B"
+NOWPAYMENTS_API_KEY = os.environ.get("NOWPAYMENTS_API_KEY", "")
 NOWPAYMENTS_IPN_SECRET = "GSScDvP5M3Y8ttPn/5uSiyBf6H3/Sqj6"
 NOWPAYMENTS_API = "https://api.nowpayments.io/v1"
 

@@ -16,7 +16,7 @@ os.environ["DEBUG"] = "false"
 import uvicorn
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from pydantic import BaseModel
 from typing import Optional
 import httpx
@@ -274,7 +274,7 @@ async def run_oracle(question: str) -> dict:
                 return {"agent":name, "role":info["role"], "color":info["color"], "icon":info["icon"],
                         "vote":data.get("vote","YES").upper(), "confidence":float(data.get("confidence",65)),
                         "reasoning":data.get("reasoning","Analysis pending.")}
-            except:
+            except Exception:
                 pass
         # Fallback synthetic
         h = int(hashlib.md5(f"{name}{question}".encode()).hexdigest()[:8],16)
@@ -411,7 +411,7 @@ async def register(req: RegisterRequest):
             row = await cursor.fetchone()
             token = create_token(row[0], req.username)
             return {"token":token,"username":req.username,"credits":50}
-        except:
+        except Exception:
             return JSONResponse({"error":"Username already exists"},400)
 
 @app.post("/api/auth/login")
@@ -853,7 +853,7 @@ async def matic_price():
             resp = await client.get("https://api.coingecko.com/api/v3/simple/price", params={"ids": "matic-network", "vs_currencies": "usd"})
             price = resp.json()["matic-network"]["usd"]
             return {"matic_usd": price}
-    except:
+    except Exception:
         return {"matic_usd": 0.40}
 
 # ── Live Whale Tracking Routes ───────────────────────────────────────────
@@ -1234,9 +1234,10 @@ async def oracle_free(request: Request):
 
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
-    return HTMLResponse(_get_html())
-
-# Load HTML from file
+    # Return JSON 404 for missing API routes
+    if full_path.startswith("api/"):
+        return JSONResponse({"error": "Not found", "path": f"/{full_path}"}, status_code=404)
+    return FileResponse(str(BASE_DIR / "ui.html"))
 _html_path = BASE_DIR / "ui.html"
 def _get_html():
     try:

@@ -674,6 +674,51 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script>
+    // Global fetch wrapper with error handling
+    async function safeFetch(url, options = {}) {
+        try {
+            const token = localStorage.getItem('omen_token');
+            if (token && !options.headers?.['Authorization']) {
+                options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+            }
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: response.statusText }));
+                throw new Error(errorData.error || errorData.detail || `HTTP ${response.status}`);
+            }
+            return response;
+        } catch (error) {
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                showNotification('Network error — server may be offline', 'error');
+            }
+            throw error;
+        }
+    }
+
+    // Toast notification system
+    function showNotification(msg, type = 'info') {
+        const existing = document.getElementById('omen-toast');
+        if (existing) existing.remove();
+
+        const colors = { 
+            error: '#ef4444', 
+            success: '#10b981', 
+            info: '#3b82f6', 
+            warning: '#f59e0b' 
+        };
+        const toast = document.createElement('div');
+        toast.id = 'omen-toast';
+        toast.style.cssText = `
+            position:fixed; top:20px; right:20px; z-index:99999;
+            padding:14px 24px; border-radius:8px; color:#fff; font-size:14px;
+            background:${colors[type] || colors.info}; box-shadow:0 4px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease; max-width:400px;
+        `;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
+    }
+
 // === D3 FORCE-DIRECTED SWARM GRAPH (MiroFish-style) — Real 45-Agent Network ===
 var SWARM_CATEGORIES = [
   {name:'Core',color:'#FF6B35'},{name:'Technical',color:'#004E89'},{name:'Macro',color:'#7B2D8E'},
