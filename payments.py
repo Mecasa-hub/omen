@@ -1,208 +1,268 @@
-"""Polygon Crypto Payment Verification Module."""
+"""NOWPayments Gateway Integration for OMEN.
+
+OpenRouter-style credits page with hosted crypto checkout.
+Funds go directly to merchant wallet via NOWPayments.
+"""
 import httpx
-import asyncio
-import time
+import hmac
+import hashlib
 import json
+import time
 import logging
-from typing import Optional
+from typing import Optional, Dict
 
 logger = logging.getLogger("omen.payments")
 
-PAYMENT_WALLET = "0x135C480C813451eF443A2F60cfaD49EA7197B855".lower()
-POLYGON_RPC = "https://polygon-bor-rpc.publicnode.com"
-POLYGON_RPC_BACKUP = "https://polygon-rpc.com"
+# NOWPayments configuration
+NOWPAYMENTS_API_KEY = "26HA9ZR-BDN4KS3-MYCMWSA-3ANR82B"
+NOWPAYMENTS_IPN_SECRET = "GSScDvP5M3Y8ttPn/5uSiyBf6H3/Sqj6"
+NOWPAYMENTS_API = "https://api.nowpayments.io/v1"
 
-# USDC on Polygon (PoS)
-USDC_CONTRACT = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359".lower()  # Native USDC
-USDCE_CONTRACT = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174".lower()  # USDC.e (bridged)
+PAYMENT_WALLET = "0x135C480C813451eF443A2F60cfaD49EA7197B855"
 
-# ERC-20 Transfer event topic
-TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+# Credit conversion: $1 USD = X credits (tiered)
+CREDIT_TIERS = [
+    (50, 20, "Whale"),     # $50+ = 20 credits/$1
+    (20, 15, "Pro"),       # $20+ = 15 credits/$1
+    (10, 12, "Popular"),   # $10+ = 12 credits/$1
+    (5, 10, "Starter"),    # $5+  = 10 credits/$1
+    (0, 8, "Micro"),       # <$5  = 8 credits/$1
+]
 
-# Credit packages: amount_usd -> credits
-CREDIT_RATES = {
-    5: 50,    # $5 = 50 credits
-    10: 120,  # $10 = 120 credits  
-    20: 300,  # $20 = 300 credits
-    50: 1000, # $50 = 1000 credits
-}
+# Supported crypto currencies on NOWPayments
+SUPPORTED_CURRENCIES = [
+    {"code": "matic", "name": "Polygon MATIC", "network": "Polygon"},
+    {"code": "usdcmatic", "name": "USDC (Polygon)", "network": "Polygon"},
+    {"code": "usdtmatic", "name": "USDT (Polygon)", "network": "Polygon"},
+    {"code": "btc", "name": "Bitcoin", "network": "Bitcoin"},
+    {"code": "eth", "name": "Ethereum", "network": "Ethereum"},
+    {"code": "usdc", "name": "USDC (ERC-20)", "network": "Ethereum"},
+    {"code": "usdt", "name": "USDT (ERC-20)", "network": "Ethereum"},
+    {"code": "usdterc20", "name": "USDT (ERC-20)", "network": "Ethereum"},
+    {"code": "usdttrc20", "name": "USDT (TRC-20)", "network": "Tron"},
+    {"code": "sol", "name": "Solana", "network": "Solana"},
+    {"code": "usdcsol", "name": "USDC (Solana)", "network": "Solana"},
+]
 
-# MATIC price cache
-_matic_price_cache = {"price": 0.5, "ts": 0}
 
-async def _rpc_call(method: str, params: list, rpc_url: str = POLYGON_RPC) -> dict:
-    """Make a JSON-RPC call to Polygon."""
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
-            resp = await client.post(rpc_url, json={
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": method,
-                "params": params
-            })
-            return resp.json()
-        except Exception:
-            # Try backup
-            resp = await client.post(POLYGON_RPC_BACKUP, json={
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": method,
-                "params": params
-            })
-            return resp.json()
+def _headers():
+    return {"x-api-key": NOWPAYMENTS_API_KEY, "Content-Type": "application/json"}
 
-async def get_matic_price() -> float:
-    """Get current MATIC/USD price from CoinGecko."""
-    global _matic_price_cache
-    if time.time() - _matic_price_cache["ts"] < 300:  # 5min cache
-        return _matic_price_cache["price"]
+
+def calculate_credits(usd_amount: float) -> tuple:
+    """Calculate credits from USD amount. Returns (credits, tier_name, rate)."""
+    for min_usd, rate, name in CREDIT_TIERS:
+        if usd_amount >= min_usd:
+            return (int(usd_amount * rate), name, rate)
+    return (0, "None", 0)
+
+
+async def get_api_status() -> dict:
+    """Check NOWPayments API status."""
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=usd")
-            price = resp.json()["matic-network"]["usd"]
-            _matic_price_cache = {"price": price, "ts": time.time()}
-            return price
+            resp = await client.get(f"{NOWPAYMENTS_API}/status", headers=_headers())
+            return resp.json()
     except Exception as e:
-        logger.warning(f"CoinGecko price fetch failed: {e}, using cached")
-        return _matic_price_cache["price"]
+        return {"status": "error", "message": str(e)}
 
-async def verify_matic_payment(tx_hash: str) -> Optional[dict]:
-    """Verify a MATIC (native) payment transaction."""
+
+async def get_estimate(amount_usd: float, pay_currency: str = "matic") -> dict:
+    """Get estimated crypto amount for a USD payment."""
     try:
-        result = await _rpc_call("eth_getTransactionByHash", [tx_hash])
-        tx = result.get("result")
-        if not tx:
-            return {"verified": False, "error": "Transaction not found"}
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{NOWPAYMENTS_API}/estimate",
+                params={"amount": amount_usd, "currency_from": "usd", "currency_to": pay_currency},
+                headers=_headers()
+            )
+            return resp.json()
+    except Exception as e:
+        return {"error": str(e)}
 
-        to_addr = (tx.get("to") or "").lower()
-        if to_addr != PAYMENT_WALLET:
-            return {"verified": False, "error": "Wrong recipient address"}
 
-        # Check confirmation
-        receipt_result = await _rpc_call("eth_getTransactionReceipt", [tx_hash])
-        receipt = receipt_result.get("result")
-        if not receipt or receipt.get("status") != "0x1":
-            return {"verified": False, "error": "Transaction failed or pending"}
+async def get_min_amount(pay_currency: str = "matic") -> dict:
+    """Get minimum payment amount for a currency."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{NOWPAYMENTS_API}/min-amount",
+                params={"currency_from": pay_currency, "currency_to": "usd"},
+                headers=_headers()
+            )
+            return resp.json()
+    except Exception as e:
+        return {"error": str(e)}
 
-        # Calculate value in MATIC
-        value_wei = int(tx.get("value", "0x0"), 16)
-        value_matic = value_wei / 1e18
 
-        # Get USD value
-        matic_price = await get_matic_price()
-        value_usd = value_matic * matic_price
+async def create_invoice(amount_usd: float, order_id: str, order_description: str = "OMEN Credits") -> dict:
+    """Create a NOWPayments invoice (hosted checkout page).
 
-        # Calculate credits
-        credits = calculate_credits(value_usd)
+    This creates a hosted payment page where the user can choose their
+    preferred cryptocurrency and complete payment.
 
-        return {
-            "verified": True,
-            "tx_hash": tx_hash,
-            "from": tx.get("from", "").lower(),
-            "to": to_addr,
-            "value_matic": round(value_matic, 6),
-            "value_usd": round(value_usd, 2),
-            "matic_price": matic_price,
-            "credits_awarded": credits,
-            "block": int(tx.get("blockNumber", "0x0"), 16),
-            "confirmations": "confirmed"
+    Args:
+        amount_usd: Amount in USD
+        order_id: Unique order identifier (e.g., user_id + timestamp)
+        order_description: Description shown on checkout page
+
+    Returns:
+        dict with invoice_url for redirect
+    """
+    try:
+        credits, tier, rate = calculate_credits(amount_usd)
+        payload = {
+            "price_amount": amount_usd,
+            "price_currency": "usd",
+            "order_id": order_id,
+            "order_description": f"{order_description} - {credits} credits ({tier} tier)",
+            "ipn_callback_url": None,  # Uses dashboard-configured IPN URL
+            "success_url": None,  # Will be set by frontend
+            "cancel_url": None,
+            "is_fixed_rate": True,
+            "is_fee_paid_by_user": False
         }
-    except Exception as e:
-        logger.error(f"MATIC payment verification failed: {e}")
-        return {"verified": False, "error": str(e)}
 
-async def verify_usdc_payment(tx_hash: str) -> Optional[dict]:
-    """Verify a USDC payment transaction on Polygon."""
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{NOWPAYMENTS_API}/invoice",
+                json=payload,
+                headers=_headers()
+            )
+            data = resp.json()
+
+            if "id" in data:
+                data["credits_preview"] = credits
+                data["tier"] = tier
+                data["rate"] = f"{rate} credits/$1"
+                data["invoice_url"] = data.get("invoice_url", f"https://nowpayments.io/payment/?iid={data["id"]}")
+
+            return data
+    except Exception as e:
+        logger.error(f"Failed to create invoice: {e}")
+        return {"error": str(e)}
+
+
+async def create_payment(amount_usd: float, pay_currency: str, order_id: str) -> dict:
+    """Create a direct payment (no hosted page, returns pay address).
+
+    Use this for inline payment without redirect.
+    """
     try:
-        receipt_result = await _rpc_call("eth_getTransactionReceipt", [tx_hash])
-        receipt = receipt_result.get("result")
-        if not receipt or receipt.get("status") != "0x1":
-            return {"verified": False, "error": "Transaction failed or pending"}
+        credits, tier, rate = calculate_credits(amount_usd)
+        payload = {
+            "price_amount": amount_usd,
+            "price_currency": "usd",
+            "pay_currency": pay_currency,
+            "order_id": order_id,
+            "order_description": f"OMEN Credits - {credits} credits",
+            "is_fixed_rate": True,
+            "is_fee_paid_by_user": False
+        }
 
-        # Look for Transfer events to our wallet
-        for log in receipt.get("logs", []):
-            contract = log.get("address", "").lower()
-            topics = log.get("topics", [])
-
-            if contract not in [USDC_CONTRACT, USDC_E_CONTRACT]:
-                continue
-            if len(topics) < 3 or topics[0] != TRANSFER_TOPIC:
-                continue
-
-            # topics[2] = to address (padded to 32 bytes)
-            to_addr = "0x" + topics[2][-40:]
-            if to_addr.lower() != PAYMENT_WALLET:
-                continue
-
-            # Decode amount (USDC has 6 decimals)
-            raw_amount = int(log.get("data", "0x0"), 16)
-            amount_usdc = raw_amount / 1e6
-            credits = calculate_credits(amount_usdc)
-
-            from_addr = "0x" + topics[1][-40:]
-
-            return {
-                "verified": True,
-                "tx_hash": tx_hash,
-                "from": from_addr.lower(),
-                "to": to_addr.lower(),
-                "token": "USDC" if contract == USDC_CONTRACT else "USDC.e",
-                "value_usdc": round(amount_usdc, 2),
-                "value_usd": round(amount_usdc, 2),
-                "credits_awarded": credits,
-                "block": int(receipt.get("blockNumber", "0x0"), 16),
-                "confirmations": "confirmed"
-            }
-
-        return {"verified": False, "error": "No USDC transfer to payment wallet found in this transaction"}
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{NOWPAYMENTS_API}/payment",
+                json=payload,
+                headers=_headers()
+            )
+            data = resp.json()
+            if "payment_id" in data:
+                data["credits_preview"] = credits
+                data["tier"] = tier
+            return data
     except Exception as e:
-        logger.error(f"USDC payment verification failed: {e}")
-        return {"verified": False, "error": str(e)}
+        return {"error": str(e)}
 
-async def verify_payment(tx_hash: str) -> dict:
-    """Auto-detect and verify MATIC or USDC payment."""
-    # Try USDC first (check logs)
-    usdc_result = await verify_usdc_payment(tx_hash)
-    if usdc_result and usdc_result.get("verified"):
-        return usdc_result
 
-    # Try native MATIC
-    matic_result = await verify_matic_payment(tx_hash)
-    if matic_result and matic_result.get("verified"):
-        return matic_result
+async def get_payment_status(payment_id: str) -> dict:
+    """Check payment status by payment ID."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{NOWPAYMENTS_API}/payment/{payment_id}",
+                headers=_headers()
+            )
+            return resp.json()
+    except Exception as e:
+        return {"error": str(e)}
 
-    return {"verified": False, "error": "Transaction not found or not a valid payment to the OMEN wallet"}
 
-def calculate_credits(usd_amount: float) -> int:
-    """Calculate credits based on USD amount with tiered pricing."""
-    if usd_amount >= 50:
-        return int(usd_amount * 20)    # 20 credits/$1 (best rate)
-    elif usd_amount >= 20:
-        return int(usd_amount * 15)    # 15 credits/$1
-    elif usd_amount >= 10:
-        return int(usd_amount * 12)    # 12 credits/$1
-    elif usd_amount >= 5:
-        return int(usd_amount * 10)    # 10 credits/$1
-    else:
-        return int(usd_amount * 8)     # 8 credits/$1 (minimum)
+def verify_ipn_signature(payload_body: bytes, received_signature: str) -> bool:
+    """Verify NOWPayments IPN webhook signature.
 
-def get_payment_info() -> dict:
-    """Return payment info for frontend."""
+    NOWPayments signs webhooks with HMAC-SHA512 using the IPN secret.
+    """
+    try:
+        # NOWPayments: sort keys, then HMAC-SHA512
+        data = json.loads(payload_body)
+        sorted_data = json.dumps(data, sort_keys=True, separators=(",", ":"))
+        expected_sig = hmac.new(
+            NOWPAYMENTS_IPN_SECRET.encode(),
+            sorted_data.encode(),
+            hashlib.sha512
+        ).hexdigest()
+        return hmac.compare_digest(expected_sig, received_signature)
+    except Exception as e:
+        logger.error(f"IPN signature verification failed: {e}")
+        return False
+
+
+def process_ipn_data(data: dict) -> dict:
+    """Process IPN webhook data and determine credit award.
+
+    NOWPayments IPN statuses:
+    - waiting, confirming, confirmed, sending, partially_paid, finished, failed, refunded, expired
+
+    We only credit on 'finished' or 'confirmed'.
+    """
+    status = data.get("payment_status", "")
+    order_id = data.get("order_id", "")
+    payment_id = data.get("payment_id", "")
+    price_amount = float(data.get("price_amount", 0))  # USD amount
+    pay_amount = float(data.get("pay_amount", 0))  # Crypto amount paid
+    actually_paid = float(data.get("actually_paid", 0))  # What was actually received
+    pay_currency = data.get("pay_currency", "")
+    outcome_amount = float(data.get("outcome_amount", 0))  # Final USD equivalent
+
+    # Only credit on finished payments
+    should_credit = status in ["finished", "confirmed"]
+
+    credits = 0
+    tier = ""
+    rate = 0
+    if should_credit and price_amount > 0:
+        credits, tier, rate = calculate_credits(price_amount)
+
     return {
-        "wallet": PAYMENT_WALLET,
-        "network": "Polygon (MATIC)",
-        "chain_id": 137,
-        "accepted_tokens": [
-            {"symbol": "MATIC", "name": "Polygon", "type": "native"},
-            {"symbol": "USDC", "name": "USD Coin", "contract": USDC_CONTRACT, "type": "ERC-20"},
-            {"symbol": "USDC.e", "name": "USD Coin (Bridged)", "contract": USDC_E_CONTRACT, "type": "ERC-20"},
-        ],
-        "credit_rates": [
-            {"tier": "Starter", "min_usd": 5, "rate": "10 credits/$1", "example": "$5 = 50 credits"},
-            {"tier": "Popular", "min_usd": 10, "rate": "12 credits/$1", "example": "$10 = 120 credits"},
-            {"tier": "Pro", "min_usd": 20, "rate": "15 credits/$1", "example": "$20 = 300 credits"},
-            {"tier": "Whale", "min_usd": 50, "rate": "20 credits/$1", "example": "$50 = 1,000 credits"},
-        ]
+        "payment_id": payment_id,
+        "order_id": order_id,
+        "status": status,
+        "should_credit": should_credit,
+        "price_usd": price_amount,
+        "pay_amount": pay_amount,
+        "actually_paid": actually_paid,
+        "pay_currency": pay_currency,
+        "outcome_usd": outcome_amount,
+        "credits": credits,
+        "tier": tier,
+        "rate": rate
     }
 
-USDC_E_CONTRACT = USDCE_CONTRACT  # alias
+
+def get_payment_info() -> dict:
+    """Return payment gateway info for frontend."""
+    return {
+        "gateway": "NOWPayments",
+        "wallet": PAYMENT_WALLET,
+        "supported_currencies": SUPPORTED_CURRENCIES,
+        "credit_packages": [
+            {"tier": "Starter", "price_usd": 5, "credits": 50, "rate": "10 credits/$1", "badge": "starter"},
+            {"tier": "Popular", "price_usd": 10, "credits": 120, "rate": "12 credits/$1", "badge": "popular", "recommended": True},
+            {"tier": "Pro", "price_usd": 20, "credits": 300, "rate": "15 credits/$1", "badge": "pro"},
+            {"tier": "Whale", "price_usd": 50, "credits": 1000, "rate": "20 credits/$1", "badge": "whale"},
+        ],
+        "custom_amount": True,
+        "min_amount_usd": 1,
+        "max_amount_usd": 500
+    }

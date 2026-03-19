@@ -61,6 +61,15 @@ DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 # ── Database ─────────────────────────────────────────────────────────────
 async def init_database():
     async with aiosqlite.connect(str(DB_PATH)) as db:
+        await db.execute("""CREATE TABLE IF NOT EXISTS used_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tx_hash TEXT UNIQUE NOT NULL,
+            user_id INTEGER,
+            credits INTEGER DEFAULT 0,
+            token TEXT DEFAULT '',
+            value_usd REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
         await db.executescript("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -334,6 +343,7 @@ class CopyTradeRequest(BaseModel):
 
 class PaymentVerifyRequest(BaseModel):
     tx_hash: str
+    sender: str = None
 
 class PredictionRequest(BaseModel):
     question: str
@@ -628,29 +638,132 @@ async def update_trading_settings(request: Request):
         await db.commit()
     return {"status": "updated"}
 
-# ── Crypto Payment Routes ────────────────────────────────────────────────
+# ── NOWPayments Gateway Routes ────────────────────────────────────────────
 @app.get("/api/payments/info")
 async def payment_info():
     return payments_mod.get_payment_info()
 
-@app.post("/api/payments/verify")
-async def verify_payment(req: PaymentVerifyRequest, request: Request):
+@app.get("/api/payments/status")
+async def gateway_status():
+    return await payments_mod.get_api_status()
+
+@app.get("/api/payments/estimate")
+async def payment_estimate(amount: float = 10, currency: str = "matic"):
+    return await payments_mod.get_estimate(amount, currency)
+
+@app.post("/api/payments/create-invoice")
+async def create_payment_invoice(request: Request):
+    """Create a NOWPayments hosted checkout invoice."""
     user = await get_current_user(request)
-    result = await payments_mod.verify_payment(req.tx_hash)
-    if result.get("verified") and user:
-        credits = result["credits_awarded"]
-        async with aiosqlite.connect(str(DB_PATH)) as db:
-            await db.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (credits, user["id"]))
-            await db.commit()
-            cursor = await db.execute("SELECT credits FROM users WHERE id = ?", (user["id"],))
-            row = await cursor.fetchone()
-            result["new_balance"] = row[0] if row else credits
+    if not user:
+        return JSONResponse({"error": "Login required to purchase credits"}, status_code=401)
+    body = await request.json()
+    amount_usd = float(body.get("amount", 10))
+    if amount_usd < 1 or amount_usd > 500:
+        return JSONResponse({"error": "Amount must be between $1 and $500"}, status_code=400)
+    import time as _time
+    order_id = f"omen_{user['id']}_{int(_time.time())}"
+    result = await payments_mod.create_invoice(amount_usd, order_id)
+    if "error" in result:
+        return JSONResponse({"error": result["error"]}, status_code=500)
+    # Store pending order in DB
+    async with aiosqlite.connect(str(DB_PATH)) as db:
+        await db.execute(
+            "INSERT INTO payment_orders (order_id, user_id, amount_usd, credits_preview, status) VALUES (?, ?, ?, ?, ?)",
+            (order_id, user["id"], amount_usd, result.get("credits_preview", 0), "pending")
+        )
+        await db.commit()
     return result
+
+@app.post("/api/payments/nowpayments-webhook")
+async def nowpayments_ipn(request: Request):
+    """Handle NOWPayments IPN webhook."""
+    body = await request.body()
+    sig = request.headers.get("x-nowpayments-sig", "")
+    # Verify signature
+    if not payments_mod.verify_ipn_signature(body, sig):
+        logger.warning("Invalid IPN signature received")
+        return JSONResponse({"error": "Invalid signature"}, status_code=403)
+    data = await request.json()
+    result = payments_mod.process_ipn_data(data)
+    logger.info(f"IPN received: order={result['order_id']} status={result['status']} credits={result['credits']}")
+    if result["should_credit"] and result["order_id"]:
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            # Check if already credited
+            cursor = await db.execute(
+                "SELECT status FROM payment_orders WHERE order_id = ?", (result["order_id"],)
+            )
+            row = await cursor.fetchone()
+            if row and row[0] == "completed":
+                return {"status": "already_credited"}
+            # Get user from order
+            cursor = await db.execute(
+                "SELECT user_id FROM payment_orders WHERE order_id = ?", (result["order_id"],)
+            )
+            row = await cursor.fetchone()
+            if row:
+                user_id = row[0]
+                credits = result["credits"]
+                await db.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (credits, user_id))
+                await db.execute(
+                    "UPDATE payment_orders SET status = ?, payment_id = ?, pay_currency = ?, credits_awarded = ? WHERE order_id = ?",
+                    ("completed", str(result["payment_id"]), result["pay_currency"], credits, result["order_id"])
+                )
+                await db.commit()
+                # Create alert
+                try:
+                    alerts_mod.create_alert(user_id, "trade_won", f"+{credits} credits added", f"Payment of ${result['price_usd']:.2f} confirmed via {result['pay_currency']}")
+                except: pass
+                logger.info(f"Credited {credits} to user {user_id} for order {result['order_id']}")
+                return {"status": "credited", "credits": credits}
+    # Update order status even if not crediting
+    if result["order_id"]:
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            await db.execute(
+                "UPDATE payment_orders SET status = ? WHERE order_id = ?",
+                (result["status"], result["order_id"])
+            )
+            await db.commit()
+    return {"status": "received"}
+
+@app.get("/api/payments/check/{payment_id}")
+async def check_payment(payment_id: str):
+    """Check status of a specific payment."""
+    return await payments_mod.get_payment_status(payment_id)
+
+@app.get("/api/payments/balance")
+async def get_credit_balance(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Login required"}, status_code=401)
+    async with aiosqlite.connect(str(DB_PATH)) as db:
+        cursor = await db.execute("SELECT credits, email FROM users WHERE id = ?", (user["id"],))
+        row = await cursor.fetchone()
+        return {"credits": row[0] if row else 0, "email": row[1] if row else "", "username": user.get("username","")}
+
+@app.get("/api/payments/history")
+async def payment_history(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Login required"}, status_code=401)
+    async with aiosqlite.connect(str(DB_PATH)) as db:
+        cursor = await db.execute(
+            "SELECT order_id, amount_usd, credits_awarded, pay_currency, status, created_at FROM payment_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20",
+            (user["id"],)
+        )
+        rows = await cursor.fetchall()
+        return {"transactions": [{"order_id": r[0], "amount_usd": r[1], "credits": r[2], "currency": r[3], "status": r[4], "date": r[5]} for r in rows]}
 
 @app.get("/api/payments/matic-price")
 async def matic_price():
-    price = await payments_mod.get_matic_price()
-    return {"matic_usd": price}
+    try:
+        import httpx as _httpx
+        async with _httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get("https://api.coingecko.com/api/v3/simple/price", params={"ids": "matic-network", "vs_currencies": "usd"})
+            price = resp.json()["matic-network"]["usd"]
+            return {"matic_usd": price}
+    except:
+        return {"matic_usd": 0.40}
 
 # ── Live Whale Tracking Routes ───────────────────────────────────────────
 @app.get("/api/whales/live")

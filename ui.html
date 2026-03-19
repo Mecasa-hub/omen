@@ -141,7 +141,36 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .discover-card .whale-stat{text-align:center}
 .discover-card .whale-stat .val{font-weight:700}
 .discover-card .whale-stat .lbl{font-size:.65rem;color:#999}
+
+.token-select{background:#111;border:1px solid #333;color:#999;padding:6px 16px;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;transition:all .2s}
+.token-select:hover{border-color:#666;color:#fff}
+.token-select.active{background:#fff;color:#000;border-color:#fff;font-weight:700}
+.pkg-card{background:#111;border:1px solid #222;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s}
+.pkg-card:hover{border-color:#555;transform:translateY(-2px)}
+.pkg-card.recommended{border-color:#fff}
+.pkg-card .pkg-tier{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:8px}
+.pkg-card .pkg-credits{font-size:1.8rem;font-weight:700;margin:8px 0}
+.pkg-card .pkg-price{font-size:1rem;color:#999;margin-bottom:4px}
+.pkg-card .pkg-rate{font-size:.7rem;color:#555;font-family:'JetBrains Mono',monospace}
+.pkg-card .pkg-btn{margin-top:12px;background:#fff;color:#000;border:none;padding:8px 20px;border-radius:4px;font-weight:700;font-size:.8rem;cursor:pointer;width:100%;font-family:'Space Grotesk',sans-serif}
+.pkg-card .pkg-btn:hover{background:#ddd}
+.pkg-card .pkg-btn:disabled{background:#333;color:#666;cursor:not-allowed}
+
+.amt-btn{background:#111;border:1px solid #333;color:#999;padding:8px 14px;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;transition:all .15s}
+.amt-btn:hover{border-color:#666;color:#fff}
+.amt-btn.active{background:#fff;color:#000;border-color:#fff;font-weight:700}
+.purchase-btn{width:100%;background:#fff;color:#000;border:none;padding:14px;border-radius:6px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .15s}
+.purchase-btn:hover{background:#e0e0e0}
+.purchase-btn:disabled{background:#333;color:#666;cursor:not-allowed}
+.tier-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid #222;border-radius:6px;cursor:pointer;transition:all .15s}
+.tier-row:hover{border-color:#555;background:#111}
+.tier-row.recommended{border-color:#333;background:#0a0a0a}
+.tier-name{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;min-width:60px}
+.tier-detail{font-size:.7rem;color:#999;font-family:'JetBrains Mono',monospace}
+.tier-eg{font-size:.7rem;color:#10B981;font-family:'JetBrains Mono',monospace}
+.crypto-badge{background:#111;border:1px solid #333;padding:4px 10px;border-radius:12px;font-size:.65rem;color:#999;font-family:'JetBrains Mono',monospace}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 <nav class="navbar">
@@ -283,26 +312,141 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 
 <!-- CREDITS -->
 <div class="page" id="page-credits">
-  <h2>Credits</h2>
-  <p class="subtitle">Pay with crypto on Polygon. No subscriptions.</p>
-  <div class="section-header">Payment Address</div>
-  <div class="pay-card">
-    <div class="pay-network"><span class="net-dot"></span> Polygon Network</div>
-    <div class="pay-address" id="pay-address" onclick="copyAddr()">0x135C480C813451eF443A2F60cfaD49EA7197B855</div>
-    <div class="pay-copy" id="pay-copy">Click to copy</div>
-    <div class="pay-tokens"><span class="token-badge">MATIC</span><span class="token-badge">USDC</span><span class="token-badge">USDC.e</span></div>
-    <div class="pay-note mono">MATIC Price: $<span id="matic-price">--</span></div>
+  <!-- Balance Display -->
+  <div style="padding:8px 0 24px 0">
+    <div style="font-size:.75rem;color:#666;margin-bottom:4px">Credits</div>
+    <div style="display:flex;align-items:baseline;gap:4px">
+      <span style="font-size:.9rem;color:#999;font-family:'JetBrains Mono',monospace">$</span>
+      <span id="credit-balance" style="font-size:3.5rem;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-2px">0.00</span>
+    </div>
+    <div id="credit-account" style="font-size:.75rem;color:#666;margin-top:4px"></div>
   </div>
-  <div class="section-header">Credit Tiers</div>
-  <div class="packages-grid" id="pkg-grid"></div>
-  <div class="section-header">Verify Payment</div>
-  <div class="verify-wrap">
-    <input class="oracle-input" id="tx-hash-input" placeholder="Paste your Polygon transaction hash (0x...)">
-    <button class="oracle-btn" onclick="verifyPayment()" id="verify-btn">Verify</button>
-  </div>
-  <div id="verify-result"></div>
-</div>
 
+  <!-- Two Column Layout -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px">
+
+    <!-- Buy Credits -->
+    <div class="pay-card" style="padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0;font-size:1rem;font-weight:600">Buy Credits</h3>
+      </div>
+
+      <!-- Quick Amount Buttons -->
+      <div style="display:flex;gap:6px;margin-bottom:16px">
+        <button class="amt-btn" onclick="setAmount(5)">$5</button>
+        <button class="amt-btn" onclick="setAmount(10)">$10</button>
+        <button class="amt-btn active" onclick="setAmount(20)">$20</button>
+        <button class="amt-btn" onclick="setAmount(50)">$50</button>
+        <button class="amt-btn" onclick="setAmount(100)">$100</button>
+      </div>
+
+      <!-- Amount Input -->
+      <div style="position:relative;margin-bottom:12px">
+        <label style="font-size:.7rem;color:#666;display:block;margin-bottom:4px">Amount</label>
+        <div style="display:flex;align-items:center;border:1px solid #333;border-radius:6px;overflow:hidden">
+          <input type="number" id="credit-amount" value="20" min="1" max="500" 
+            style="flex:1;background:transparent;border:none;color:#fff;padding:12px 16px;font-size:1.1rem;font-family:'JetBrains Mono',monospace;outline:none">
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #222;margin-bottom:4px">
+        <span style="font-size:.8rem;color:#999">Total due</span>
+        <span id="total-due" style="font-size:1rem;font-weight:600;font-family:'JetBrains Mono',monospace">$20.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-bottom:16px">
+        <span style="font-size:.7rem;color:#555">Credits earned</span>
+        <span id="credits-earned" style="font-size:.8rem;color:#10B981;font-family:'JetBrains Mono',monospace">300 credits</span>
+      </div>
+
+      <!-- Purchase Button -->
+      <button class="purchase-btn" id="purchase-btn" onclick="purchaseCredits()">
+        Purchase
+      </button>
+
+      <div style="text-align:center;margin-top:12px;font-size:.7rem;color:#555">
+        Powered by NOWPayments &middot; 200+ cryptocurrencies
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:.7rem;color:#555">
+        Transactions may take a few minutes to confirm.
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px">
+        <a href="#" onclick="navigate('dashboard')" style="font-size:.75rem;color:#10B981;text-decoration:none">View Usage &rarr;</a>
+        <a href="#" onclick="showPromoInput()" style="font-size:.75rem;color:#10B981;text-decoration:none">Redeem Promo Code</a>
+      </div>
+      <div id="promo-section" style="display:none;margin-top:12px">
+        <div style="display:flex;gap:8px">
+          <input id="promo-code" class="oracle-input" placeholder="Enter promo code" style="flex:1;font-size:.8rem">
+          <button class="oracle-btn" onclick="redeemPromo()" style="font-size:.75rem;padding:8px 16px">Apply</button>
+        </div>
+        <div id="promo-result" style="margin-top:6px;font-size:.7rem"></div>
+      </div>
+    </div>
+
+    <!-- Credit Tiers Info -->
+    <div class="pay-card" style="padding:24px">
+      <h3 style="margin:0 0 16px 0;font-size:1rem;font-weight:600">Credit Tiers</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="tier-row" onclick="setAmount(5)">
+          <span class="tier-name">Starter</span>
+          <span class="tier-detail">$5+ &rarr; 10 credits/$1</span>
+          <span class="tier-eg">$5 = 50 credits</span>
+        </div>
+        <div class="tier-row recommended" onclick="setAmount(10)">
+          <span class="tier-name">Popular</span>
+          <span class="tier-detail">$10+ &rarr; 12 credits/$1</span>
+          <span class="tier-eg">$10 = 120 credits</span>
+        </div>
+        <div class="tier-row" onclick="setAmount(20)">
+          <span class="tier-name">Pro</span>
+          <span class="tier-detail">$20+ &rarr; 15 credits/$1</span>
+          <span class="tier-eg">$20 = 300 credits</span>
+        </div>
+        <div class="tier-row" onclick="setAmount(50)">
+          <span class="tier-name">Whale</span>
+          <span class="tier-detail">$50+ &rarr; 20 credits/$1</span>
+          <span class="tier-eg">$50 = 1,000 credits</span>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #222">
+        <div style="font-size:.75rem;color:#666;margin-bottom:8px">Accepted Cryptocurrencies</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="crypto-badge">MATIC</span>
+          <span class="crypto-badge">USDC</span>
+          <span class="crypto-badge">USDT</span>
+          <span class="crypto-badge">BTC</span>
+          <span class="crypto-badge">ETH</span>
+          <span class="crypto-badge">SOL</span>
+          <span class="crypto-badge">+200 more</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Status (shown during purchase) -->
+  <div id="purchase-status" style="display:none;margin-bottom:24px" class="pay-card">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px">
+      <div id="purchase-status-icon" style="font-size:1.5rem">...</div>
+      <div>
+        <div id="purchase-status-text" style="font-size:.85rem"></div>
+        <div id="purchase-status-link" style="font-size:.75rem;margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0;font-size:1rem;font-weight:600">Recent Transactions</h3>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Amount</th><th>Credits</th><th>Currency</th><th>Status</th></tr></thead>
+      <tbody id="tx-history-body">
+        <tr><td colspan="5" style="text-align:center;color:#555;padding:24px;font-size:.8rem">No transactions yet. Purchase credits to get started.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 <!-- ALERT PANEL -->
 <div class="alert-panel" id="alert-panel">
@@ -454,7 +598,7 @@ function navigate(page){
   document.querySelector('[data-page="'+page+'"]').classList.add('active');
   if(page==='dashboard')loadStats();
   if(page==='whales')loadWhales();
-  if(page==='credits')loadPackages();
+  if(page==='credits')loadCreditsPage();
   if(page==='trading'){checkWalletStatus();loadHistory();}
   if(page==='portfolio')loadPortfolio();
   if(page==='autopilot')loadAutopilot();
@@ -509,21 +653,147 @@ async function askOracle(){
   }catch(e){$('verdict-wrap').innerHTML='<div style="color:#EF4444;text-align:center;padding:24px">Error: '+e.message+'</div>'}
   $('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';
 }
-function copyAddr(){navigator.clipboard.writeText('0x135C480C813451eF443A2F60cfaD49EA7197B855').then(()=>{$('pay-copy').textContent='Copied!';$('pay-copy').style.color='#10B981';setTimeout(()=>{$('pay-copy').textContent='Click to copy';$('pay-copy').style.color=''},2000)})}
-async function loadPackages(){
-  try{const r=await fetch('/api/payments/info');const d=await r.json();
-  $('pkg-grid').innerHTML=d.credit_rates.map((p,i)=>'<div class="pkg-card'+(i===1?' featured':'')+'"><div class="pkg-name">'+p.tier+'</div><div class="pkg-credits">'+p.example.split('=')[1].trim()+'</div><div class="stat-label" style="margin-bottom:8px">'+p.rate+'</div><div class="pkg-price">Min $'+p.min_usd+'</div></div>').join('');
-  const pr=await fetch('/api/payments/matic-price');const pd=await pr.json();if($('matic-price'))$('matic-price').textContent=pd.matic_usd.toFixed(2)}catch(e){}
+// === NOWPAYMENTS CREDITS SYSTEM ===
+function copyAddr(){navigator.clipboard.writeText('0x135C480C813451eF443A2F60cfaD49EA7197B855').then(()=>alert('Address copied!'))}
+
+function setAmount(val){
+  document.getElementById('credit-amount').value = val;
+  document.querySelectorAll('.amt-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  updateTotal();
 }
-async function verifyPayment(){
-  const tx=$('tx-hash-input').value.trim();if(!tx||!tx.startsWith('0x')){$('verify-result').innerHTML='<div class="verify-fail">Enter a valid tx hash starting with 0x</div>';return}
-  $('verify-btn').disabled=true;$('verify-btn').innerHTML='<span class="loading"></span>';
-  try{const headers={'Content-Type':'application/json'};if(token)headers['Authorization']='Bearer '+token;
-  const r=await fetch('/api/payments/verify',{method:'POST',headers,body:JSON.stringify({tx_hash:tx})});const d=await r.json();
-  if(d.verified){let h='<div class="verify-ok"><div class="vr-label">Payment Verified</div><div class="vr-credits">+'+d.credits_awarded+' credits</div><div style="margin-top:12px;font-size:.8rem;color:#666">';if(d.value_usdc)h+='Amount: $'+d.value_usdc+' USDC<br>';else if(d.value_matic)h+='Amount: '+d.value_matic+' MATIC ($'+d.value_usd+')<br>';h+='Block: '+d.block;if(d.new_balance)h+='<br>New Balance: '+d.new_balance+' credits';h+='</div></div>';$('verify-result').innerHTML=h}
-  else $('verify-result').innerHTML='<div class="verify-fail">'+d.error+'</div>'}catch(e){$('verify-result').innerHTML='<div class="verify-fail">Network error</div>'}
-  $('verify-btn').disabled=false;$('verify-btn').textContent='Verify';
+
+function updateTotal(){
+  const amt = parseFloat(document.getElementById('credit-amount').value) || 0;
+  document.getElementById('total-due').textContent = '$' + amt.toFixed(2);
+  let credits = 0, tier = '';
+  if(amt >= 50){credits = amt * 20; tier = 'Whale'}
+  else if(amt >= 20){credits = amt * 15; tier = 'Pro'}
+  else if(amt >= 10){credits = amt * 12; tier = 'Popular'}
+  else if(amt >= 5){credits = amt * 10; tier = 'Starter'}
+  else {credits = amt * 8; tier = 'Micro'}
+  document.getElementById('credits-earned').textContent = Math.floor(credits) + ' credits (' + tier + ')';
 }
+
+// Update total on input change
+document.addEventListener('DOMContentLoaded', function(){
+  const amtInput = document.getElementById('credit-amount');
+  if(amtInput) amtInput.addEventListener('input', updateTotal);
+});
+
+async function purchaseCredits(){
+  const amt = parseFloat(document.getElementById('credit-amount').value);
+  if(!amt || amt < 1 || amt > 500){alert('Amount must be between $1 and $500');return}
+  if(!token){alert('Please login first to purchase credits');return}
+  const btn = document.getElementById('purchase-btn');
+  const status = document.getElementById('purchase-status');
+  const statusIcon = document.getElementById('purchase-status-icon');
+  const statusText = document.getElementById('purchase-status-text');
+  const statusLink = document.getElementById('purchase-status-link');
+  btn.disabled = true; btn.textContent = 'Creating invoice...';
+  status.style.display = 'block';
+  statusIcon.textContent = '...';
+  statusText.textContent = 'Creating payment invoice...';
+  statusLink.innerHTML = '';
+  try{
+    const r = await fetch('/api/payments/create-invoice', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token},
+      body: JSON.stringify({amount: amt})
+    });
+    const d = await r.json();
+    if(d.error){
+      statusIcon.textContent = 'Error';
+      statusIcon.style.color = '#EF4444';
+      statusText.textContent = d.error;
+      btn.disabled = false; btn.textContent = 'Purchase';
+      return;
+    }
+    // Got invoice URL - redirect user to NOWPayments checkout
+    const invoiceUrl = d.invoice_url;
+    if(invoiceUrl){
+      statusIcon.textContent = 'Redirecting';
+      statusIcon.style.color = '#10B981';
+      statusText.textContent = 'Opening payment page for $' + amt.toFixed(2) + ' (' + (d.credits_preview||'') + ' credits)...';
+      statusLink.innerHTML = '<a href="'+invoiceUrl+'" target="_blank" style="color:#10B981;text-decoration:underline">Click here if not redirected</a>';
+      // Open in new tab
+      window.open(invoiceUrl, '_blank');
+      // After redirect, show waiting message
+      setTimeout(()=>{
+        statusText.textContent = 'Waiting for payment confirmation. Credits will be added automatically when payment is confirmed.';
+        statusIcon.textContent = 'Waiting';
+        statusIcon.style.color = '#F59E0B';
+        btn.disabled = false; btn.textContent = 'Purchase';
+      }, 3000);
+    } else {
+      statusIcon.textContent = 'Error';
+      statusText.textContent = 'Could not create invoice. Try again.';
+    }
+  }catch(e){
+    statusIcon.textContent = 'Error';
+    statusIcon.style.color = '#EF4444';
+    statusText.textContent = 'Network error: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Purchase';
+}
+
+async function loadCreditBalance(){
+  if(!token){
+    document.getElementById('credit-balance').textContent = '0.00';
+    document.getElementById('credit-account').textContent = 'Login to view balance';
+    return;
+  }
+  try{
+    const r = await fetch('/api/payments/balance', {headers:{'Authorization':'Bearer '+token}});
+    const d = await r.json();
+    if(d.credits !== undefined){
+      document.getElementById('credit-balance').textContent = d.credits.toFixed ? d.credits.toFixed(2) : d.credits;
+      document.getElementById('credit-account').textContent = 'Account: ' + (d.email || '');
+    }
+  }catch(e){}
+}
+
+async function loadTransactionHistory(){
+  if(!token)return;
+  try{
+    const r = await fetch('/api/payments/history', {headers:{'Authorization':'Bearer '+token}});
+    const d = await r.json();
+    const tbody = document.getElementById('tx-history-body');
+    if(!d.transactions || d.transactions.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#555;padding:24px;font-size:.8rem">No transactions yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.transactions.map(t=>{
+      const date = t.date ? new Date(t.date).toLocaleDateString() : '--';
+      const statusColor = t.status === 'completed' ? '#10B981' : t.status === 'pending' ? '#F59E0B' : '#EF4444';
+      return '<tr>'+
+        '<td class="mono" style="font-size:.75rem">'+date+'</td>'+
+        '<td class="mono" style="font-size:.8rem">$'+((t.amount_usd||0).toFixed(2))+'</td>'+
+        '<td class="mono" style="font-size:.8rem;color:#10B981">+'+(t.credits||0)+'</td>'+
+        '<td class="mono" style="font-size:.75rem">'+(t.currency||'--')+'</td>'+
+        '<td style="font-size:.75rem;color:'+statusColor+'">'+t.status+'</td></tr>';
+    }).join('');
+  }catch(e){}
+}
+
+function showPromoInput(){
+  const el = document.getElementById('promo-section');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function redeemPromo(){
+  const code = document.getElementById('promo-code').value.trim();
+  if(!code){document.getElementById('promo-result').innerHTML='<span style="color:#EF4444">Enter a code</span>';return}
+  document.getElementById('promo-result').innerHTML='<span style="color:#F59E0B">Promo codes coming soon!</span>';
+}
+
+// Load credits data when navigating to credits page
+function loadCreditsPage(){
+  loadCreditBalance();
+  loadTransactionHistory();
+  updateTotal();
+}
+
 function showTradePanel(mode){document.querySelectorAll('.trade-panel').forEach(p=>p.style.display='none');var panel=document.getElementById('trade-panel-'+mode);if(panel)panel.style.display='block'}
 async function checkWalletStatus(){
   if(!token)return;try{const r=await fetch('/api/trading/wallet-status',{headers:{'Authorization':'Bearer '+token}});const d=await r.json();
