@@ -223,6 +223,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <button class="nav-link" data-page="trading" onclick="navigate('trading')">Trading</button>
     <button class="nav-link" data-page="credits" onclick="navigate('credits')">Credits</button>
     <button class="nav-link" data-page="portfolio" onclick="navigate('portfolio')">Portfolio</button>
+    <button class="nav-link" data-page="leaderboard" onclick="navigate('leaderboard')">Leaderboard</button>
     <button class="nav-link" data-page="autopilot" onclick="navigate('autopilot')">Auto-Pilot</button>
     <button class="nav-link" data-page="backtest" onclick="navigate('backtest')">Backtest</button>
   </div>
@@ -556,6 +557,44 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 </div>
 
 <!-- AUTO-PILOT PAGE -->
+
+<div class="page" id="page-leaderboard">
+  <h2 class="section-title" style="margin-bottom:8px">🏆 Leaderboard</h2>
+  <p style="color:#999;font-size:.75rem;margin-bottom:20px">Top predictors ranked by accuracy and streak</p>
+
+  <div class="stats-row" id="lb-stats" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-value" id="lb-total-users">—</div><div class="stat-label">Total Predictors</div></div>
+    <div class="stat-card"><div class="stat-value" id="lb-top-accuracy">—</div><div class="stat-label">Top Accuracy</div></div>
+    <div class="stat-card"><div class="stat-value" id="lb-top-streak">—</div><div class="stat-label">Longest Streak</div></div>
+    <div class="stat-card"><div class="stat-value" id="lb-your-rank">—</div><div class="stat-label">Your Rank</div></div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;font-size:.85rem">Top Predictors</span>
+      <button class="btn-sm" onclick="loadLeaderboard()" style="font-size:.65rem">Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Predictor</th>
+            <th>Accuracy</th>
+            <th>Predictions</th>
+            <th>Streak</th>
+            <th>Win/Loss</th>
+            <th>Credits</th>
+          </tr>
+        </thead>
+        <tbody id="lb-tbody">
+          <tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">Loading leaderboard...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="page-autopilot">
   <h2>Auto-Pilot</h2>
   <p class="subtitle">Fully automated trading powered by Oracle AI + Whale Intelligence</p>
@@ -1135,6 +1174,7 @@ function navigate(page){
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   $('page-'+page).classList.add('active');
   document.querySelector('[data-page="'+page+'"]').classList.add('active');
+  if(page==='leaderboard')loadLeaderboard();
   if(page==='dashboard')loadStats();
   if(page==='whales')loadWhales();
   if(page==='credits')loadCreditsPage();
@@ -1709,6 +1749,63 @@ document.addEventListener('click',function(e){
     alertPanelOpen=false;$('alert-panel').classList.remove('show');
   }
 });
+
+  // ===== LEADERBOARD =====
+  async function loadLeaderboard() {
+    try {
+      const resp = await safeFetch('/api/leaderboard');
+      const data = await resp.json();
+
+      // Stats
+      const users = Array.isArray(data) ? data : (data.users || data.leaderboard || []);
+      $('lb-total-users').textContent = users.length;
+      if (users.length > 0) {
+        const topAcc = Math.max(...users.map(u => u.accuracy || u.win_rate || 0));
+        const topStreak = Math.max(...users.map(u => u.streak || 0));
+        $('lb-top-accuracy').textContent = (topAcc * 100).toFixed(1) + '%';
+        $('lb-top-streak').textContent = topStreak + '🔥';
+      }
+      // Find user rank
+      if (currentUser) {
+        const idx = users.findIndex(u => u.username === currentUser || u.name === currentUser);
+        $('lb-your-rank').textContent = idx >= 0 ? '#' + (idx + 1) : 'Unranked';
+      }
+
+      // Table
+      const tbody = $('lb-tbody');
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">No predictions yet — be the first!</td></tr>';
+        return;
+      }
+      tbody.innerHTML = users.slice(0, 50).map((u, i) => {
+        const rank = i + 1;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+        const name = u.username || u.name || u.address || 'Anonymous';
+        const acc = ((u.accuracy || u.win_rate || 0) * 100).toFixed(1);
+        const preds = u.predictions || u.total || 0;
+        const streak = u.streak || 0;
+        const wins = u.wins || 0;
+        const losses = u.losses || (preds - wins);
+        const credits = u.credits || 0;
+        const isYou = currentUser && (name === currentUser);
+        const rowStyle = isYou ? 'background:rgba(16,185,129,.08)' : '';
+        const streakBadge = streak >= 5 ? '<span style="color:#FF6B35">🔥' + streak + '</span>' : streak;
+        const accColor = acc >= 70 ? '#10B981' : acc >= 50 ? '#F59E0B' : '#EF4444';
+        return '<tr style="' + rowStyle + '">' +
+          '<td style="font-weight:700">' + medal + '</td>' +
+          '<td style="font-weight:600">' + name + (isYou ? ' <span style="color:#627EEA;font-size:.6rem">(you)</span>' : '') + '</td>' +
+          '<td style="color:' + accColor + ';font-weight:700">' + acc + '%</td>' +
+          '<td>' + preds + '</td>' +
+          '<td>' + streakBadge + '</td>' +
+          '<td><span style="color:#10B981">' + wins + 'W</span> / <span style="color:#EF4444">' + losses + 'L</span></td>' +
+          '<td style="color:#F59E0B">' + credits + '</td>' +
+        '</tr>';
+      }).join('');
+    } catch (e) {
+      $('lb-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#EF4444;padding:40px;font-size:.75rem">Failed to load leaderboard</td></tr>';
+    }
+  }
+
 </script>
 </body>
 </html>

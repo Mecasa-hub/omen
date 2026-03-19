@@ -64,7 +64,7 @@ async def check_mirofish_health() -> bool:
 
 async def _generate_research_document(question: str) -> str:
     """Use Gemini to generate a comprehensive research document."""
-    prompt = f"""Write a comprehensive research brief (800-1200 words) analyzing this prediction market question:
+    prompt = f"""Write a concise research brief (400-500 words) analyzing this prediction market question:
 
 "{question}"
 
@@ -84,7 +84,7 @@ Write as a factual research document with specific names, dates, and data."""
             async with session.post(
                 GEMINI_URL,
                 headers={"Authorization": f"Bearer {GEMINI_KEY}", "Content-Type": "application/json"},
-                json={"model": GEMINI_MODEL, "messages": [{"role": "user", "content": prompt}], "max_tokens": 2000},
+                json={"model": GEMINI_MODEL, "messages": [{"role": "user", "content": prompt}], "max_tokens": 800},
                 timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 data = await resp.json()
@@ -403,6 +403,38 @@ async def run_mirofish_prediction(question: str, mode: str = "fast") -> dict:
             valid_agents.append(a)
 
         logger.info(f"AI reasoning complete: {len(valid_agents)}/{len(raw_agents)} agents succeeded")
+
+
+        # ===== STEP 4.5: Generate ontology-based edges (for FAST mode) =====
+        if not graph_edges and edge_types and len(valid_agents) >= 2:
+            logger.info(f"Generating ontology edges from {len(edge_types)} edge types...")
+            import itertools
+            agent_names = [a["name"] for a in valid_agents]
+            edge_idx = 0
+            for edge_def in edge_types:
+                edge_name = edge_def.get("name", edge_def.get("type", "RELATES_TO")) if isinstance(edge_def, dict) else str(edge_def)
+                # Create edges between agent pairs based on edge types
+                for i in range(len(agent_names)):
+                    for j in range(i + 1, len(agent_names)):
+                        # Use edge_idx to deterministically assign edges
+                        if edge_idx % max(1, len(agent_names)) == 0:
+                            graph_edges.append({
+                                "source": agent_names[i],
+                                "target": agent_names[j],
+                                "type": edge_name,
+                            })
+                        edge_idx += 1
+            # Also add relationship edges based on vote agreement
+            for i in range(len(valid_agents)):
+                for j in range(i + 1, min(len(valid_agents), i + 3)):
+                    a1, a2 = valid_agents[i], valid_agents[j]
+                    agree = a1.get("vote") == a2.get("vote")
+                    graph_edges.append({
+                        "source": a1["name"],
+                        "target": a2["name"],
+                        "type": "AGREES" if agree else "DISAGREES",
+                    })
+            logger.info(f"Generated {len(graph_edges)} ontology-based edges")
 
         # ===== STEP 6: Format for Omen D3 visualization =====
         colors = ["#FF6B35", "#004E89", "#7B2D8E", "#1A936F", "#C5283D",
