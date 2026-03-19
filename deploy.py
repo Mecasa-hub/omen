@@ -792,6 +792,15 @@ async def index():
 # =========================================================================
 
 # -- Swarm Categories --
+
+@app.get("/test-canvas")
+async def test_canvas():
+    return FileResponse("canvas_test.html", media_type="text/html")
+
+@app.get("/test-bubbles") 
+async def test_bubbles():
+    return FileResponse("test_bubbles.html", media_type="text/html")
+
 @app.get("/api/swarm/categories")
 async def swarm_categories():
     return JSONResponse(swarm_engine.get_persona_categories())

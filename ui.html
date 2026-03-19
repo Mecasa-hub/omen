@@ -37,10 +37,9 @@ body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--white);co
 .agent-reasoning{font-size:.8rem;line-height:1.6;color:#333;min-height:60px;opacity:0;transition:opacity .5s}.agent-card.revealed .agent-reasoning{opacity:1}
 .agent-vote{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:3px 8px;letter-spacing:1px;margin-top:8px;border:1px solid}
 .vote-yes{color:#10B981;border-color:#10B981;background:#10B9811a}.vote-no{color:#EF4444;border-color:#EF4444;background:#EF44441a}
-.swarm-section{margin:32px 0;text-align:center}
+.swarm-section{margin:32px 0;text-align:center;width:100%;min-height:500px}
 .swarm-label{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--light-gray);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px}
-.swarm-grid{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;max-width:600px;margin:0 auto 16px;padding:20px;border:1px solid var(--border)}
-.swarm-dot{width:8px;height:8px;border-radius:1px;background:#E5E5E5;transition:background .4s ease}.swarm-dot.yes{background:#10B981}.swarm-dot.no{background:#EF4444}
+#bubble-canvas{cursor:crosshair;transition:opacity .5s;width:680px;height:460px;max-width:100%;display:block;margin:0 auto}
 .swarm-counts{display:flex;justify-content:center;gap:24px;font-family:'JetBrains Mono',monospace;font-size:.8rem}
 .count-yes{color:#10B981;font-weight:600}.count-no{color:#EF4444;font-weight:600}
 .verdict-card{border:2px solid #000;padding:32px;text-align:center;margin:32px 0}
@@ -215,13 +214,14 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
   <div class="oracle-input-wrap">
     <input class="oracle-input" id="oracle-input" placeholder="Will Bitcoin exceed $100k by end of year?" onkeydown="if(event.key==='Enter')askOracle()">
     <button class="oracle-btn" id="oracle-go" onclick="askOracle()">Consult Oracle</button>
+    <button class="oracle-btn" style="background:#333;font-size:.65rem;padding:6px 12px;margin-left:8px" onclick="testBubbleMap()">Demo</button>
   </div>
   <div class="war-room" id="war-room">
     <div class="section-header">Agent Debate</div>
     <div class="agents-grid" id="agents-grid"></div>
     <div class="swarm-section">
-      <div class="swarm-label">Swarm Intelligence Matrix - 1,200 Agents</div>
-      <div class="swarm-grid" id="swarm-grid"></div>
+      <div class="swarm-label">Swarm Intelligence Bubble Map</div>
+      <canvas id="bubble-canvas" width="700" height="500" style="display:block;margin:0 auto;border:1px solid #1a1a1a;border-radius:8px;background:#050505"></canvas>
       <div class="swarm-counts" id="swarm-counts"></div>
     </div>
     <div id="verdict-wrap"></div>
@@ -588,6 +588,235 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 </div>
 
 <script>
+// BubbleMap Engine (isolated)
+// === BUBBLE MAP ENGINE (MiroFish-style) ===
+var BubbleMap = {
+  canvas: null, ctx: null, width: 0, height: 0,
+  bubbles: [], _raf: null, running: false,
+  mouseX: -999, mouseY: -999, hoveredBubble: null,
+
+  showLoading() {
+    this._initCanvas();
+    if (!this.ctx) return;
+    const ctx = this.ctx, cx = this.width/2, cy = this.height/2;
+    ctx.fillStyle = '#07070b'; ctx.fillRect(0,0,this.width,this.height);
+    this._drawGrid();
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '12px "JetBrains Mono",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Agents deliberating...', cx, cy);
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.arc(cx, cy, 40 + i * 30, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(16,185,129,' + (0.06 - i*0.015) + ')'; ctx.lineWidth = 1; ctx.stroke();
+    }
+  },
+
+  stopLoading() {},
+
+  clear() {
+    this.bubbles = [];
+    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
+    this.running = false;
+    if (this.ctx) this.ctx.clearRect(0,0,this.width,this.height);
+  },
+
+  _initCanvas() {
+    this.canvas = document.getElementById('bubble-canvas');
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    const cont = this.canvas.parentElement;
+    this.width = Math.min(680, (cont && cont.clientWidth > 0) ? cont.clientWidth - 40 : 680);
+    this.height = 460;
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = this.width * dpr;
+    this.canvas.height = this.height * dpr;
+    this.canvas.style.width = this.width + 'px';
+    this.canvas.style.height = this.height + 'px';
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.canvas.onmousemove = (e) => {
+      const r = this.canvas.getBoundingClientRect();
+      this.mouseX = (e.clientX - r.left) * (this.width / r.width);
+      this.mouseY = (e.clientY - r.top) * (this.height / r.height);
+    };
+    this.canvas.onmouseleave = () => { this.mouseX = -999; this.mouseY = -999; };
+  },
+
+  _drawGrid() {
+    const ctx = this.ctx;
+    ctx.strokeStyle = 'rgba(255,255,255,0.02)'; ctx.lineWidth = 0.5;
+    for (let x = 0; x < this.width; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,this.height); ctx.stroke(); }
+    for (let y = 0; y < this.height; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(this.width,y); ctx.stroke(); }
+  },
+
+  populate(debates, swarmVotes) {
+    this.clear(); this._initCanvas();
+    if (!this.ctx) return;
+    const cx = this.width/2, cy = this.height/2;
+
+    // Place agent bubbles in a pentagon
+    const n = debates.length;
+    const orbitR = Math.min(this.width, this.height) * 0.26;
+    debates.forEach((d, i) => {
+      const conf = d.confidence || 65;
+      const r = 30 + (conf - 50) * 0.7;
+      const a = -Math.PI/2 + (2*Math.PI/n) * i;
+      this.bubbles.push({
+        x: cx + Math.cos(a) * orbitR,
+        y: cy + Math.sin(a) * orbitR,
+        r: r, color: d.vote==='YES' ? '#10B981' : '#EF4444',
+        lightColor: d.vote==='YES' ? '#6EE7B7' : '#FCA5A5',
+        darkColor: d.vote==='YES' ? '#065F46' : '#7F1D1D',
+        glowColor: d.vote==='YES' ? 'rgba(16,185,129,' : 'rgba(239,68,68,',
+        label: (d.agent||'').split(' ')[0].substring(0,8),
+        sublabel: d.vote+' '+conf+'%',
+        reasoning: d.reasoning || '',
+        isAgent: true, vote: d.vote, confidence: conf,
+        vx: 0, vy: 0, phase: Math.random()*6.28
+      });
+    });
+
+    // Swarm bubbles
+    const total = swarmVotes.yes + swarmVotes.no;
+    const count = Math.min(180, total);
+    const yesN = Math.round(count * (swarmVotes.yes / total));
+    for (let i = 0; i < count; i++) {
+      const isY = i < yesN;
+      const a = Math.random() * Math.PI * 2;
+      const dist = 20 + Math.random() * (Math.min(this.width,this.height)*0.43);
+      const r = 2.5 + Math.random() * 4;
+      this.bubbles.push({
+        x: cx + Math.cos(a)*dist, y: cy + Math.sin(a)*dist,
+        r: r, color: isY ? '#10B981' : '#EF4444',
+        glowColor: isY ? 'rgba(16,185,129,' : 'rgba(239,68,68,',
+        isAgent: false, vote: isY ? 'YES' : 'NO',
+        vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
+        phase: Math.random()*6.28
+      });
+    }
+
+    // Draw immediately (static frame)
+    this._drawFrame();
+    // Then start gentle animation
+    this.running = true;
+    this._animate();
+  },
+
+  _drawFrame() {
+    const ctx = this.ctx;
+    // BG
+    ctx.fillStyle = '#07070b'; ctx.fillRect(0,0,this.width,this.height);
+    this._drawGrid();
+
+    // Connection lines between agents
+    const agents = this.bubbles.filter(b=>b.isAgent);
+    for (let i=0; i<agents.length; i++) {
+      for (let j=i+1; j<agents.length; j++) {
+        const a=agents[i], b=agents[j];
+        ctx.strokeStyle = a.vote===b.vote ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)';
+        ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+
+    // Small bubbles
+    for (const b of this.bubbles) {
+      if (b.isAgent) continue;
+      ctx.globalAlpha = 0.55;
+      // Glow
+      const g = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*2.5);
+      g.addColorStop(0, b.glowColor+'0.12)'); g.addColorStop(1, b.glowColor+'0)');
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r*2.5,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+      // Body
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle=b.color; ctx.fill();
+      // Specular
+      ctx.beginPath(); ctx.arc(b.x-b.r*0.2,b.y-b.r*0.25,b.r*0.35,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.18)'; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Agent bubbles
+    this.hoveredBubble = null;
+    for (const b of agents) {
+      // Hover check
+      const mdx = this.mouseX-b.x, mdy = this.mouseY-b.y;
+      const isH = Math.sqrt(mdx*mdx+mdy*mdy) < b.r+8;
+      if (isH) this.hoveredBubble = b;
+      const dr = isH ? b.r+5 : b.r;
+
+      // Outer glow
+      const og = ctx.createRadialGradient(b.x,b.y,dr*0.5,b.x,b.y,dr*2.2);
+      og.addColorStop(0, b.glowColor+'0.2)'); og.addColorStop(0.6, b.glowColor+'0.04)'); og.addColorStop(1,'transparent');
+      ctx.beginPath(); ctx.arc(b.x,b.y,dr*2.2,0,Math.PI*2); ctx.fillStyle=og; ctx.fill();
+
+      // Main sphere
+      const sg = ctx.createRadialGradient(b.x-dr*0.3,b.y-dr*0.3,0,b.x,b.y,dr);
+      sg.addColorStop(0, b.lightColor); sg.addColorStop(0.45, b.color); sg.addColorStop(1, b.darkColor);
+      ctx.beginPath(); ctx.arc(b.x,b.y,dr,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.strokeStyle = isH ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.12)'; ctx.lineWidth = isH?2:1; ctx.stroke();
+
+      // Glass highlight
+      ctx.beginPath(); ctx.ellipse(b.x-dr*0.15,b.y-dr*0.28,dr*0.45,dr*0.22,-0.3,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.fill();
+
+      // Labels
+      ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=4;
+      ctx.font='bold '+Math.max(10,dr*0.34)+'px "Space Grotesk",system-ui,sans-serif';
+      ctx.fillText(b.label, b.x, b.y-5);
+      ctx.font=Math.max(8,dr*0.23)+'px "JetBrains Mono",monospace';
+      ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fillText(b.sublabel, b.x, b.y+dr*0.32);
+      ctx.shadowBlur=0;
+    }
+
+    // Tooltip
+    if (this.hoveredBubble) {
+      const b = this.hoveredBubble;
+      const tw=220, th=52;
+      let tx = b.x+b.r+12, ty = b.y-th/2;
+      if (tx+tw>this.width) tx=b.x-b.r-tw-12;
+      if (ty<4) ty=4; if (ty+th>this.height-4) ty=this.height-th-4;
+      ctx.globalAlpha=0.9;
+      ctx.fillStyle='rgba(8,8,14,0.92)'; ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(tx+5,ty); ctx.lineTo(tx+tw-5,ty); ctx.arcTo(tx+tw,ty,tx+tw,ty+5,5);
+      ctx.lineTo(tx+tw,ty+th-5); ctx.arcTo(tx+tw,ty+th,tx+tw-5,ty+th,5);
+      ctx.lineTo(tx+5,ty+th); ctx.arcTo(tx,ty+th,tx,ty+th-5,5);
+      ctx.lineTo(tx,ty+5); ctx.arcTo(tx,ty,tx+5,ty,5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font='bold 10px "Space Grotesk",sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText(b.label+'  '+b.sublabel, tx+8, ty+8);
+      ctx.fillStyle='#888'; ctx.font='8px "JetBrains Mono",monospace';
+      const r = (b.reasoning||'').substring(0,65);
+      ctx.fillText(r.substring(0,36), tx+8, ty+24); ctx.fillText(r.substring(36)+'...', tx+8, ty+36);
+      ctx.globalAlpha=1;
+    }
+  },
+
+  _animate() {
+    if (!this.running) return;
+    const cx=this.width/2, cy=this.height/2;
+    // Gentle physics
+    for (const b of this.bubbles) {
+      b.phase += 0.01;
+      if (b.isAgent) {
+        // Gentle wobble
+        b.x += Math.sin(b.phase) * 0.15;
+        b.y += Math.cos(b.phase * 0.7) * 0.12;
+      } else {
+        // Drift toward center
+        const dx=cx-b.x, dy=cy-b.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+        b.vx += dx/d*0.0005; b.vy += dy/d*0.0005;
+        b.vx += (Math.random()-0.5)*0.015; b.vy += (Math.random()-0.5)*0.015;
+        b.vx *= 0.99; b.vy *= 0.99;
+        b.x += b.vx; b.y += b.vy;
+        if (b.x<b.r) b.x=b.r; if (b.x>this.width-b.r) b.x=this.width-b.r;
+        if (b.y<b.r) b.y=b.r; if (b.y>this.height-b.r) b.y=this.height-b.r;
+      }
+    }
+    this._drawFrame();
+    this._raf = requestAnimationFrame(() => this._animate());
+  }
+};
+
+console.log("BubbleMap loaded:", typeof BubbleMap);
+</script>
+<script>
 let token=localStorage.getItem('omen_token'),username=localStorage.getItem('omen_user'),authMode='login';
 const $=id=>document.getElementById(id);
 
@@ -634,24 +863,109 @@ async function loadPolygonStatus(){
   try{const r=await fetch('/api/polygon/status');const d=await r.json();if($('poly-block')&&d.block_number)$('poly-block').textContent='#'+d.block_number.toLocaleString()}catch(e){}
 }
 function dashPredict(){const q=$('dash-oracle-input').value.trim();if(q){navigate('oracle');$('oracle-input').value=q;askOracle()}}
-async function askOracle(){
+async 
+
+function testBubbleMap(){
+    $('war-room').classList.add('active');
+    // Force DOM reflow before measuring canvas
+    void document.body.offsetHeight;
+  $('agents-grid').innerHTML='';
+  $('swarm-counts').innerHTML='';
+  $('verdict-wrap').innerHTML='';
+
+  var debates = [
+    {agent:'Atlas',icon:'A',role:'Lead Strategist',vote:'YES',confidence:78,color:'#10B981',reasoning:'Strong institutional adoption and ETF flows support bullish thesis for next 18 months'},
+    {agent:'Nemesis',icon:'N',role:'Devils Advocate',vote:'NO',confidence:72,color:'#EF4444',reasoning:'Regulatory headwinds and macro tightening pose significant risks to crypto valuations'},
+    {agent:'Quant',icon:'Q',role:'Data Analyst',vote:'YES',confidence:65,color:'#10B981',reasoning:'On-chain metrics show accumulation pattern similar to pre-bull 2020 cycle'},
+    {agent:'Maverick',icon:'M',role:'Wild Card',vote:'NO',confidence:60,color:'#EF4444',reasoning:'Market cycle suggests extended consolidation before any significant move up'},
+    {agent:'Clio',icon:'C',role:'Historian',vote:'YES',confidence:70,color:'#10B981',reasoning:'Historical halving cycles consistently point to new ATH within 12-18 months'}
+  ];
+  var swarm = {yes: 720, no: 480, total: 1200};
+
+  debates.forEach(function(a, i) {
+    setTimeout(function() {
+      $('agents-grid').innerHTML+='<div class="agent-card revealed">'+
+        '<div class="agent-avatar" style="background:'+a.color+'">'+a.icon+'</div>'+
+        '<div class="agent-name">'+a.agent+'</div>'+
+        '<div class="agent-role">'+a.role+'</div>'+
+        '<div class="agent-reasoning">'+a.reasoning+'</div>'+
+        '<div class="agent-vote '+(a.vote==='YES'?'vote-yes':'vote-no')+'">'+a.vote+' '+a.confidence+'%</div></div>';
+    }, i * 300);
+  });
+
+  setTimeout(function() {
+    BubbleMap.populate(debates, swarm);
+    }
+    $('swarm-counts').innerHTML='<span class="count-yes">YES: 720</span>'+
+      '<span class="mono" style="color:#999">/ 1,200</span>'+
+      '<span class="count-no">NO: 480</span>';
+    setTimeout(function() {
+      $('verdict-wrap').innerHTML='<div class="verdict-card">'+
+        '<div class="verdict-label">Oracle Verdict</div>'+
+        '<div class="verdict-text">YES - Likely</div>'+
+        '<div class="verdict-conf">72% confidence</div></div>';
+    }, 1500);
+  }, 1800);
+
+  }
+
+function askOracle(){
   const q=$('oracle-input').value.trim();if(!q)return;
-  $('oracle-go').disabled=true;$('oracle-go').innerHTML='<span class="loading"></span>';$('war-room').classList.add('active');$('agents-grid').innerHTML='';$('swarm-grid').innerHTML='';$('swarm-counts').innerHTML='';$('verdict-wrap').innerHTML='';
-  let dots=[];for(let i=0;i<1200;i++){const d=document.createElement('div');d.className='swarm-dot';$('swarm-grid').appendChild(d);dots.push(d)}
+  $('oracle-go').disabled=true;$('oracle-go').innerHTML='<span class="loading"></span>';
+  $('war-room').classList.add('active');
+  $('agents-grid').innerHTML='';
+  $('swarm-counts').innerHTML='';
+  $('verdict-wrap').innerHTML='';
+  BubbleMap.clear();
+
+  (async()=>{
   try{
-    const headers={'Content-Type':'application/json'};if(token)headers['Authorization']='Bearer '+token;
-    const r=await fetch('/api/oracle/predict',{method:'POST',headers,body:JSON.stringify({question:q})});const data=await r.json();
-    for(let i=0;i<data.debates.length;i++){const a=data.debates[i];await new Promise(r=>setTimeout(r,400));$('agents-grid').innerHTML+='<div class="agent-card revealed"><div class="agent-avatar" style="background:'+a.color+'">'+a.icon+'</div><div class="agent-name">'+a.agent+'</div><div class="agent-role">'+a.role+'</div><div class="agent-reasoning">'+a.reasoning+'</div><div class="agent-vote '+(a.vote==='YES'?'vote-yes':'vote-no')+'">'+a.vote+' '+a.confidence+'%</div></div>';}
-    const sv=data.swarm_votes;let assignments=[];for(let i=0;i<1200;i++)assignments.push(i<sv.yes?'yes':'no');
-    for(let i=assignments.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[assignments[i],assignments[j]]=[assignments[j],assignments[i]]}
-    for(let i=0;i<1200;i++){const col=i%30,row=Math.floor(i/30);const dist=Math.sqrt((col-15)**2+(row-20)**2);setTimeout(()=>{dots[i].classList.add(assignments[i])},dist*40+Math.random()*80)}
-    await new Promise(r=>setTimeout(r,1500));
-    $('swarm-counts').innerHTML='<span class="count-yes">YES: '+sv.yes+'</span><span class="mono" style="color:#999">/ 1,200</span><span class="count-no">NO: '+sv.no+'</span>';
+    const headers={'Content-Type':'application/json'};
+    if(token) headers['Authorization']='Bearer '+token;
+    const r=await fetch('/api/oracle/predict',{method:'POST',headers,body:JSON.stringify({question:q})});
+    const data=await r.json();
+
+    // Reveal agent debate cards one by one
+    for(let i=0;i<data.debates.length;i++){
+      const a=data.debates[i];
+      await new Promise(r=>setTimeout(r,400));
+      $('agents-grid').innerHTML+='<div class="agent-card revealed">'+
+        '<div class="agent-avatar" style="background:'+a.color+'">'+a.icon+'</div>'+
+        '<div class="agent-name">'+a.agent+'</div>'+
+        '<div class="agent-role">'+a.role+'</div>'+
+        '<div class="agent-reasoning">'+a.reasoning+'</div>'+
+        '<div class="agent-vote '+(a.vote==='YES'?'vote-yes':'vote-no')+'">'+a.vote+' '+a.confidence+'%</div></div>';
+    }
+
+    // Launch bubble map
+    BubbleMap.stopLoading();
+    BubbleMap.populate(data.debates, data.swarm_votes);
+
+    // Show swarm counts
+    const sv=data.swarm_votes;
+    await new Promise(r=>setTimeout(r,2500));
+    $('swarm-counts').innerHTML='<span class="count-yes">YES: '+sv.yes+'</span>'+
+      '<span class="mono" style="color:#999">/ 1,200</span>'+
+      '<span class="count-no">NO: '+sv.no+'</span>';
+
+    // Verdict
     await new Promise(r=>setTimeout(r,500));
-    let wh='';for(let i=0;i<data.whale_agreement.total;i++)wh+='<div class="whale-dot '+(i<data.whale_agreement.agree?'agree':'disagree')+'">'+(i<data.whale_agreement.agree?'V':'X')+'</div>';
-    $('verdict-wrap').innerHTML='<div class="verdict-card"><div class="verdict-label">Oracle Verdict</div><div class="verdict-text">'+data.verdict+'</div><div class="verdict-conf">'+data.confidence+'% confidence</div><div style="margin-top:16px"><div class="swarm-label">Whale Agreement</div><div class="whale-row">'+wh+'</div></div></div>';
-  }catch(e){$('verdict-wrap').innerHTML='<div style="color:#EF4444;text-align:center;padding:24px">Error: '+e.message+'</div>'}
+    let wh='';
+    for(let i=0;i<data.whale_agreement.total;i++)
+      wh+='<div class="whale-dot '+(i<data.whale_agreement.agree?'agree':'disagree')+'"></div>';
+    $('verdict-wrap').innerHTML='<div class="verdict-card">'+
+      '<div class="verdict-label">Oracle Verdict</div>'+
+      '<div class="verdict-text">'+data.verdict+'</div>'+
+      '<div class="verdict-conf">'+data.confidence+'% confidence</div>'+
+      '<div style="margin-top:16px">'+
+        '<div class="swarm-label">Whale Agreement</div>'+
+        '<div class="whale-row">'+wh+'</div>'+
+      '</div></div>';
+  }catch(e){
+    $('verdict-wrap').innerHTML='<div style="color:#EF4444;text-align:center;padding:24px">Error: '+e.message+'</div>';
+  }
   $('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';
+  })();
 }
 // === NOWPAYMENTS CREDITS SYSTEM ===
 function copyAddr(){navigator.clipboard.writeText('0x135C480C813451eF443A2F60cfaD49EA7197B855').then(()=>alert('Address copied!'))}
