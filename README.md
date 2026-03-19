@@ -81,6 +81,40 @@ OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](
     <td align="center"><em>Manual, Oracle auto-trade, and whale copy-trade</em></td>
     <td align="center"><em>Crypto payments on Polygon with tiered credit packages</em></td>
   </tr>
+
+  <tr>
+    <td align="center"><strong>🏆 Leaderboard</strong></td>
+    <td align="center"><strong>⚡ God View</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/leaderboard.png" alt="Leaderboard" width="100%"></td>
+    <td><img src="docs/screenshots/godview.png" alt="God View Terminal" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Live Polymarket top 100 traders with PnL tracking</em></td>
+    <td align="center"><em>45-agent dark terminal with research-informed multi-round debate</em></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>🤖 Auto-Pilot</strong></td>
+    <td align="center"><strong>📈 Portfolio</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/autopilot.png" alt="Auto-Pilot" width="100%"></td>
+    <td><img src="docs/screenshots/portfolio.png" alt="Portfolio" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Automated trading with Conservative/Balanced/Aggressive risk profiles</em></td>
+    <td align="center"><em>Track positions, P&L, and trade history</em></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><strong>🔬 Backtest</strong></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/screenshots/backtest.png" alt="Backtest" width="50%"></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><em>Backtest Oracle predictions against real Polymarket outcomes</em></td>
+  </tr>
 </table>
 
 ---
@@ -264,7 +298,7 @@ omen/
 ├── .env                # API keys and configuration
 ├── data/               # SQLite database
 ├── docs/
-│   ├── screenshots/    # Dashboard, Oracle, Whales, Trading, Credits
+│   ├── screenshots/    # All 10 pages: Dashboard, Oracle, Whales, Trading, Credits, Leaderboard, God View, Auto-Pilot, Portfolio, Backtest
 │   ├── API.md          # Full API reference
 │   ├── ARCHITECTURE.md # System design
 │   ├── DEPLOYMENT.md   # Production setup guide
