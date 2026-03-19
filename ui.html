@@ -147,8 +147,8 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .autopilot-status{display:flex;align-items:center;gap:12px}
 .status-dot{width:12px;height:12px;border-radius:50%;background:#ccc}
 .status-dot.active{background:#10B981;box-shadow:0 0 8px #10B981}
-.backtest-config{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
-.backtest-config label{font-size:.75rem;color:#555;text-transform:uppercase;letter-spacing:1px}
+.backtest-config{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin:24px 0}
+.backtest-config label{font-size:.7rem;color:#888;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:block;font-family:"JetBrains Mono",monospace}
 .backtest-results{margin-top:24px}
 .result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:16px 0}
 .result-card{background:#fff;border:2px solid #eee;border-radius:8px;padding:16px;text-align:center}
@@ -160,6 +160,29 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .detail-table th{text-align:left;padding:8px 12px;border-bottom:2px solid #eee;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:.7rem}
 .detail-table td{padding:8px 12px;border-bottom:1px solid #f0f0f0}
 .detail-table tr:hover{background:#f7f7f7}
+.backtest-config select.oracle-input{height:44px;padding:10px 14px;font-size:.85rem;border:2px solid #e5e5e5;border-radius:8px;background:#fff;color:#111;cursor:pointer;appearance:auto;-webkit-appearance:auto;transition:border .2s}
+.backtest-config select.oracle-input:focus{border-color:#000}
+.backtest-config select.oracle-input:hover{border-color:#999}
+.bt-run-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 40px;background:#000;color:#fff;border:none;font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.bt-run-btn:hover{background:#222;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.bt-run-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.bt-run-btn:active{transform:translateY(0)}
+.bt-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}
+.bt-stat-card{background:#fff;border:2px solid #eee;border-radius:12px;padding:20px;text-align:center;transition:border .2s}
+.bt-stat-card:hover{border-color:#ccc}
+.bt-stat-card .bt-val{font-size:2rem;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1.2}
+.bt-stat-card .bt-lbl{font-size:.65rem;color:#888;text-transform:uppercase;letter-spacing:1.5px;margin-top:6px;font-family:'JetBrains Mono',monospace}
+.bt-stat-card.positive .bt-val{color:#10B981}
+.bt-stat-card.negative .bt-val{color:#EF4444}
+.bt-progress{margin:24px 0;padding:20px;background:#f8f8f8;border-radius:12px;display:none}
+.bt-progress .bt-prog-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:12px}
+.bt-progress .bt-prog-fill{height:100%;background:#000;border-radius:3px;transition:width .3s ease}
+.bt-progress .bt-prog-text{font-size:.75rem;color:#666;font-family:'JetBrains Mono',monospace}
+.bt-history-card{background:#fff;border:2px solid #eee;border-radius:12px;padding:16px;margin:12px 0;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;align-items:center;transition:border .2s;cursor:pointer}
+.bt-history-card:hover{border-color:#000}
+.bt-history-card .bt-h-label{font-size:.65rem;color:#888;text-transform:uppercase;letter-spacing:1px}
+.bt-history-card .bt-h-value{font-size:1.1rem;font-weight:600;font-family:'JetBrains Mono',monospace}
+
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600}
 .badge-green{background:#10B98122;color:#10B981}
 .badge-red{background:#EF444422;color:#EF4444}
@@ -723,50 +746,63 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 
 <!-- BACKTEST PAGE -->
 <div class="page" id="page-backtest">
-  <h2>Backtest</h2>
-  <p class="subtitle">Test Oracle accuracy against resolved Polymarket markets</p>
-  <div class="section-header">Configuration</div>
-  <div class="backtest-config">
-    <div>
-      <label>Agent Count</label>
-      <select class="oracle-input" id="bt-agents" style="height:40px">
-        <option value="3">3 agents (fast)</option>
-        <option value="5" selected>5 agents (balanced)</option>
-        <option value="10">10 agents (thorough)</option>
-      </select>
+  <h2 style="margin-bottom:4px">Backtest</h2>
+  <p class="subtitle" style="margin-bottom:32px">Test Oracle accuracy against resolved Polymarket markets</p>
+
+  <div style="background:#fff;border:2px solid #eee;border-radius:12px;padding:32px">
+    <div class="section-header" style="margin-top:0">Configuration</div>
+    <div class="backtest-config">
+      <div>
+        <label>Agent Count</label>
+        <select class="oracle-input" id="bt-agents">
+          <option value="3">3 agents (fast)</option>
+          <option value="5" selected>5 agents (balanced)</option>
+          <option value="10">10 agents (thorough)</option>
+          <option value="20">20 agents (deep)</option>
+          <option value="45">45 agents (full swarm)</option>
+        </select>
+      </div>
+      <div>
+        <label>Min Confidence</label>
+        <select class="oracle-input" id="bt-conf">
+          <option value="50">50% (all predictions)</option>
+          <option value="60" selected>60% (moderate filter)</option>
+          <option value="70">70% (selective)</option>
+          <option value="80">80% (high conviction only)</option>
+        </select>
+      </div>
+      <div>
+        <label>Markets to Test</label>
+        <select class="oracle-input" id="bt-limit">
+          <option value="5">5 markets (quick)</option>
+          <option value="10" selected>10 markets</option>
+          <option value="20">20 markets (thorough)</option>
+          <option value="30">30 markets (extensive)</option>
+        </select>
+      </div>
     </div>
-    <div>
-      <label>Min Confidence</label>
-      <select class="oracle-input" id="bt-conf" style="height:40px">
-        <option value="50">50% (all trades)</option>
-        <option value="60" selected>60% (moderate)</option>
-        <option value="70">70% (selective)</option>
-        <option value="80">80% (high only)</option>
-      </select>
-    </div>
-    <div>
-      <label>Markets to Test</label>
-      <select class="oracle-input" id="bt-limit" style="height:40px">
-        <option value="5">5 markets (quick)</option>
-        <option value="10" selected>10 markets</option>
-        <option value="20">20 markets (thorough)</option>
-      </select>
+    <div style="text-align:center;margin:28px 0 8px">
+      <button class="bt-run-btn" onclick="runBacktest()" id="bt-run-btn">&#9654; Run Backtest</button>
     </div>
   </div>
-  <div style="text-align:center;margin:24px 0">
-    <button class="oracle-btn" onclick="runBacktest()" id="bt-run-btn" style="width:auto;padding:12px 32px">Run Backtest</button>
+
+  <div class="bt-progress" id="bt-progress">
+    <div class="bt-prog-text" id="bt-prog-text">Initializing backtest...</div>
+    <div class="bt-prog-bar"><div class="bt-prog-fill" id="bt-prog-fill" style="width:0%"></div></div>
   </div>
+
   <div class="backtest-results" id="bt-results" style="display:none">
-    <div class="section-header">Results</div>
-    <div class="result-grid" id="bt-result-grid"></div>
+    <div class="section-header">Results Summary</div>
+    <div class="bt-stat-grid" id="bt-result-grid"></div>
     <div class="section-header">Prediction Details</div>
     <table class="detail-table">
-      <thead><tr><th>Market</th><th>Predicted</th><th>Actual</th><th>Confidence</th><th>Correct</th><th>PnL</th></tr></thead>
+      <thead><tr><th>Market</th><th>Oracle Said</th><th>Actual Result</th><th>Confidence</th><th>Correct</th><th>Sim. PnL</th></tr></thead>
       <tbody id="bt-details-body"></tbody>
     </table>
   </div>
-  <div class="section-header" style="margin-top:32px">Previous Backtests</div>
-  <div id="bt-history"><div style="text-align:center;color:#666;padding:16px">No previous backtests</div></div>
+
+  <div class="section-header" style="margin-top:40px">Previous Backtests</div>
+  <div id="bt-history"><div style="text-align:center;color:#aaa;padding:32px;font-size:.85rem">No previous backtests — run one above to see results here</div></div>
 </div>
 
 <!-- AUTH MODAL -->
@@ -1778,38 +1814,79 @@ async function scanMarkets(){
 
 // ── Phase 3: Backtest ──────────────────────────────────────
 async function runBacktest(){
-  if(!token){alert('Login first');return}
-  const btn=$('bt-run-btn');
-  btn.textContent='Running...';
+  if(!token){showToast('Please login first to run backtests','error');return}
+  var btn=$('bt-run-btn');
+  var prog=$('bt-progress');
+  var progFill=$('bt-prog-fill');
+  var progText=$('bt-prog-text');
+  btn.innerHTML='&#9209; Running...';
   btn.disabled=true;
+  prog.style.display='block';
+  progFill.style.width='10%';
+  progText.textContent='Fetching resolved Polymarket markets...';
+  var progTimer=setInterval(function(){
+    var w=parseFloat(progFill.style.width)||10;
+    if(w<85){progFill.style.width=(w+Math.random()*8)+'%'}
+    if(w>20&&w<40)progText.textContent='Running Oracle predictions on each market...';
+    if(w>40&&w<60)progText.textContent='AI agents debating outcomes...';
+    if(w>60&&w<80)progText.textContent='Comparing predictions vs actual results...';
+    if(w>80)progText.textContent='Calculating final accuracy...';
+  },800);
   try{
-    const r=await fetch('/api/backtest/run',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({agent_count:parseInt($('bt-agents').value),min_confidence:parseInt($('bt-conf').value),limit:parseInt($('bt-limit').value)})});
-    const d=await r.json();
-    if(d.error){alert('Backtest error: '+d.error);btn.textContent='Run Backtest';btn.disabled=false;return}
-    // Show results
+    var r=await safeFetch('/api/backtest/run',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({agent_count:parseInt($('bt-agents').value),min_confidence:parseInt($('bt-conf').value),limit:parseInt($('bt-limit').value)})});
+    var d=await r.json();
+    clearInterval(progTimer);
+    progFill.style.width='100%';
+    progText.textContent='Backtest complete!';
+    setTimeout(function(){prog.style.display='none'},2000);
+    if(d.error){showToast('Backtest error: '+d.error,'error');btn.innerHTML='&#9654; Run Backtest';btn.disabled=false;return}
     $('bt-results').style.display='block';
+    var accClass=d.accuracy>=60?'positive':'negative';
+    var pnlClass=(d.simulated_pnl||0)>=0?'positive':'negative';
     $('bt-result-grid').innerHTML=
-      '<div class="result-card '+(d.accuracy>=60?'positive':'negative')+'"><div class="value">'+d.accuracy+'%</div><div class="label">Accuracy</div></div>'+
-      '<div class="result-card"><div class="value">'+d.predictions+'</div><div class="label">Predictions</div></div>'+
-      '<div class="result-card '+(d.simulated_pnl>=0?'positive':'negative')+'"><div class="value">$'+d.simulated_pnl+'</div><div class="label">Simulated PnL</div></div>'+
-      '<div class="result-card"><div class="value">'+d.avg_confidence+'%</div><div class="label">Avg Confidence</div></div>';
-    // Details table
-    const details=d.details||[];
-    $('bt-details-body').innerHTML=details.map(r=>'<tr><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">'+r.question+'</td><td><span class="badge '+(r.predicted==='YES'?'badge-green':'badge-red')+'">'+r.predicted+'</span></td><td><span class="badge '+(r.actual==='YES'?'badge-green':'badge-red')+'">'+r.actual+'</span></td><td class="mono">'+r.confidence+'%</td><td>'+(r.correct?'&#10003;':'&#10007;')+'</td><td class="mono" style="color:'+(r.pnl>=0?'#10B981':'#EF4444')+'">$'+r.pnl+'</td></tr>').join('');
+      '<div class="bt-stat-card '+accClass+'"><div class="bt-val">'+d.accuracy+'%</div><div class="bt-lbl">Accuracy</div></div>'+
+      '<div class="bt-stat-card"><div class="bt-val">'+d.predictions+'</div><div class="bt-lbl">Markets Tested</div></div>'+
+      '<div class="bt-stat-card '+pnlClass+'"><div class="bt-val">$'+(d.simulated_pnl||0)+'</div><div class="bt-lbl">Simulated PnL</div></div>'+
+      '<div class="bt-stat-card"><div class="bt-val">'+(d.avg_confidence||0)+'%</div><div class="bt-lbl">Avg Confidence</div></div>';
+    var details=d.details||[];
+    $('bt-details-body').innerHTML=details.map(function(r){
+      var predBadge=r.predicted==='YES'?'badge-green':'badge-red';
+      var actBadge=r.actual==='YES'?'badge-green':'badge-red';
+      var correctIcon=r.correct?'<span style="color:#10B981;font-size:1.1rem">&#10003;</span>':'<span style="color:#EF4444;font-size:1.1rem">&#10007;</span>';
+      var pnlColor=(r.pnl||0)>=0?'#10B981':'#EF4444';
+      return '<tr><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+r.question+'">'+r.question+'</td><td><span class="badge '+predBadge+'">'+r.predicted+'</span></td><td><span class="badge '+actBadge+'">'+r.actual+'</span></td><td class="mono">'+(r.confidence||0)+'%</td><td style="text-align:center">'+correctIcon+'</td><td class="mono" style="color:'+pnlColor+'">$'+(r.pnl||0)+'</td></tr>';
+    }).join('');
     loadBacktestHistory();
-  }catch(e){alert('Backtest failed: '+e.message)}
-  btn.textContent='Run Backtest';
+    showToast('Backtest complete: '+d.accuracy+'% accuracy','success');
+  }catch(e){
+    clearInterval(progTimer);
+    prog.style.display='none';
+    showToast('Backtest failed: '+e.message,'error');
+  }
+  btn.innerHTML='&#9654; Run Backtest';
   btn.disabled=false;
 }
 async function loadBacktestHistory(){
   if(!token)return;
   try{
-    const r=await fetch('/api/backtest/history',{headers:{'Authorization':'Bearer '+token}});
-    const hist=await r.json();
-    if(hist.length){
-      $('bt-history').innerHTML='<table class="detail-table"><thead><tr><th>Date</th><th>Markets</th><th>Accuracy</th><th>PnL</th></tr></thead><tbody>'+hist.map(h=>'<tr><td class="mono" style="font-size:.7rem">'+(h.created_at||'').substr(0,16)+'</td><td>'+h.markets_tested+'</td><td class="mono">'+(h.accuracy||0)+'%</td><td class="mono" style="color:'+(h.simulated_pnl>=0?'#10B981':'#EF4444')+'">$'+h.simulated_pnl+'</td></tr>').join('')+'</tbody></table>';
+    var r=await safeFetch('/api/backtest/history',{headers:{'Authorization':'Bearer '+token}});
+    var hist=await r.json();
+    if(hist&&hist.length){
+      $('bt-history').innerHTML=hist.map(function(h){
+        var acc=h.accuracy||0;
+        var pnl=h.simulated_pnl||0;
+        var accColor=acc>=60?'#10B981':'#EF4444';
+        var pnlColor=pnl>=0?'#10B981':'#EF4444';
+        var dateStr=(h.created_at||'').substring(0,16).replace('T',' ');
+        return '<div class="bt-history-card">'+
+          '<div><div class="bt-h-label">Date</div><div class="bt-h-value" style="font-size:.85rem">'+dateStr+'</div></div>'+
+          '<div><div class="bt-h-label">Markets</div><div class="bt-h-value">'+(h.markets_tested||0)+'</div></div>'+
+          '<div><div class="bt-h-label">Accuracy</div><div class="bt-h-value" style="color:'+accColor+'">'+acc+'%</div></div>'+
+          '<div><div class="bt-h-label">Simulated PnL</div><div class="bt-h-value" style="color:'+pnlColor+'">$'+pnl+'</div></div>'+
+          '</div>';
+      }).join('');
     }
-  }catch(e){}
+  }catch(e){console.error('BT history error:',e)}
 }
 
 // ── Phase 3: Navigation Updates ────────────────────────────
