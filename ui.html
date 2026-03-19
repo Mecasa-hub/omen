@@ -1754,58 +1754,66 @@ document.addEventListener('click',function(e){
   // ===== LEADERBOARD =====
   async function loadLeaderboard() {
     try {
-      const resp = await safeFetch('/api/leaderboard');
-      const data = await resp.json();
+      const resp = await fetch('/api/leaderboard');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const users = await resp.json();
 
-      // Stats - API returns array of whale/user objects
-      const users = Array.isArray(data) ? data : (data.users || data.leaderboard || []);
-      $('lb-total-users').textContent = users.length;
-      if (users.length > 0) {
-        // win_rate is already a percentage (e.g. 73.5 means 73.5%)
-        const topAcc = Math.max(...users.map(u => u.win_rate || u.accuracy || 0));
-        const topStreak = Math.max(...users.map(u => u.streak || u.followers || 0));
+      // Stats
+      const list = Array.isArray(users) ? users : [];
+      $('lb-total-users').textContent = list.length;
+      if (list.length > 0) {
+        var topAcc = 0, topFollow = 0;
+        for (var k = 0; k < list.length; k++) {
+          var wr = list[k].win_rate || 0;
+          var fl = list[k].followers || 0;
+          if (wr > topAcc) topAcc = wr;
+          if (fl > topFollow) topFollow = fl;
+        }
         $('lb-top-accuracy').textContent = topAcc.toFixed(1) + '%';
-        $('lb-top-streak').textContent = topStreak + '🔥';
+        $('lb-top-streak').textContent = topFollow + '🔥';
       }
-      // Find user rank
       if (currentUser) {
-        const idx = users.findIndex(u => u.name === currentUser || u.username === currentUser);
-        $('lb-your-rank').textContent = idx >= 0 ? '#' + (idx + 1) : 'Unranked';
+        var found = -1;
+        for (var k = 0; k < list.length; k++) {
+          if (list[k].name === currentUser) { found = k; break; }
+        }
+        $('lb-your-rank').textContent = found >= 0 ? '#' + (found + 1) : 'Unranked';
       }
 
       // Table
-      const tbody = $('lb-tbody');
-      if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">No predictions yet — be the first!</td></tr>';
+      var tbody = $('lb-tbody');
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:40px;font-size:.75rem">No predictions yet</td></tr>';
         return;
       }
-      tbody.innerHTML = users.slice(0, 50).map((u, i) => {
-        const rank = i + 1;
-        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
-        const name = u.name || u.username || u.address || 'Anonymous';
-        // win_rate is already percentage (73.5 = 73.5%)
-        const acc = (u.win_rate || u.accuracy || 0).toFixed(1);
-        const preds = u.total_trades || u.predictions || u.total || 0;
-        const streak = u.streak || 0;
-        const profit = u.profit_30d || 0;
-        const volume = u.volume_total || 0;
-        const followers = u.followers || 0;
-        const specialty = u.specialty || '-';
-        const isYou = currentUser && (name === currentUser);
-        const rowStyle = isYou ? 'background:rgba(16,185,129,.08)' : '';
-        const accColor = acc >= 70 ? '#10B981' : acc >= 50 ? '#F59E0B' : '#EF4444';
-        const profitStr = profit >= 0 ? '+$' + (profit/1000).toFixed(1) + 'k' : '-$' + (Math.abs(profit)/1000).toFixed(1) + 'k';
-        const profitColor = profit >= 0 ? '#10B981' : '#EF4444';
-        return '<tr style="' + rowStyle + '">' +
-          '<td style="font-weight:700">' + medal + '</td>' +
-          '<td style="font-weight:600">' + name + (isYou ? ' <span style="color:#627EEA;font-size:.6rem">(you)</span>' : '') + '</td>' +
-          '<td style="color:' + accColor + ';font-weight:700">' + acc + '%</td>' +
-          '<td>' + preds.toLocaleString() + '</td>' +
-          '<td>' + specialty + '</td>' +
-          '<td style="color:' + profitColor + ';font-weight:600">' + profitStr + '</td>' +
-          '<td style="color:#F59E0B">' + followers + '</td>' +
-        '</tr>';
-      }).join('');
+      var html = '';
+      for (var i = 0; i < list.length && i < 50; i++) {
+        var u = list[i];
+        var rank = i + 1;
+        var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank);
+        var name = u.name || u.address || 'Anon';
+        var acc = Number(u.win_rate || 0).toFixed(1);
+        var preds = Number(u.total_trades || 0);
+        var profit = Number(u.profit_30d || 0);
+        var followers = Number(u.followers || 0);
+        var specialty = u.specialty || '-';
+        var isYou = currentUser && (name === currentUser);
+        var bg = isYou ? 'background:rgba(16,185,129,.08)' : '';
+        var accN = Number(acc);
+        var ac = accN >= 70 ? '#10B981' : accN >= 50 ? '#F59E0B' : '#EF4444';
+        var pStr = profit >= 0 ? '+$' + (profit/1000).toFixed(1) + 'k' : '-$' + (Math.abs(profit)/1000).toFixed(1) + 'k';
+        var pc = profit >= 0 ? '#10B981' : '#EF4444';
+        html += '<tr style="' + bg + '">';
+        html += '<td style="font-weight:700">' + medal + '</td>';
+        html += '<td style="font-weight:600">' + name + (isYou ? ' <span style="color:#627EEA;font-size:.6rem">(you)</span>' : '') + '</td>';
+        html += '<td style="color:' + ac + ';font-weight:700">' + acc + '%</td>';
+        html += '<td>' + preds.toLocaleString() + '</td>';
+        html += '<td>' + specialty + '</td>';
+        html += '<td style="color:' + pc + ';font-weight:600">' + pStr + '</td>';
+        html += '<td style="color:#F59E0B">' + followers + '</td>';
+        html += '</tr>';
+      }
+      tbody.innerHTML = html;
     } catch (e) {
       console.error('Leaderboard error:', e);
       $('lb-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#EF4444;padding:40px;font-size:.75rem">Failed to load leaderboard</td></tr>';
