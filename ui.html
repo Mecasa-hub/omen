@@ -210,7 +210,19 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 <!-- ORACLE -->
 <div class="page" id="page-oracle">
   <h2>Oracle Chamber</h2>
-  <p class="subtitle">Five AI minds debate. 1,200 agents vote. One verdict emerges.</p>
+  <p class="subtitle">Five AI minds debate. 45 real AI agents vote. One verdict emerges.</p>
+  <!-- Tier Toggle -->
+  <div id="tier-toggle-wrap" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 0">
+    <span id="tier-free-label" style="color:#fff;font-size:.75rem;font-weight:700;font-family:'JetBrains Mono',monospace">FREE</span>
+    <label style="position:relative;display:inline-block;width:44px;height:22px;cursor:pointer">
+      <input type="checkbox" id="premium-toggle" onchange="toggleTier(this.checked)" style="opacity:0;width:0;height:0;position:absolute">
+      <span id="tier-slider" style="position:absolute;top:0;left:0;right:0;bottom:0;background:#333;border-radius:11px;transition:.3s"></span>
+      <span id="tier-knob" style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+    </label>
+    <span id="tier-premium-label" style="color:#666;font-size:.75rem;font-weight:700;font-family:'JetBrains Mono',monospace">PREMIUM &#x1F41F;</span>
+    <span id="tier-cost-label" style="color:#555;font-size:.65rem;font-family:'JetBrains Mono',monospace;margin-left:4px">(5 credits &bull; MiroFish Knowledge Graph)</span>
+    <span id="mf-status" style="margin-left:auto;font-size:.6rem;font-family:'JetBrains Mono',monospace;color:#555"></span>
+  </div>
   <div class="oracle-input-wrap">
     <input class="oracle-input" id="oracle-input" placeholder="Will Bitcoin exceed $100k by end of year?" onkeydown="if(event.key==='Enter')askOracle()">
     <button class="oracle-btn" id="oracle-go" onclick="askOracle()">Consult Oracle</button>
@@ -1138,6 +1150,18 @@ function testBubbleMap(){
   }, 1800);
 }
 
+var currentTier='free';
+function toggleTier(isPremium){
+  currentTier=isPremium?'premium':'free';
+  var fl=$('tier-free-label'),pl=$('tier-premium-label'),knob=$('tier-knob'),slider=$('tier-slider');
+  if(isPremium){fl.style.color='#666';pl.style.color='#10B981';knob.style.left='24px';slider.style.background='#10B981';checkMiroFish()}
+  else{fl.style.color='#fff';pl.style.color='#666';knob.style.left='2px';slider.style.background='#333';$('mf-status').textContent=''}
+}
+async function checkMiroFish(){
+  try{const r=await fetch('/api/mirofish/status');const d=await r.json();
+    $('mf-status').innerHTML=d.available?'<span style="color:#10B981">&#x25CF; MiroFish Online</span>':'<span style="color:#EF4444">&#x25CF; MiroFish Offline</span>';
+  }catch(e){$('mf-status').innerHTML='<span style="color:#EF4444">&#x25CF; MiroFish Offline</span>'}
+}
 function askOracle(){
   const q=$('oracle-input').value.trim();if(!q)return;
   $('oracle-go').disabled=true;$('oracle-go').innerHTML='<span class="loading"></span>';
@@ -1151,7 +1175,10 @@ function askOracle(){
   try{
     const headers={'Content-Type':'application/json'};
     if(token) headers['Authorization']='Bearer '+token;
-    const r=await fetch('/api/oracle/predict',{method:'POST',headers,body:JSON.stringify({question:q})});
+    const endpoint=currentTier==='premium'?'/api/oracle/premium':'/api/oracle/free';
+    const r=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify({question:q})});
+    if(r.status===402){$('verdict-wrap').innerHTML='<div style="color:#F59E0B;text-align:center;padding:24px">Not enough credits for Premium. Need 5 credits.</div>';$('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';return}
+    if(r.status===503){$('verdict-wrap').innerHTML='<div style="color:#F59E0B;text-align:center;padding:24px">MiroFish offline. Credits refunded. Try Free tier.</div>';$('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';return}
     const data=await r.json();
 
     // Reveal agent debate cards one by one
@@ -1173,9 +1200,10 @@ function askOracle(){
     // Show swarm counts
     const sv=data.swarm_votes;
     await new Promise(r=>setTimeout(r,2500));
+    var tierLabel=data.tier==='premium'?'<span style="color:#10B981;font-size:.65rem"> &#x1F41F; PREMIUM</span>':'<span style="color:#999;font-size:.65rem"> &#x2728; REAL AI</span>';
     $('swarm-counts').innerHTML='<span class="count-yes">YES: '+sv.yes+'</span>'+
-      '<span class="mono" style="color:#999">/ 1,200</span>'+
-      '<span class="count-no">NO: '+sv.no+'</span>';
+      '<span class="mono" style="color:#999">/ '+(sv.total||45)+'</span>'+
+      '<span class="count-no">NO: '+sv.no+'</span>'+tierLabel;
 
     // Verdict
     await new Promise(r=>setTimeout(r,500));

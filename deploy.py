@@ -54,6 +54,7 @@ import alerts as alerts_mod
 import autopilot as autopilot_mod
 import whale_discovery as whale_disc_mod
 import backtest as backtest_mod
+import mirofish_bridge
 load_dotenv(BASE_DIR / ".env")
 
 API_KEY = os.getenv("OPENROUTER_API_KEY", "")
@@ -304,13 +305,25 @@ async def run_oracle(question: str) -> dict:
     whale_agree = random.randint(2,4)
     whale_total = 5
 
+    # Run ALL 45 agents through real AI in parallel (Free tier)
+    try:
+        swarm_agents = await swarm_engine.run_all_agents_ai(question, agent_results)
+    except Exception as e:
+        logger.warning(f"Real AI swarm failed, falling back to deterministic: {e}")
+        swarm_agents = swarm_engine.generate_swarm_agent_votes(agent_results, question)
+
+    # Recalculate swarm votes from actual agent results
+    swarm_yes_ai = sum(1 for a in swarm_agents if a.get('vote') == 'YES')
+    swarm_no_ai = len(swarm_agents) - swarm_yes_ai
+
     return {
         "question": question,
         "verdict": verdict,
         "confidence": round(avg_conf, 1),
         "debates": agent_results,
-        "swarm_votes": {"yes": swarm_yes if verdict=="YES" else swarm_no, "no": swarm_no if verdict=="YES" else swarm_yes, "total": 1200},
-        "swarm_agents": swarm_engine.generate_swarm_agent_votes(agent_results, question),
+        "swarm_votes": {"yes": swarm_yes_ai, "no": swarm_no_ai, "total": len(swarm_agents)},
+        "swarm_agents": swarm_agents,
+        "tier": "free",
         "whale_agreement": {"agree": whale_agree, "total": whale_total},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
@@ -481,8 +494,8 @@ async def predict(req: PredictionRequest, request: Request):
             await db.commit()
     return result
 
-@app.get("/api/oracle/free")
-async def free_prediction():
+@app.get("/api/oracle/demo")
+async def demo_prediction():
     questions = [
         "Will Bitcoin exceed $100,000 by end of 2026?",
         "Will AI stocks outperform the S&P 500 this quarter?",
@@ -1069,6 +1082,97 @@ async def backtest_history(request: Request):
         rows = [dict(r) for r in await cursor.fetchall()]
         return JSONResponse(rows)
 
+
+
+# ── MiroFish Premium Oracle ──────────────────────────────────────────────
+@app.get("/api/mirofish/status")
+async def mirofish_status():
+    """Check if MiroFish backend is available."""
+    alive = await mirofish_bridge.check_mirofish_health()
+    return JSONResponse({"available": alive, "url": "http://localhost:5001"})
+
+@app.post("/api/oracle/premium")
+async def oracle_premium(request: Request):
+    """Premium Oracle — uses MiroFish for full knowledge graph analysis.
+    Requires credits (costs 5 credits per query)."""
+    body = await request.json()
+    question = body.get("question", "")
+    if not question:
+        return JSONResponse({"error": "Question required"}, status_code=400)
+
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Login required"}, status_code=401)
+
+    # Check credits (premium costs 5 credits)
+    PREMIUM_COST = 5
+    async with aiosqlite.connect(str(DB_PATH)) as db:
+        cursor = await db.execute("SELECT credits FROM users WHERE id=?", (user["id"],))
+        row = await cursor.fetchone()
+        if not row or row[0] < PREMIUM_COST:
+            return JSONResponse({"error": f"Need {PREMIUM_COST} credits. You have {row[0] if row else 0}."}, status_code=402)
+
+        # Deduct credits
+        await db.execute("UPDATE users SET credits = credits - ? WHERE id=?", (PREMIUM_COST, user["id"]))
+        await db.commit()
+
+    # Check MiroFish availability
+    mf_alive = await mirofish_bridge.check_mirofish_health()
+    if not mf_alive:
+        # Refund and suggest free tier
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            await db.execute("UPDATE users SET credits = credits + ? WHERE id=?", (PREMIUM_COST, user["id"]))
+            await db.commit()
+        return JSONResponse({"error": "MiroFish not available. Credits refunded. Use free tier.", "refunded": True}, status_code=503)
+
+    try:
+        # Run MiroFish prediction
+        mf_result = await mirofish_bridge.run_mirofish_prediction(question)
+
+        # Also run core 5 agents for the debate cards
+        core_result = await run_oracle(question)
+
+        return JSONResponse({
+            "question": question,
+            "tier": "premium",
+            "credits_used": PREMIUM_COST,
+            "verdict": core_result["verdict"],
+            "confidence": core_result["confidence"],
+            "debates": core_result["debates"],
+            "whale_agreement": core_result["whale_agreement"],
+            "swarm_agents": mf_result["swarm_agents"],
+            "swarm_votes": {"yes": sum(1 for a in mf_result["swarm_agents"] if a.get("vote")=="YES"), "no": sum(1 for a in mf_result["swarm_agents"] if a.get("vote")!="YES"), "total": len(mf_result["swarm_agents"])},
+            "graph_edges": mf_result["graph_edges"],
+            "node_count": mf_result["node_count"],
+            "edge_count": mf_result["edge_count"],
+            "graph_id": mf_result.get("graph_id"),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception as e:
+        # Refund on error
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            await db.execute("UPDATE users SET credits = credits + ? WHERE id=?", (PREMIUM_COST, user["id"]))
+            await db.commit()
+        logger.error(f"Premium oracle error: {e}")
+        return JSONResponse({"error": str(e), "refunded": True}, status_code=500)
+
+@app.post("/api/oracle/free")
+async def oracle_free(request: Request):
+    """Free Oracle — real AI for all 45 agents, no credits required."""
+    body = await request.json()
+    question = body.get("question", "")
+    if not question:
+        return JSONResponse({"error": "Question required"}, status_code=400)
+    result = await run_oracle(question)
+    result["tier"] = "free"
+    # Save prediction if logged in
+    user = await get_current_user(request)
+    if user:
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            await db.execute("INSERT INTO predictions (user_id,question,verdict,confidence,agents_data) VALUES (?,?,?,?,?)",
+                (user["id"], question, result["verdict"], result["confidence"], json.dumps(result["debates"])))
+            await db.commit()
+    return JSONResponse(result)
 
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):

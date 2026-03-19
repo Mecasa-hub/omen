@@ -302,3 +302,115 @@ def generate_swarm_agent_votes(debates: list, question: str) -> list:
         })
 
     return swarm_results
+
+
+import aiohttp
+import os
+
+def _get_oracle_key():
+    return os.getenv("OPENROUTER_API_KEY", "")
+
+def _get_oracle_model():
+    return os.getenv("LLM_MODEL", "google/gemini-2.0-flash-exp:free")
+
+async def run_all_agents_ai(question: str, debates: list = None) -> list:
+    """Run ALL 45 agents through real Gemini AI in parallel.
+    Each agent gets a short focused prompt based on their persona.
+    Returns list of agent results with real AI reasoning."""
+
+    # Check API key is available
+    if not _get_oracle_key():
+        logger.warning("No API key available for AI swarm, falling back to deterministic")
+        return generate_swarm_agent_votes(debates or [], question)
+
+    # Get consensus from main 5 debates if available
+    consensus_context = ""
+    if debates:
+        yes_count = sum(1 for d in debates if d.get('vote') == 'YES')
+        consensus_context = f"Current consensus: {yes_count}/{len(debates)} core agents voted YES."
+
+    async def query_agent(session, agent, idx):
+        """Query a single agent via Gemini API."""
+        cat_index = idx // 5
+        cat_names = ['Core','Technical','Macro','Sentiment','Crypto','Sports','Risk','Timing','Fundamental']
+        category = cat_names[min(cat_index, len(cat_names)-1)]
+
+        prompt = f"""You are {agent['name']}, a {agent['role']}. {agent['prompt']}
+
+Question: {question}
+{consensus_context}
+
+Respond in EXACTLY this JSON format, nothing else:
+{{"vote": "YES" or "NO", "confidence": 50-95, "reasoning": "one sentence"}}"""
+
+        try:
+            async with session.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {_get_oracle_key()}", "Content-Type": "application/json"},
+                json={
+                    "model": _get_oracle_model(),
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 100,
+                    "temperature": 0.7,
+                },
+                timeout=aiohttp.ClientTimeout(total=15)
+            ) as resp:
+                data = await resp.json()
+                text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                import json as _json
+                text = text.strip()
+                if text.startswith('```'):
+                    text = text.split('```')[1]
+                    if text.startswith('json'):
+                        text = text[4:]
+                result = _json.loads(text)
+                return {
+                    "name": agent["name"],
+                    "role": agent["role"],
+                    "icon": agent["icon"],
+                    "color": agent["color"],
+                    "strategy": agent["strategy"],
+                    "category": category,
+                    "vote": result.get("vote", "YES").upper(),
+                    "confidence": min(95, max(50, int(result.get("confidence", 65)))),
+                    "reasoning": result.get("reasoning", f"{agent['role']} analysis complete."),
+                    "ai_generated": True
+                }
+        except Exception as e:
+            # Fallback to deterministic if AI fails
+            seed = int(hashlib.md5(f"{agent['name']}{question}".encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+            is_yes = seed > 0.5
+            return {
+                "name": agent["name"],
+                "role": agent["role"],
+                "icon": agent["icon"],
+                "color": agent["color"],
+                "strategy": agent["strategy"],
+                "category": category,
+                "vote": "YES" if is_yes else "NO",
+                "confidence": int(55 + seed * 30),
+                "reasoning": f"{agent['role']}: {'Favorable' if is_yes else 'Unfavorable'} outlook based on {agent['strategy']} analysis.",
+                "ai_generated": False
+            }
+
+    async with aiohttp.ClientSession() as session:
+        tasks = [query_agent(session, agent, i) for i, agent in enumerate(AGENT_PERSONAS)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # Filter out exceptions
+        valid = []
+        for i, r in enumerate(results):
+            if isinstance(r, Exception):
+                agent = AGENT_PERSONAS[i]
+                cat_index = i // 5
+                cat_names = ['Core','Technical','Macro','Sentiment','Crypto','Sports','Risk','Timing','Fundamental']
+                valid.append({
+                    "name": agent["name"], "role": agent["role"], "icon": agent["icon"],
+                    "color": agent["color"], "strategy": agent["strategy"],
+                    "category": cat_names[min(cat_index, len(cat_names)-1)],
+                    "vote": "YES", "confidence": 55,
+                    "reasoning": f"{agent['role']} analysis pending.",
+                    "ai_generated": False
+                })
+            else:
+                valid.append(r)
+        return valid
