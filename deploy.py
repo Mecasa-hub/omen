@@ -310,6 +310,7 @@ async def run_oracle(question: str) -> dict:
         "confidence": round(avg_conf, 1),
         "debates": agent_results,
         "swarm_votes": {"yes": swarm_yes if verdict=="YES" else swarm_no, "no": swarm_no if verdict=="YES" else swarm_yes, "total": 1200},
+        "swarm_agents": swarm_engine.generate_swarm_agent_votes(agent_results, question),
         "whale_agreement": {"agree": whale_agree, "total": whale_total},
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

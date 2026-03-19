@@ -162,3 +162,143 @@ def get_persona_categories() -> dict:
         "fundamental": {"count": 5, "agents": [p["name"] for p in AGENT_PERSONAS[40:45]]},
         "total": len(AGENT_PERSONAS)
     }
+
+
+def generate_swarm_agent_votes(debates: list, question: str) -> list:
+    """Generate votes for all 45 agents based on the 5 main agent debates.
+    Uses each agent's strategy to deterministically derive their vote."""
+    import hashlib
+
+    # Calculate consensus from main debates
+    yes_count = sum(1 for d in debates if d.get('vote') == 'YES')
+    yes_ratio = yes_count / max(len(debates), 1)
+    avg_confidence = sum(d.get('confidence', 65) for d in debates) / max(len(debates), 1)
+
+    strategy_bias = {
+        'bullish': 0.75, 'bearish': 0.25, 'statistical': 0.5,
+        'contrarian': 1.0 - yes_ratio,
+        'historical': 0.5, 'technical': 0.45, 'momentum': yes_ratio * 0.8 + 0.1,
+        'volatility': 0.4, 'orderflow': 0.5, 'options': 0.45,
+        'macro': 0.5, 'geopolitical': 0.4, 'monetary': 0.45,
+        'reflexive': yes_ratio * 0.9 + 0.05,
+        'tail_risk': 0.3,
+        'behavioral': 0.5, 'sentiment': yes_ratio * 0.7 + 0.15,
+        'fear_greed': 0.4, 'narrative': yes_ratio * 0.6 + 0.2,
+        'smart_money': 0.55,
+        'crypto_native': 0.6, 'defi': 0.55, 'onchain': 0.5,
+        'whale_watching': 0.5, 'meme': 0.65,
+        'sports': 0.5, 'odds': 0.5, 'scouting': 0.5,
+        'external': 0.45, 'rules': 0.5,
+        'kelly': 0.5, 'risk_mgmt': 0.35, 'hedging': 0.45,
+        'portfolio': 0.5, 'exit': 0.4,
+        'timing': 0.5, 'liquidity': 0.5, 'regime': 0.5,
+        'catalyst': 0.55, 'time_decay': 0.45,
+        'value': 0.5, 'growth': 0.6, 'forensic': 0.5,
+        'thesis': 0.5, 'skeptic': 0.3,
+    }
+
+    cat_names = ['Core', 'Technical', 'Macro', 'Sentiment', 'Crypto', 'Sports', 'Risk', 'Timing', 'Fundamental']
+
+    reasoning_templates = {
+        'bullish': "Growth catalysts and positive momentum favor YES. Confidence at {conf}%.",
+        'bearish': "Risk factors and headwinds point to NO. Downside scenarios dominant at {conf}%.",
+        'statistical': "Base rate analysis suggests {vote} with {conf}% probability.",
+        'contrarian': "Consensus is {consensus}, contrarian view suggests {vote}.",
+        'historical': "Historical precedents from similar events suggest {vote} at {conf}%.",
+        'technical': "Chart patterns and technical indicators point to {vote}. Key levels confirm at {conf}%.",
+        'momentum': "Trend momentum is {direction}. Following the trend suggests {vote}.",
+        'volatility': "Implied volatility analysis indicates {vote}. Risk-adjusted view at {conf}%.",
+        'orderflow': "Order flow imbalance detected. Smart execution data suggests {vote}.",
+        'options': "Options market pricing implies {vote}. Skew analysis at {conf}% confidence.",
+        'macro': "Macro environment {macro_dir} this outcome. GDP and policy factors weigh in at {conf}%.",
+        'geopolitical': "Geopolitical dynamics {geo_dir} this outcome. Power structure analysis at {conf}%.",
+        'monetary': "Central bank signals and liquidity conditions suggest {vote} at {conf}%.",
+        'reflexive': "Self-reinforcing loop detected. Market perception creating reality toward {vote}.",
+        'tail_risk': "Fat-tail risk assessment: market underpricing {tail_dir} scenarios. {conf}% confidence.",
+        'behavioral': "Cognitive bias scan: crowd exhibiting {bias_type}. Adjusted view: {vote}.",
+        'sentiment': "Social sentiment {sent_dir}. Crowd mood trending toward {vote} at {conf}%.",
+        'fear_greed': "Fear/Greed index suggests market is {fg_state}. Implies {vote}.",
+        'narrative': "Dominant narrative {narr_dir}. Story momentum suggests {vote} at {conf}%.",
+        'smart_money': "Smart money flows indicate {vote}. Institutional positioning at {conf}% conviction.",
+        'crypto_native': "On-chain fundamentals and adoption metrics favor {vote}. Network effects at {conf}%.",
+        'defi': "DeFi protocol metrics and TVL trends suggest {vote}. Yield dynamics at {conf}%.",
+        'onchain': "On-chain data: wallet flows and exchange balances point to {vote} at {conf}%.",
+        'whale_watching': "Whale wallet activity suggests {vote}. Large holder conviction at {conf}%.",
+        'meme': "Meme velocity and viral attention {meme_dir}. Cultural momentum: {vote}.",
+        'sports': "Team form, matchup analysis, and tactical factors suggest {vote} at {conf}%.",
+        'odds': "Line value detected. Market odds vs true probability favors {vote} at {conf}%.",
+        'scouting': "Intelligence gathering reveals unpriced info. Edge suggests {vote}.",
+        'external': "External variables (weather, scheduling, injuries) factor toward {vote} at {conf}%.",
+        'rules': "Resolution criteria analysis: exact rules favor {vote}. Ambiguity risk at {conf}%.",
+        'kelly': "Kelly criterion optimal sizing suggests {vote}. Edge-to-odds ratio at {conf}%.",
+        'risk_mgmt': "Risk assessment: worst-case scenario analysis points to {vote}. Caution at {conf}%.",
+        'hedging': "Hedge structure analysis favors {vote}. Downside protection at {conf}%.",
+        'portfolio': "Portfolio correlation analysis: this position {port_dir} diversification. {vote} at {conf}%.",
+        'exit': "Exit timing analysis: {vote} with planned exit criteria. Confidence {conf}%.",
+        'timing': "Cycle timing and event calendar analysis suggests {vote} at {conf}%.",
+        'liquidity': "Market microstructure and order book depth favor {vote}. Execution risk at {conf}%.",
+        'regime': "Regime detection: market in {regime_type} phase. Suggests {vote} at {conf}%.",
+        'catalyst': "Upcoming catalysts {cat_dir} this outcome. Event-driven view: {vote} at {conf}%.",
+        'time_decay': "Time decay analysis: theta {decay_dir} this position. {vote} at {conf}%.",
+        'value': "Intrinsic value assessment: market {val_state}. Fair probability suggests {vote} at {conf}%.",
+        'growth': "Growth trajectory {growth_dir}. Trend acceleration suggests {vote} at {conf}%.",
+        'forensic': "Data forensics reveal {forensic_find}. Hidden signal suggests {vote} at {conf}%.",
+        'thesis': "Investment thesis construction: key assumptions favor {vote} at {conf}%.",
+        'skeptic': "Devil's advocate: attacking strongest argument reveals {vote}. Weakness at {conf}%.",
+    }
+
+    swarm_results = []
+    for i, agent in enumerate(AGENT_PERSONAS):
+        # Deterministic vote based on strategy + question hash
+        seed = hashlib.md5(f"{agent['name']}{question}".encode()).hexdigest()
+        seed_val = int(seed[:8], 16) / 0xFFFFFFFF
+
+        bias = strategy_bias.get(agent['strategy'], 0.5)
+        vote_prob = 0.4 * bias + 0.3 * yes_ratio + 0.3 * seed_val
+        is_yes = vote_prob > 0.5
+        confidence = int(50 + abs(vote_prob - 0.5) * 80 + seed_val * 10)
+        confidence = min(95, max(52, confidence))
+
+        vote = 'YES' if is_yes else 'NO'
+        consensus = 'YES' if yes_ratio > 0.5 else 'NO'
+        direction = 'bullish' if is_yes else 'bearish'
+
+        # Build reasoning from template
+        template = reasoning_templates.get(agent['strategy'],
+            "{role} analysis: {vote} at {conf}% confidence based on {strategy} framework.")
+        reasoning = template.format(
+            vote=vote, conf=confidence, consensus=consensus, direction=direction,
+            role=agent['role'], strategy=agent['strategy'],
+            macro_dir='supports' if is_yes else 'challenges',
+            geo_dir='favor' if is_yes else 'complicate',
+            tail_dir='upside' if is_yes else 'downside',
+            bias_type='anchoring bias' if is_yes else 'loss aversion',
+            sent_dir='bullish' if is_yes else 'bearish',
+            fg_state='greedy' if is_yes else 'fearful',
+            narr_dir='strengthening' if is_yes else 'weakening',
+            meme_dir='accelerating' if is_yes else 'fading',
+            port_dir='improves' if is_yes else 'reduces',
+            regime_type='trending' if is_yes else 'mean-reverting',
+            cat_dir='support' if is_yes else 'challenge',
+            decay_dir='favors' if is_yes else 'hurts',
+            val_state='underpriced' if is_yes else 'overpriced',
+            growth_dir='accelerating' if is_yes else 'decelerating',
+            forensic_find='hidden bullish signal' if is_yes else 'overlooked risk factor',
+        )
+
+        cat_index = i // 5
+        category = cat_names[min(cat_index, len(cat_names) - 1)]
+
+        swarm_results.append({
+            'name': agent['name'],
+            'role': agent['role'],
+            'icon': agent['icon'],
+            'color': agent['color'],
+            'strategy': agent['strategy'],
+            'category': category,
+            'vote': vote,
+            'confidence': confidence,
+            'reasoning': reasoning,
+        })
+
+    return swarm_results

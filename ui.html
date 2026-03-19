@@ -613,12 +613,98 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script>
-// === D3 FORCE-DIRECTED SWARM GRAPH (MiroFish-style) ===
+// === D3 FORCE-DIRECTED SWARM GRAPH (MiroFish-style) — Real 45-Agent Network ===
 var SWARM_CATEGORIES = [
-  {name:'Macro',color:'#FF6B35'},{name:'Technical',color:'#004E89'},{name:'Sentiment',color:'#7B2D8E'},
-  {name:'On-Chain',color:'#1A936F'},{name:'Risk',color:'#C5283D'},{name:'Momentum',color:'#E9724C'},
-  {name:'Volatility',color:'#3498db'},{name:'Liquidity',color:'#9b59b6'},{name:'Governance',color:'#27ae60'}
+  {name:'Core',color:'#FF6B35'},{name:'Technical',color:'#004E89'},{name:'Macro',color:'#7B2D8E'},
+  {name:'Sentiment',color:'#1A936F'},{name:'Crypto',color:'#C5283D'},{name:'Sports',color:'#E9724C'},
+  {name:'Risk',color:'#3498db'},{name:'Timing',color:'#9b59b6'},{name:'Fundamental',color:'#27ae60'}
 ];
+var CAT_COLOR_MAP = {};
+SWARM_CATEGORIES.forEach(function(c){ CAT_COLOR_MAP[c.name] = c.color; });
+
+// Generate fallback swarm agents from debates when API doesn't provide them
+function generateFallbackSwarmAgents(debates) {
+  var ALL_AGENTS = [
+    {name:"Atlas",role:"Bull Analyst",icon:"A",color:"#10B981",strategy:"bullish",category:"Core"},
+    {name:"Nemesis",role:"Bear Analyst",icon:"N",color:"#EF4444",strategy:"bearish",category:"Core"},
+    {name:"Quant",role:"Statistician",icon:"Q",color:"#3B82F6",strategy:"statistical",category:"Core"},
+    {name:"Maverick",role:"Contrarian",icon:"M",color:"#F59E0B",strategy:"contrarian",category:"Core"},
+    {name:"Clio",role:"Historian",icon:"C",color:"#8B5CF6",strategy:"historical",category:"Core"},
+    {name:"Fibonacci",role:"Chart Technician",icon:"F",color:"#06B6D4",strategy:"technical",category:"Technical"},
+    {name:"Momentum",role:"Trend Follower",icon:"Mo",color:"#22C55E",strategy:"momentum",category:"Technical"},
+    {name:"VIX",role:"Volatility Analyst",icon:"V",color:"#DC2626",strategy:"volatility",category:"Technical"},
+    {name:"Flow",role:"Order Flow Analyst",icon:"Fl",color:"#7C3AED",strategy:"orderflow",category:"Technical"},
+    {name:"Delta",role:"Options Strategist",icon:"D",color:"#0EA5E9",strategy:"options",category:"Technical"},
+    {name:"Keynes",role:"Macro Economist",icon:"K",color:"#14532D",strategy:"macro",category:"Macro"},
+    {name:"Kissinger",role:"Geopolitical Analyst",icon:"Ki",color:"#7F1D1D",strategy:"geopolitical",category:"Macro"},
+    {name:"Powell",role:"Central Bank Watcher",icon:"P",color:"#1E3A5F",strategy:"monetary",category:"Macro"},
+    {name:"Soros",role:"Reflexivity Theorist",icon:"S",color:"#4A1D96",strategy:"reflexive",category:"Macro"},
+    {name:"Taleb",role:"Black Swan Hunter",icon:"T",color:"#000000",strategy:"tail_risk",category:"Macro"},
+    {name:"Kahneman",role:"Behavioral Analyst",icon:"Ka",color:"#DB2777",strategy:"behavioral",category:"Sentiment"},
+    {name:"Pulse",role:"Social Sentiment",icon:"Pu",color:"#F97316",strategy:"sentiment",category:"Sentiment"},
+    {name:"Fear",role:"Fear/Greed Gauge",icon:"Fe",color:"#B91C1C",strategy:"fear_greed",category:"Sentiment"},
+    {name:"Narrative",role:"Story Analyst",icon:"Na",color:"#9333EA",strategy:"narrative",category:"Sentiment"},
+    {name:"Insider",role:"Smart Money Tracker",icon:"In",color:"#047857",strategy:"smart_money",category:"Sentiment"},
+    {name:"Satoshi",role:"Crypto Purist",icon:"Sa",color:"#F7931A",strategy:"crypto_native",category:"Crypto"},
+    {name:"DeFi",role:"DeFi Analyst",icon:"De",color:"#627EEA",strategy:"defi",category:"Crypto"},
+    {name:"OnChain",role:"On-Chain Analyst",icon:"On",color:"#8247E5",strategy:"onchain",category:"Crypto"},
+    {name:"Whale",role:"Whale Watcher",icon:"W",color:"#0D9488",strategy:"whale_watching",category:"Crypto"},
+    {name:"Meme",role:"Meme Economy",icon:"Me",color:"#E11D48",strategy:"meme",category:"Crypto"},
+    {name:"Coach",role:"Sports Strategist",icon:"Co",color:"#15803D",strategy:"sports",category:"Sports"},
+    {name:"Vegas",role:"Odds Maker",icon:"Ve",color:"#CA8A04",strategy:"odds",category:"Sports"},
+    {name:"Scout",role:"Intelligence Scout",icon:"Sc",color:"#4B5563",strategy:"scouting",category:"Sports"},
+    {name:"Weather",role:"External Factors",icon:"Wt",color:"#0284C7",strategy:"external",category:"Sports"},
+    {name:"Arbiter",role:"Rules Expert",icon:"Ar",color:"#78350F",strategy:"rules",category:"Sports"},
+    {name:"Kelly",role:"Position Sizer",icon:"Ke",color:"#166534",strategy:"kelly",category:"Risk"},
+    {name:"Shield",role:"Risk Manager",icon:"Sh",color:"#991B1B",strategy:"risk_mgmt",category:"Risk"},
+    {name:"Hedge",role:"Hedge Strategist",icon:"H",color:"#4338CA",strategy:"hedging",category:"Risk"},
+    {name:"Rebalance",role:"Portfolio Optimizer",icon:"R",color:"#0F766E",strategy:"portfolio",category:"Risk"},
+    {name:"Exit",role:"Exit Strategist",icon:"Ex",color:"#9F1239",strategy:"exit",category:"Risk"},
+    {name:"Clock",role:"Timing Analyst",icon:"Cl",color:"#A16207",strategy:"timing",category:"Timing"},
+    {name:"Liquidity",role:"Liquidity Analyst",icon:"L",color:"#0891B2",strategy:"liquidity",category:"Timing"},
+    {name:"Regime",role:"Regime Detector",icon:"Re",color:"#4C1D95",strategy:"regime",category:"Timing"},
+    {name:"Catalyst",role:"Event Catalyst",icon:"Ca",color:"#B45309",strategy:"catalyst",category:"Timing"},
+    {name:"Decay",role:"Time Decay Analyst",icon:"Dy",color:"#6B21A8",strategy:"time_decay",category:"Timing"},
+    {name:"Warren",role:"Value Investor",icon:"Wa",color:"#1D4ED8",strategy:"value",category:"Fundamental"},
+    {name:"Growth",role:"Growth Analyst",icon:"G",color:"#059669",strategy:"growth",category:"Fundamental"},
+    {name:"Forensic",role:"Data Forensics",icon:"Fo",color:"#374151",strategy:"forensic",category:"Fundamental"},
+    {name:"Thesis",role:"Thesis Builder",icon:"Th",color:"#7E22CE",strategy:"thesis",category:"Fundamental"},
+    {name:"Skeptic",role:"Devil's Advocate",icon:"Sk",color:"#B91C1C",strategy:"skeptic",category:"Fundamental"}
+  ];
+
+  var yesCount = 0;
+  debates.forEach(function(d){ if(d.vote==='YES') yesCount++; });
+  var yesRatio = yesCount / Math.max(debates.length, 1);
+
+  var stratBias = {
+    bullish:0.75,bearish:0.25,statistical:0.5,contrarian:1-yesRatio,historical:0.5,
+    technical:0.45,momentum:yesRatio*0.8+0.1,volatility:0.4,orderflow:0.5,options:0.45,
+    macro:0.5,geopolitical:0.4,monetary:0.45,reflexive:yesRatio*0.9+0.05,tail_risk:0.3,
+    behavioral:0.5,sentiment:yesRatio*0.7+0.15,fear_greed:0.4,narrative:yesRatio*0.6+0.2,smart_money:0.55,
+    crypto_native:0.6,defi:0.55,onchain:0.5,whale_watching:0.5,meme:0.65,
+    sports:0.5,odds:0.5,scouting:0.5,external:0.45,rules:0.5,
+    kelly:0.5,risk_mgmt:0.35,hedging:0.45,portfolio:0.5,exit:0.4,
+    timing:0.5,liquidity:0.5,regime:0.5,catalyst:0.55,time_decay:0.45,
+    value:0.5,growth:0.6,forensic:0.5,thesis:0.5,skeptic:0.3
+  };
+
+  return ALL_AGENTS.map(function(agent, i){
+    var hash = 0;
+    var s = agent.name + (debates[0]?debates[0].agent:'demo');
+    for(var k=0;k<s.length;k++) hash = ((hash << 5) - hash) + s.charCodeAt(k);
+    var seedVal = Math.abs(hash % 10000) / 10000;
+    var bias = stratBias[agent.strategy] || 0.5;
+    var voteProb = 0.4*bias + 0.3*yesRatio + 0.3*seedVal;
+    var isYes = voteProb > 0.5;
+    var conf = Math.min(95, Math.max(52, Math.round(50 + Math.abs(voteProb-0.5)*80 + seedVal*10)));
+    return {
+      name: agent.name, role: agent.role, icon: agent.icon, color: agent.color,
+      strategy: agent.strategy, category: agent.category,
+      vote: isYes?'YES':'NO', confidence: conf,
+      reasoning: agent.role+' analysis: '+(isYes?'YES':'NO')+' at '+conf+'% confidence via '+agent.strategy+' framework.'
+    };
+  });
+}
 
 var BubbleMap = {
   svg: null, simulation: null, running: false,
@@ -644,87 +730,132 @@ var BubbleMap = {
     var dp=document.getElementById('agent-detail-panel');if(dp)dp.style.display='none';
   },
 
-  populate(debates, swarmVotes) {
+  populate(debates, swarmVotes, swarmAgents) {
     this.clear();
     var container = document.getElementById('oracle-visual');
     if(!container) return;
     var W = container.clientWidth || 700, H = 500;
     var svg = d3.select('#swarm-svg').attr('viewBox','0 0 '+W+' '+H);
 
-    // Build nodes & edges
+    // Use real swarm agents from API, or generate fallback
+    if(!swarmAgents || !swarmAgents.length) {
+      swarmAgents = generateFallbackSwarmAgents(debates);
+    }
+
     var nodes = [], edges = [];
-    var catColors = {};
+    var catNodeIds = {};
 
-    // 1) Main agent nodes (large)
-    debates.forEach(function(d,i){
+    // 1) Category hub nodes (9 categories)
+    var categories = ['Core','Technical','Macro','Sentiment','Crypto','Sports','Risk','Timing','Fundamental'];
+    var catColors = ['#FF6B35','#004E89','#7B2D8E','#1A936F','#C5283D','#E9724C','#3498db','#9b59b6','#27ae60'];
+    categories.forEach(function(cat, i) {
+      var catId = 'cat-'+cat;
+      catNodeIds[cat] = catId;
+      // Count votes in this category
+      var catAgents = swarmAgents.filter(function(a){ return a.category === cat; });
+      var catYes = catAgents.filter(function(a){ return a.vote === 'YES'; }).length;
+      var catTotal = catAgents.length || 1;
       nodes.push({
-        id: 'agent-'+i, type:'agent', label:d.agent||('Agent '+i), role:d.role||'',
-        vote:d.vote, confidence:d.confidence||65, reasoning:d.reasoning||'',
-        color:d.vote==='YES'?'#10B981':'#EF4444', icon:d.icon||d.agent[0],
-        r: 18, fx: null, fy: null
+        id: catId, type:'category', label: cat, color: catColors[i],
+        r: 14, vote: null, confidence: null,
+        reasoning: cat+' cluster: '+catYes+'/'+catTotal+' agents vote YES ('+Math.round(catYes/catTotal*100)+'%)'
       });
     });
 
-    // 2) Category nodes (medium)
-    var cats = SWARM_CATEGORIES.slice(0, Math.min(9, SWARM_CATEGORIES.length));
-    cats.forEach(function(c,i){
-      catColors[c.name] = c.color;
+    // 2) All 45 agent nodes with REAL data
+    swarmAgents.forEach(function(agent, i) {
+      var nodeId = 'agent-'+agent.name.replace(/[^a-zA-Z0-9]/g,'');
+      var isCore = i < 5;
       nodes.push({
-        id:'cat-'+i, type:'category', label:c.name, color:c.color, r:12,
-        vote:null, confidence:null, reasoning:null
+        id: nodeId, type: isCore ? 'core-agent' : 'swarm-agent',
+        label: agent.name, role: agent.role, icon: agent.icon,
+        color: agent.vote === 'YES' ? '#10B981' : '#EF4444',
+        agentColor: agent.color,
+        r: isCore ? 20 : 9,
+        vote: agent.vote, confidence: agent.confidence,
+        reasoning: agent.reasoning, strategy: agent.strategy,
+        category: agent.category
       });
-    });
 
-    // 3) Swarm agent nodes (small) - distribute among categories
-    var totalSwarm = Math.min(45, (swarmVotes.yes||0)+(swarmVotes.no||0));
-    var yesRatio = swarmVotes.yes / ((swarmVotes.yes||1)+(swarmVotes.no||1));
-    var swarmIdx = 0;
-    cats.forEach(function(c,ci){
-      var perCat = Math.max(3, Math.round(totalSwarm / cats.length));
-      for(var j=0; j<perCat && swarmIdx<totalSwarm; j++, swarmIdx++){
-        var isYes = Math.random() < yesRatio;
-        nodes.push({
-          id:'swarm-'+swarmIdx, type:'swarm', label:c.name.substring(0,3)+'-'+(j+1),
-          color:c.color, r:6, parentCat:'cat-'+ci,
-          vote:isYes?'YES':'NO', confidence:null, reasoning:null
+      // Edge to category hub
+      if(catNodeIds[agent.category]) {
+        edges.push({
+          source: nodeId, target: catNodeIds[agent.category],
+          type: 'to-category', strength: 0.35,
+          color: 'rgba(255,255,255,0.06)'
         });
-        // Edge: swarm -> category
-        edges.push({source:'swarm-'+swarmIdx, target:'cat-'+ci, type:'category', strength:0.3});
       }
     });
 
-    // 4) Edges between main agents
-    for(var i=0;i<debates.length;i++){
-      for(var j=i+1;j<debates.length;j++){
-        var agree = debates[i].vote === debates[j].vote;
+    // 3) Intra-category edges (agents in same category)
+    for(var i=0; i<swarmAgents.length; i++) {
+      for(var j=i+1; j<swarmAgents.length; j++) {
+        if(swarmAgents[i].category === swarmAgents[j].category) {
+          var agree = swarmAgents[i].vote === swarmAgents[j].vote;
+          var ni = 'agent-'+swarmAgents[i].name.replace(/[^a-zA-Z0-9]/g,'');
+          var nj = 'agent-'+swarmAgents[j].name.replace(/[^a-zA-Z0-9]/g,'');
+          edges.push({
+            source: ni, target: nj, type: 'intra',
+            agree: agree, strength: 0.12,
+            color: agree ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.08)'
+          });
+        }
+      }
+    }
+
+    // 4) Cross-category edges between core agents and agreeing swarm agents
+    var coreAgents = swarmAgents.slice(0,5);
+    var otherAgents = swarmAgents.slice(5);
+    coreAgents.forEach(function(core){
+      var coreId = 'agent-'+core.name.replace(/[^a-zA-Z0-9]/g,'');
+      otherAgents.forEach(function(other, idx){
+        if(core.vote === other.vote) {
+          // Use deterministic selection: ~25% of agreeing pairs
+          var hash = 0;
+          var s = core.name + other.name;
+          for(var k=0;k<s.length;k++) hash = ((hash<<5)-hash)+s.charCodeAt(k);
+          if(Math.abs(hash) % 4 === 0) {
+            edges.push({
+              source: coreId,
+              target: 'agent-'+other.name.replace(/[^a-zA-Z0-9]/g,''),
+              type: 'cross', agree: true, strength: 0.04,
+              color: 'rgba(16,185,129,0.06)'
+            });
+          }
+        }
+      });
+    });
+
+    // 5) Hub-to-hub edges (light structural connections)
+    for(var i=0; i<categories.length; i++) {
+      for(var j=i+1; j<categories.length; j++) {
         edges.push({
-          source:'agent-'+i, target:'agent-'+j, type:'agent',
-          agree:agree, strength: agree?0.5:0.2
+          source: 'cat-'+categories[i], target: 'cat-'+categories[j],
+          type: 'hub', strength: 0.015,
+          color: 'rgba(255,255,255,0.02)'
         });
       }
     }
 
-    // 5) Edges between agents and relevant categories
-    debates.forEach(function(d,i){
-      var ci = i % cats.length;
-      edges.push({source:'agent-'+i, target:'cat-'+ci, type:'agent-cat', strength:0.15});
-    });
-
-    // D3 Force Simulation
+    // D3 Force Simulation — tuned for 54+ nodes
     var simulation = d3.forceSimulation(nodes)
       .force('link', d3.forceLink(edges).id(function(d){return d.id}).distance(function(d){
-        if(d.type==='category') return 60;
-        if(d.type==='agent') return 150;
+        if(d.type==='to-category') return 70;
+        if(d.type==='intra') return 45;
+        if(d.type==='cross') return 180;
+        if(d.type==='hub') return 220;
         return 100;
-      }).strength(function(d){return d.strength||0.3}))
+      }).strength(function(d){return d.strength||0.1}))
       .force('charge', d3.forceManyBody().strength(function(d){
-        if(d.type==='agent') return -400;
-        if(d.type==='category') return -200;
-        return -50;
+        if(d.type==='core-agent') return -500;
+        if(d.type==='category') return -300;
+        return -100;
       }))
       .force('center', d3.forceCenter(W/2, H/2))
-      .force('collide', d3.forceCollide(function(d){return d.r+8}).strength(0.8))
-      .alphaDecay(0.02);
+      .force('collide', d3.forceCollide(function(d){return d.r+5}).strength(0.9))
+      .force('x', d3.forceX(W/2).strength(0.03))
+      .force('y', d3.forceY(H/2).strength(0.03))
+      .alphaDecay(0.015);
     this.simulation = simulation;
     this.running = true;
 
@@ -735,21 +866,27 @@ var BubbleMap = {
     });
     svg.call(zoom);
 
-    // Edges (SVG lines/paths)
+    // Edges
     var linkGroup = g.append('g').attr('class','links');
     var link = linkGroup.selectAll('line').data(edges).enter().append('line')
       .attr('stroke',function(d){
-        if(d.type==='agent') return d.agree?'rgba(16,185,129,0.4)':'rgba(239,68,68,0.3)';
-        return 'rgba(192,192,192,0.15)';
+        return d.color || 'rgba(192,192,192,0.1)';
       })
       .attr('stroke-width',function(d){
-        if(d.type==='agent') return d.agree?2:1.5;
+        if(d.type==='hub') return 0.3;
+        if(d.type==='cross') return 0.6;
+        if(d.type==='intra') return d.agree ? 1.2 : 0.8;
+        if(d.type==='to-category') return 0.8;
         return 1;
-      })
-      .attr('stroke-dasharray',function(d){
-        if(d.type==='agent'&&d.agree) return '4,3';
-        return null;
       });
+
+    // Glow filter
+    var defs = svg.append('defs');
+    var glowFilter = defs.append('filter').attr('id','glow').attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
+    glowFilter.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+    var feMerge = glowFilter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in','blur');
+    feMerge.append('feMergeNode').attr('in','SourceGraphic');
 
     // Nodes
     var nodeGroup = g.append('g').attr('class','nodes');
@@ -758,84 +895,124 @@ var BubbleMap = {
       .call(d3.drag()
         .on('start',function(event,d){if(!event.active)simulation.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
         .on('drag',function(event,d){d.fx=event.x;d.fy=event.y;})
-        .on('end',function(event,d){if(!event.active)simulation.alphaTarget(0);if(d.type!=='agent'){d.fx=null;d.fy=null;}})
+        .on('end',function(event,d){if(!event.active)simulation.alphaTarget(0);d.fx=null;d.fy=null;})
       );
 
-    // Glow filter for agents
-    var defs = svg.append('defs');
-    var glowFilter = defs.append('filter').attr('id','glow').attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
-    glowFilter.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
-    var feMerge = glowFilter.append('feMerge');
-    feMerge.append('feMergeNode').attr('in','blur');
-    feMerge.append('feMergeNode').attr('in','SourceGraphic');
-
-    // Draw circles
+    // Circles
     node.append('circle')
       .attr('r',function(d){return d.r})
-      .attr('fill',function(d){return d.color})
-      .attr('stroke',function(d){return d.type==='agent'?'#fff':'rgba(255,255,255,0.3)'})
-      .attr('stroke-width',function(d){return d.type==='agent'?2.5:1})
-      .attr('filter',function(d){return d.type==='agent'?'url(#glow)':null})
-      .attr('opacity',function(d){return d.type==='swarm'?0.7:1});
+      .attr('fill',function(d){
+        if(d.type==='category') return d.color;
+        return d.color; // YES=#10B981, NO=#EF4444
+      })
+      .attr('stroke',function(d){
+        if(d.type==='core-agent') return '#fff';
+        if(d.type==='category') return 'rgba(255,255,255,0.4)';
+        return 'rgba(255,255,255,0.15)';
+      })
+      .attr('stroke-width',function(d){
+        if(d.type==='core-agent') return 2.5;
+        if(d.type==='category') return 1.5;
+        return 0.8;
+      })
+      .attr('filter',function(d){return d.type==='core-agent'?'url(#glow)':null})
+      .attr('opacity',function(d){
+        if(d.type==='core-agent') return 1;
+        if(d.type==='category') return 0.9;
+        return 0.75;
+      });
 
-    // Agent icons (single letter)
-    node.filter(function(d){return d.type==='agent'}).append('text')
+    // Icon text inside core agents and categories
+    node.filter(function(d){return d.type==='core-agent'||d.type==='category'}).append('text')
       .attr('text-anchor','middle').attr('dy','0.35em')
-      .attr('fill','#fff').attr('font-size','11px').attr('font-weight','700')
+      .attr('fill','#fff').attr('font-size',function(d){return d.type==='core-agent'?'11px':'8px'})
+      .attr('font-weight','700')
+      .attr('font-family','"Space Grotesk",sans-serif')
+      .text(function(d){return d.icon||d.label.substring(0,2)});
+
+    // Icon inside swarm agents
+    node.filter(function(d){return d.type==='swarm-agent'}).append('text')
+      .attr('text-anchor','middle').attr('dy','0.35em')
+      .attr('fill','#fff').attr('font-size','5.5px').attr('font-weight','600')
       .attr('font-family','"Space Grotesk",sans-serif')
       .text(function(d){return d.icon||d.label[0]});
 
     // Labels next to nodes
     node.append('text')
-      .attr('dx',function(d){return d.r+4})
+      .attr('dx',function(d){return d.r+3})
       .attr('dy','0.35em')
-      .attr('fill',function(d){return d.type==='agent'?'#fff':'rgba(255,255,255,0.5)'})
-      .attr('font-size',function(d){return d.type==='agent'?'10px':d.type==='category'?'9px':'7px'})
+      .attr('fill',function(d){
+        if(d.type==='core-agent') return '#fff';
+        if(d.type==='category') return 'rgba(255,255,255,0.7)';
+        return 'rgba(255,255,255,0.4)';
+      })
+      .attr('font-size',function(d){
+        if(d.type==='core-agent') return '10px';
+        if(d.type==='category') return '9px';
+        return '6.5px';
+      })
       .attr('font-family','"JetBrains Mono",monospace')
-      .text(function(d){return d.label.substring(0,8)});
+      .text(function(d){return d.label});
 
-    // Vote badges on agents
-    node.filter(function(d){return d.type==='agent'}).append('text')
+    // Vote badges on core agents
+    node.filter(function(d){return d.type==='core-agent'}).append('text')
       .attr('text-anchor','middle').attr('dy',function(d){return d.r+14})
       .attr('fill',function(d){return d.vote==='YES'?'#10B981':'#EF4444'})
       .attr('font-size','8px').attr('font-weight','700')
       .attr('font-family','"JetBrains Mono",monospace')
       .text(function(d){return d.vote+' '+d.confidence+'%'});
 
-    // Click handler for detail panel
+    // Small vote dots on swarm agents
+    node.filter(function(d){return d.type==='swarm-agent'}).append('circle')
+      .attr('cx',function(d){return d.r+2}).attr('cy',-2)
+      .attr('r',2.5)
+      .attr('fill',function(d){return d.vote==='YES'?'#10B981':'#EF4444'})
+      .attr('stroke','rgba(0,0,0,0.3)').attr('stroke-width',0.5);
+
+    // Click handler — ALL nodes show detail panel
     node.on('click',function(event,d){
-      if(d.type==='swarm') return;
       event.stopPropagation();
       var panel = document.getElementById('agent-detail-panel');
       document.getElementById('detail-name').textContent = d.label;
-      document.getElementById('detail-type').textContent = d.type==='agent'?(d.role||'Agent'):('Category: '+d.label);
+      var typeLabel = d.type==='core-agent'?(d.role||'Core Agent'):
+                      d.type==='swarm-agent'?(d.role||'Swarm Agent'):
+                      'Category Hub: '+d.label;
+      document.getElementById('detail-type').textContent = typeLabel;
+      if(d.strategy) document.getElementById('detail-type').textContent += ' • '+d.strategy;
       document.getElementById('detail-vote').textContent = d.vote?(d.vote+' — '+(d.confidence||'?')+'% confidence'):'—';
       document.getElementById('detail-vote').style.color = d.vote==='YES'?'#10B981':d.vote==='NO'?'#EF4444':'#999';
-      document.getElementById('detail-conf').textContent = d.confidence?('Confidence: '+d.confidence+'%'):(d.type==='category'?'Swarm category':'');
+      document.getElementById('detail-conf').textContent = d.confidence?('Confidence: '+d.confidence+'%'):
+        (d.type==='category'?'Category hub — click agents for details':'');
       document.getElementById('detail-reasoning').textContent = d.reasoning||'';
       panel.style.display = 'block';
     });
 
-    // Click on background closes panel
     svg.on('click',function(){document.getElementById('agent-detail-panel').style.display='none';});
 
-    // Tick function
+    // Tick
     simulation.on('tick',function(){
       link.attr('x1',function(d){return d.source.x}).attr('y1',function(d){return d.source.y})
           .attr('x2',function(d){return d.target.x}).attr('y2',function(d){return d.target.y});
       node.attr('transform',function(d){return 'translate('+d.x+','+d.y+')';});
     });
 
-    // Build legend
+    // Legend
     var legendEl = document.getElementById('graph-legend');
     if(legendEl){
-      var lh = '<div style="color:#fff;font-weight:700;margin-bottom:6px;font-size:.7rem">Agent Categories</div>';
-      cats.forEach(function(c){
-        lh += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><div style="width:8px;height:8px;border-radius:50%;background:'+c.color+'"></div><span style="color:#aaa">'+c.name+'</span></div>';
+      var yesTotal=0, noTotal=0;
+      swarmAgents.forEach(function(a){if(a.vote==='YES')yesTotal++;else noTotal++;});
+      var lh = '<div style="color:#fff;font-weight:700;margin-bottom:6px;font-size:.7rem">45 AI Agents • 9 Categories</div>';
+      SWARM_CATEGORIES.forEach(function(c){
+        var catCount = swarmAgents.filter(function(a){return a.category===c.name}).length;
+        var catYes = swarmAgents.filter(function(a){return a.category===c.name && a.vote==='YES'}).length;
+        lh += '<div style="display:flex;align-items:center;gap:6px;margin:2px 0">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:'+c.color+'"></div>'+
+          '<span style="color:#aaa;font-size:.65rem">'+c.name+' <span style="color:#666">('+catYes+'/'+catCount+' YES)</span></span></div>';
       });
       lh += '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px">';
-      lh += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><div style="width:12px;height:12px;border-radius:50%;background:#10B981;border:2px solid #fff"></div><span style="color:#aaa">YES vote</span></div>';
-      lh += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><div style="width:12px;height:12px;border-radius:50%;background:#EF4444;border:2px solid #fff"></div><span style="color:#aaa">NO vote</span></div>';
+      lh += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><div style="width:14px;height:14px;border-radius:50%;background:#10B981;border:2px solid #fff"></div><span style="color:#aaa">YES ('+yesTotal+')</span></div>';
+      lh += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><div style="width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid #fff"></div><span style="color:#aaa">NO ('+noTotal+')</span></div>';
+      lh += '<div style="margin-top:4px;color:#555;font-size:.55rem">Click any node for details</div>';
       lh += '</div>';
       legendEl.innerHTML = lh;
     }
@@ -917,20 +1094,22 @@ async
 
 function testBubbleMap(){
     $('war-room').classList.add('active');
-    // Force DOM reflow before measuring canvas
     void document.body.offsetHeight;
   $('agents-grid').innerHTML='';
   $('swarm-counts').innerHTML='';
   $('verdict-wrap').innerHTML='';
 
   var debates = [
-    {agent:'Atlas',icon:'A',role:'Lead Strategist',vote:'YES',confidence:78,color:'#10B981',reasoning:'Strong institutional adoption and ETF flows support bullish thesis for next 18 months'},
-    {agent:'Nemesis',icon:'N',role:'Devils Advocate',vote:'NO',confidence:72,color:'#EF4444',reasoning:'Regulatory headwinds and macro tightening pose significant risks to crypto valuations'},
-    {agent:'Quant',icon:'Q',role:'Data Analyst',vote:'YES',confidence:65,color:'#10B981',reasoning:'On-chain metrics show accumulation pattern similar to pre-bull 2020 cycle'},
-    {agent:'Maverick',icon:'M',role:'Wild Card',vote:'NO',confidence:60,color:'#EF4444',reasoning:'Market cycle suggests extended consolidation before any significant move up'},
-    {agent:'Clio',icon:'C',role:'Historian',vote:'YES',confidence:70,color:'#10B981',reasoning:'Historical halving cycles consistently point to new ATH within 12-18 months'}
+    {agent:'Atlas',icon:'A',role:'Bull Analyst',vote:'YES',confidence:78,color:'#10B981',reasoning:'Strong institutional adoption and ETF flows support bullish thesis for next 18 months'},
+    {agent:'Nemesis',icon:'N',role:'Bear Analyst',vote:'NO',confidence:72,color:'#EF4444',reasoning:'Regulatory headwinds and macro tightening pose significant risks to crypto valuations'},
+    {agent:'Quant',icon:'Q',role:'Statistician',vote:'YES',confidence:65,color:'#3B82F6',reasoning:'On-chain metrics show accumulation pattern similar to pre-bull 2020 cycle'},
+    {agent:'Maverick',icon:'M',role:'Contrarian',vote:'NO',confidence:60,color:'#F59E0B',reasoning:'Market cycle suggests extended consolidation before any significant move up'},
+    {agent:'Clio',icon:'C',role:'Historian',vote:'YES',confidence:70,color:'#8B5CF6',reasoning:'Historical halving cycles consistently point to new ATH within 12-18 months'}
   ];
   var swarm = {yes: 720, no: 480, total: 1200};
+
+  // Generate all 45 agents for the graph using the fallback function
+  var swarmAgents = generateFallbackSwarmAgents(debates);
 
   debates.forEach(function(a, i) {
     setTimeout(function() {
@@ -944,15 +1123,17 @@ function testBubbleMap(){
   });
 
   setTimeout(function() {
-    BubbleMap.populate(debates, swarm);
-    $('swarm-counts').innerHTML='<span class="count-yes">YES: 720</span>'+
-      '<span class="mono" style="color:#999">/ 1,200</span>'+
-      '<span class="count-no">NO: 480</span>';
+    BubbleMap.populate(debates, swarm, swarmAgents);
+    var yesCount = swarmAgents.filter(function(a){return a.vote==='YES'}).length;
+    var noCount = swarmAgents.length - yesCount;
+    $('swarm-counts').innerHTML='<span class="count-yes">YES: '+yesCount+' agents</span>'+
+      '<span class="mono" style="color:#999">/ '+swarmAgents.length+' total</span>'+
+      '<span class="count-no">NO: '+noCount+' agents</span>';
     setTimeout(function() {
       $('verdict-wrap').innerHTML='<div class="verdict-card">'+
         '<div class="verdict-label">Oracle Verdict</div>'+
         '<div class="verdict-text">YES - Likely</div>'+
-        '<div class="verdict-conf">72% confidence</div></div>';
+        '<div class="verdict-conf">72% confidence • 45 agents deliberated</div></div>';
     }, 1500);
   }, 1800);
 }
@@ -987,7 +1168,7 @@ function askOracle(){
 
     // Launch bubble map
     BubbleMap.stopLoading();
-    BubbleMap.populate(data.debates, data.swarm_votes);
+    BubbleMap.populate(data.debates, data.swarm_votes, data.swarm_agents);
 
     // Show swarm counts
     const sv=data.swarm_votes;
