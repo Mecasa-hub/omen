@@ -7,6 +7,40 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+.lb-tag{display:inline-block;padding:1px 6px;border-radius:8px;font-size:.55rem;font-weight:600;margin-left:4px;vertical-align:middle;letter-spacing:.3px}
+.lb-tag-crypto{background:#F7931A20;color:#F7931A;border:1px solid #F7931A40}
+.lb-tag-sports{background:#10B98120;color:#10B981;border:1px solid #10B98140}
+.lb-tag-politics{background:#6366F120;color:#6366F1;border:1px solid #6366F140}
+.lb-tag-finance{background:#3B82F620;color:#3B82F6;border:1px solid #3B82F640}
+.lb-tag-tech{background:#8B5CF620;color:#8B5CF6;border:1px solid #8B5CF640}
+.lb-tag-entertainment{background:#EC489920;color:#EC4899;border:1px solid #EC489940}
+.lb-tag-world{background:#EF444420;color:#EF4444;border:1px solid #EF444440}
+.lb-tag-mixed{background:#9CA3AF20;color:#6B7280;border:1px solid #9CA3AF40}
+.lb-follow-btn{background:none;border:1px solid #e5e7eb;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;transition:all .2s}
+.lb-follow-btn:hover{border-color:#EF4444;background:#FEF2F2}
+.lb-follow-btn.following{background:#FEE2E2;border-color:#EF4444;color:#EF4444}
+.lb-expand-row{display:none}
+.lb-expand-row.open{display:table-row}
+.lb-profile-panel{background:#FAFAFA;border:1px solid #f0f0f0;border-radius:8px;padding:16px;margin:4px 0}
+.lb-profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.lb-profile-stat{text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid #eee}
+.lb-profile-stat .val{font-size:1.1rem;font-weight:700;color:#000}
+.lb-profile-stat .lbl{font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.lb-pnl-mini{width:100%;height:60px;margin-top:8px}
+.lb-profile-actions{display:flex;gap:8px;margin-top:12px}
+.lb-profile-actions a,.lb-profile-actions button{padding:6px 14px;border-radius:6px;font-size:.7rem;font-weight:600;text-decoration:none;cursor:pointer;transition:all .2s}
+.lb-btn-polymarket{background:#000;color:#fff;border:none}
+.lb-btn-polymarket:hover{background:#333}
+.lb-btn-follow-lg{background:#fff;color:#EF4444;border:1px solid #EF4444}
+.lb-btn-follow-lg:hover{background:#FEF2F2}
+.lb-btn-follow-lg.following{background:#EF4444;color:#fff}
+.lb-clickable{cursor:pointer}
+.lb-clickable:hover{background:#f9fafb}
+.lb-tabs-wrap{display:flex;gap:4px;align-items:center}
+.lb-following-filter{padding:4px 10px;border-radius:12px;font-size:.65rem;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;transition:all .2s}
+.lb-following-filter:hover{border-color:#EF4444}
+.lb-following-filter.active{background:#EF4444;color:#fff;border-color:#EF4444}
+
 :root{--black:#000;--white:#FFF;--bg:#FAFAFA;--border:#EAEAEA;--gray:#666;--light-gray:#999;--accent:#FF4500}
 body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--white);color:var(--black);min-height:100vh}
 .mono{font-family:'JetBrains Mono',monospace}
@@ -605,6 +639,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <button class="lb-tab active" onclick="switchLbTab('profit')">💰 By Profit</button>
     <button class="lb-tab" onclick="switchLbTab('volume')">📊 By Volume</button>
     <button class="lb-tab" onclick="switchLbTab('wins')">🎯 Biggest Wins</button>
+    <button class="lb-following-filter" onclick="toggleFollowingFilter()" id="lb-following-btn">❤️ Following</button>
   </div>
 
   <div id="lb-profit-view">
@@ -625,7 +660,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
               <th style="text-align:right">Live Δ</th>
               <th style="text-align:right">Volume</th>
               <th style="text-align:center">Win Rate</th>
-              <th style="text-align:center;width:50px">Active</th>
+              <th style="text-align:center;padding:8px 4px;font-size:.6rem;color:#999;text-transform:uppercase;letter-spacing:.5px">⭐</th>
             </tr>
           </thead>
           <tbody id="lb-tbody">
@@ -1818,14 +1853,13 @@ document.addEventListener('click',function(e){
 
   async function loadLeaderboard() {
     try {
-      const resp = await safeFetch('/api/leaderboard');
+      loadFollowing();
+      var resp = await safeFetch('/api/leaderboard');
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       lbData = await resp.json();
+      loadTags();
       renderLeaderboard();
-      if (!lbInterval) {
-        lbInterval = setInterval(pollLbUpdate, 5000);
-      }
-    } catch(e) {
+    } catch (e) {
       console.error('Leaderboard error:', e);
       $('lb-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#EF4444;padding:40px;font-size:.75rem">Failed to load leaderboard</td></tr>';
     }
@@ -1850,109 +1884,233 @@ document.addEventListener('click',function(e){
     }
   }
 
-  function renderLeaderboard() {
-    if (!lbData || !lbData.traders) return;
-    const traders = lbData.traders;
-    const now = new Date().toLocaleTimeString();
-    $('lb-update-time').textContent = 'Updated ' + now;
+  var lbTags = {};
+var lbFollowing = new Set();
+var lbShowFollowing = false;
+var lbExpandedWallet = null;
 
-    // Stats
+function renderLeaderboard() {
+    if (!lbData || !lbData.traders) return;
+    var traders = lbData.traders;
+    var now = new Date().toLocaleTimeString();
+    $('lb-update-time').textContent = 'Updated ' + now;
     $('lb-total-traders').textContent = traders.length;
     if (traders.length > 0) {
       $('lb-top-pnl').textContent = '$' + fmtUSD(traders[0].pnl);
       var totalVol = 0, totalWr = 0;
-      for (var i = 0; i < traders.length; i++) {
-        totalVol += traders[i].volume || 0;
-        totalWr += traders[i].win_rate || 0;
-      }
+      for (var i = 0; i < traders.length; i++) { totalVol += traders[i].volume || 0; totalWr += traders[i].win_rate || 0; }
       $('lb-total-volume').textContent = '$' + fmtUSD(totalVol);
       $('lb-avg-winrate').textContent = (totalWr / traders.length).toFixed(1) + '%';
     }
+    if (lbCurrentTab === 'profit') renderProfitTab(traders);
+    else if (lbCurrentTab === 'volume') renderVolumeTab(traders);
+    else if (lbCurrentTab === 'wins') renderWinsTab();
+}
 
-    // Table
-    var html = '';
-    var limit = Math.min(traders.length, 100);
+function getTagHTML(wallet) {
+    var info = lbTags[wallet];
+    if (!info || !info.tags) return '';
+    var h = '';
+    for (var i = 0; i < info.tags.length && i < 2; i++) {
+      var t = info.tags[i].toLowerCase();
+      h += '<span class="lb-tag lb-tag-' + t + '">' + info.tags[i] + '</span>';
+    }
+    return h;
+}
+
+function isFollowing(wallet) { return lbFollowing.has(wallet); }
+
+function renderProfitTab(traders) {
+    var filtered = lbShowFollowing ? traders.filter(function(t){return lbFollowing.has(t.wallet)}) : traders;
+    var h = '';
+    var limit = Math.min(filtered.length, 100);
     for (var i = 0; i < limit; i++) {
-      var t = traders[i];
+      var t = filtered[i];
       var rank = t.rank || (i + 1);
-      var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+      var medal = rank===1?'\ud83e\udd47':rank===2?'\ud83e\udd48':rank===3?'\ud83e\udd49':rank;
       var name = t.name || 'Anon';
-      var wallet = (t.wallet || '').substring(0, 8);
+      var walletShort = (t.wallet || '').substring(0, 8);
       var pnl = t.live_pnl || t.pnl;
       var delta = t.pnl_delta || 0;
-      var dir = t.pnl_direction || (delta >= 0 ? 'up' : 'down');
       var prevPnl = lbPrevPnl[t.wallet] || pnl;
       var changed = Math.abs(pnl - prevPnl) > 0.01;
       var rowClass = changed ? (pnl > prevPnl ? 'lb-row-up' : 'lb-row-down') : '';
       lbPrevPnl[t.wallet] = pnl;
-
-      var pnlColor = pnl >= 0 ? '#10B981' : '#EF4444';
-      var pnlStr = (pnl >= 0 ? '+$' : '-$') + fmtUSD(Math.abs(pnl));
-      var deltaStr = (delta >= 0 ? '+$' : '-$') + Math.abs(delta).toFixed(0);
-      var deltaClass = delta >= 0 ? 'lb-delta-up' : 'lb-delta-down';
-      var volStr = '$' + fmtUSD(t.volume || 0);
+      var pc = pnl >= 0 ? '#10B981' : '#EF4444';
+      var ps = (pnl >= 0 ? '+$' : '-$') + fmtUSD(Math.abs(pnl));
+      var ds = (delta >= 0 ? '+$' : '-$') + Math.abs(delta).toFixed(0);
+      var dc = delta >= 0 ? 'lb-delta-up' : 'lb-delta-down';
+      var vs = '$' + fmtUSD(t.volume || 0);
       var wr = (t.win_rate || 50).toFixed(1);
-      var wrColor = wr >= 70 ? '#10B981' : wr >= 50 ? '#F59E0B' : '#EF4444';
-      var wrPct = Math.min(100, Math.max(0, wr));
-      var activeDots = t.active_trades || 0;
-      var activeColor = activeDots > 3 ? '#10B981' : activeDots > 0 ? '#F59E0B' : '#ccc';
-
-      var img = t.profileImage && !t.profileImage.includes('fallback') 
-        ? '<img class="lb-avatar" src="' + t.profileImage + '" onerror="this.hidden=true"/>'
-        : '<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#f3f4f6;text-align:center;line-height:24px;font-size:.6rem;margin-right:8px;vertical-align:middle;border:1px solid #eee">' + (name[0] || '?').toUpperCase() + '</span>';
-
-      html += '<tr class="' + rowClass + '" style="transition:background .3s">';
-      html += '<td style="font-weight:700;font-size:.8rem">' + medal + '</td>';
-      html += '<td>' + img + '<span style="font-weight:600;font-size:.78rem">' + name + '</span>';
-      if (wallet) html += '<br><span style="font-size:.55rem;color:#aaa;font-family:monospace;margin-left:32px">' + wallet + '...</span>';
-      html += '</td>';
-      html += '<td style="text-align:right;font-weight:700;color:' + pnlColor + ';font-family:monospace;font-size:.8rem" class="lb-pnl-tick">' + pnlStr + '</td>';
-      html += '<td style="text-align:right"><span class="lb-delta ' + deltaClass + '">' + (delta >= 0 ? '▲' : '▼') + ' ' + deltaStr + '</span></td>';
-      html += '<td style="text-align:right;font-family:monospace;font-size:.72rem;color:#666">' + volStr + '</td>';
-      html += '<td style="text-align:center"><span style="font-weight:600;color:' + wrColor + ';font-size:.75rem">' + wr + '%</span><div class="lb-bar"><div class="lb-bar-fill" style="width:' + wrPct + '%;background:' + wrColor + '"></div></div></td>';
-      html += '<td style="text-align:center"><span class="lb-active-dot" style="background:' + activeColor + '"></span><span style="font-size:.65rem;color:#888">' + activeDots + '</span></td>';
-      html += '</tr>';
+      var wc = wr >= 70 ? '#10B981' : wr >= 50 ? '#F59E0B' : '#EF4444';
+      var wp = Math.min(100, Math.max(0, wr));
+      var at = t.active_trades || 0;
+      var fc = isFollowing(t.wallet) ? 'following' : '';
+      var fi = isFollowing(t.wallet) ? '\u2764\uFE0F' : '\ud83e\udd0d';
+      var tags = getTagHTML(t.wallet);
+      var initials = '<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#f3f4f6;text-align:center;line-height:24px;font-size:.6rem;margin-right:8px;vertical-align:middle;border:1px solid #eee">' + (name[0]||'?').toUpperCase() + '</span>';
+      var img = (t.profileImage && t.profileImage.indexOf("fallback")<0) ? '<img class="lb-avatar" src="'+t.profileImage+'" onerror="this.hidden=true"/>' : initials;
+      var w = t.wallet;
+      h += '<tr class="lb-clickable '+rowClass+'" style="transition:background .3s" data-w="'+w+'" data-n="'+name.replace(/"/g,'')+'" onclick="expandTrader(this.dataset.w,this.dataset.n)">';
+      h += '<td style="font-weight:700;font-size:.8rem">'+medal+'</td>';
+      h += '<td>'+img+'<span style="font-weight:600;font-size:.78rem">'+name+'</span>'+tags;
+      if (walletShort) h += '<br><span style="font-size:.55rem;color:#aaa;font-family:monospace;margin-left:32px">'+walletShort+'...</span>';
+      h += '</td>';
+      h += '<td style="text-align:right;font-weight:700;color:'+pc+';font-family:monospace;font-size:.8rem" class="lb-pnl-tick">'+ps+'</td>';
+      h += '<td style="text-align:right"><span class="lb-delta '+dc+'">'+(delta>=0?'\u25B2':'\u25BC')+' '+ds+'</span></td>';
+      h += '<td style="text-align:right;font-family:monospace;font-size:.72rem;color:#666">'+vs+'</td>';
+      h += '<td style="text-align:center"><span style="font-weight:600;color:'+wc+';font-size:.75rem">'+wr+'%</span><div class="lb-bar"><div class="lb-bar-fill" style="width:'+wp+'%;background:'+wc+'"></div></div></td>';
+      h += '<td style="text-align:center"><button class="lb-follow-btn '+fc+'" data-fw="'+w+'" onclick="event.stopPropagation();followTrader(this.dataset.fw)">'+fi+'</button></td>';
+      h += '</tr>';
+      var expanded = lbExpandedWallet === w ? 'open' : '';
+      var wid = w.substring(0,10);
+      h += '<tr class="lb-expand-row '+expanded+'" id="lb-expand-'+wid+'">';
+      h += '<td colspan="7" style="padding:0"><div class="lb-profile-panel" id="lb-profile-'+wid+'">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      h += '<div style="font-weight:700;font-size:.9rem">'+name+' <span style="font-size:.6rem;color:#aaa;font-family:monospace">'+w.substring(0,12)+'...</span></div>';
+      h += '<div>'+tags+'</div></div>';
+      h += '<div class="lb-profile-stats">';
+      h += '<div class="lb-profile-stat"><div class="val" style="color:'+pc+'">'+ps+'</div><div class="lbl">PnL (30d)</div></div>';
+      h += '<div class="lb-profile-stat"><div class="val">'+vs+'</div><div class="lbl">Volume</div></div>';
+      h += '<div class="lb-profile-stat"><div class="val" style="color:'+wc+'">'+wr+'%</div><div class="lbl">Win Rate</div></div>';
+      h += '<div class="lb-profile-stat"><div class="val">'+at+'</div><div class="lbl">Active Trades</div></div>';
+      h += '</div>';
+      h += '<canvas class="lb-pnl-mini" id="lb-chart-'+wid+'"></canvas>';
+      h += '<div class="lb-profile-actions">';
+      h += '<a class="lb-btn-polymarket" href="https://polymarket.com/profile/'+w+'" target="_blank">View on Polymarket \u2197</a>';
+      h += '<button class="lb-btn-follow-lg '+fc+'" data-fw="'+w+'" onclick="followTrader(this.dataset.fw)">'+(isFollowing(w)?'\u2764\uFE0F Following':'\ud83e\udd0d Follow')+'</button>';
+      h += '</div></div></td></tr>';
     }
-    $('lb-tbody').innerHTML = html;
-  }
+    if (limit===0 && lbShowFollowing) h = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#aaa">No followed traders yet. Click the heart to follow.</td></tr>';
+    $('lb-tbody').innerHTML = h;
+}
 
-  function renderVolumeView() {
-    if (!lbData || !lbData.traders) return;
-    var sorted = [...lbData.traders].sort((a,b) => (b.volume||0) - (a.volume||0));
-    var html = '<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 20px;border-bottom:1px solid #eee"><span style="font-weight:700;font-size:.8rem">Top 100 by Volume</span></div><div style="max-height:600px;overflow-y:auto"><table><thead><tr><th style="width:40px">#</th><th>Trader</th><th style="text-align:right">Volume</th><th style="text-align:right">PnL</th><th style="text-align:center">ROI</th></tr></thead><tbody>';
-    for (var i = 0; i < Math.min(sorted.length, 100); i++) {
+function renderVolumeTab(traders) {
+    var sorted = traders.slice().sort(function(a,b){return (b.volume||0)-(a.volume||0)});
+    if (lbShowFollowing) sorted = sorted.filter(function(t){return lbFollowing.has(t.wallet)});
+    var h = '';
+    for (var i = 0; i < Math.min(sorted.length,100); i++) {
       var t = sorted[i];
-      var roi = t.volume > 0 ? ((t.pnl / t.volume) * 100).toFixed(2) : '0.00';
-      var roiColor = roi >= 0 ? '#10B981' : '#EF4444';
-      html += '<tr>';
-      html += '<td style="font-weight:700">' + (i+1) + '</td>';
-      html += '<td style="font-weight:600">' + (t.name||'Anon') + '</td>';
-      html += '<td style="text-align:right;font-family:monospace;font-size:.78rem">$' + fmtUSD(t.volume||0) + '</td>';
-      html += '<td style="text-align:right;color:' + (t.pnl>=0?'#10B981':'#EF4444') + ';font-weight:600;font-family:monospace">' + (t.pnl>=0?'+$':'-$') + fmtUSD(Math.abs(t.pnl||0)) + '</td>';
-      html += '<td style="text-align:center;color:' + roiColor + ';font-weight:600">' + roi + '%</td>';
-      html += '</tr>';
+      var tags = getTagHTML(t.wallet);
+      var fc = isFollowing(t.wallet) ? 'following' : '';
+      var fi = isFollowing(t.wallet) ? '\u2764\uFE0F' : '\ud83e\udd0d';
+      var roi = t.volume > 0 ? (t.pnl / t.volume * 100).toFixed(2) : '0.00';
+      var rc = parseFloat(roi) >= 0 ? '#10B981' : '#EF4444';
+      h += '<tr class="lb-clickable" data-w="'+t.wallet+'" data-n="'+(t.name||'')+'" onclick="expandTrader(this.dataset.w,this.dataset.n)">';
+      h += '<td style="font-weight:700">'+(i+1)+'</td>';
+      h += '<td style="font-weight:600">'+(t.name||'Anon')+tags+'</td>';
+      h += '<td style="text-align:right;font-family:monospace">$'+fmtUSD(t.volume||0)+'</td>';
+      h += '<td style="text-align:right;color:'+(t.pnl>=0?'#10B981':'#EF4444')+';font-weight:600;font-family:monospace">'+(t.pnl>=0?'+$':'-$')+fmtUSD(Math.abs(t.pnl||0))+'</td>';
+      h += '<td style="text-align:right;color:'+rc+';font-weight:600">'+roi+'%</td>';
+      h += '<td style="text-align:center"><button class="lb-follow-btn '+fc+'" data-fw="'+t.wallet+'" onclick="event.stopPropagation();followTrader(this.dataset.fw)">'+fi+'</button></td>';
+      h += '</tr>';
     }
-    html += '</tbody></table></div></div>';
-    document.getElementById('lb-volume-view').innerHTML = html;
-  }
+    document.getElementById('lb-volume-view').innerHTML = '<div style="padding:0 16px 16px"><div style="font-weight:600;font-size:.85rem;margin-bottom:8px">Top '+sorted.length+' by Volume</div><table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid #eee"><th style="text-align:left;padding:8px;font-size:.65rem;color:#888;text-transform:uppercase">#</th><th style="text-align:left;padding:8px;font-size:.65rem;color:#888;text-transform:uppercase">Trader</th><th style="text-align:right;padding:8px;font-size:.65rem;color:#888;text-transform:uppercase">Volume</th><th style="text-align:right;padding:8px;font-size:.65rem;color:#888;text-transform:uppercase">PnL</th><th style="text-align:right;padding:8px;font-size:.65rem;color:#888;text-transform:uppercase">ROI</th><th style="text-align:center;padding:8px;font-size:.65rem;color:#888">\u2B50</th></tr></thead><tbody>'+h+'</tbody></table></div>';
+}
 
-  function renderWinsView() {
+function renderWinsTab() {
     if (!lbData || !lbData.biggest_wins) return;
     var wins = lbData.biggest_wins;
-    var html = '<div style="display:flex;flex-direction:column;gap:8px">';
-    for (var i = 0; i < wins.length; i++) {
+    if (lbShowFollowing) wins = wins.filter(function(w){return lbFollowing.has(w.wallet)});
+    var h = '';
+    for (var i = 0; i < Math.min(wins.length,20); i++) {
       var w = wins[i];
-      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
-      html += '<div class="lb-wins-card">';
-      html += '<div><span style="font-weight:700;margin-right:8px">' + medal + '</span>';
-      html += '<span style="font-weight:600">' + (w.name||'Anon') + '</span>';
-      html += '<div style="font-size:.7rem;color:#888;margin-top:2px">' + (w.event||'—') + '</div></div>';
-      html += '<div style="text-align:right"><div style="font-weight:700;color:#10B981;font-family:monospace">+$' + fmtUSD(w.pnl||0) + '</div></div>';
-      html += '</div>';
+      var tags = getTagHTML(w.wallet);
+      var medal = i<3?['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'][i]:'#'+(i+1);
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #f0f0f0;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background .2s" data-w="'+(w.wallet||'')+'" data-n="'+(w.name||'').replace(/"/g,'')+'" onclick="expandTrader(this.dataset.w,this.dataset.n)">';
+      h += '<div><span style="font-size:.8rem;margin-right:8px">'+medal+'</span>';
+      h += '<strong style="font-size:.85rem">'+(w.name||'Anon')+'</strong>'+tags;
+      h += '<div style="font-size:.65rem;color:#aaa;margin-top:2px">'+(w.event||'')+'</div></div>';
+      h += '<div style="font-weight:700;color:#10B981;font-family:monospace;font-size:.9rem">+$'+fmtUSD(w.pnl||0)+'</div>';
+      h += '</div>';
     }
-    html += '</div>';
-    document.getElementById('lb-wins-view').innerHTML = html;
-  }
+    document.getElementById('lb-wins-view').innerHTML = h;
+}
+
+function expandTrader(wallet, name) {
+    if (lbExpandedWallet === wallet) { lbExpandedWallet = null; renderLeaderboard(); return; }
+    lbExpandedWallet = wallet;
+    renderLeaderboard();
+    var wid = wallet.substring(0,10);
+    safeFetch('/api/leaderboard/trader/' + wallet).then(function(r){return r.json()}).then(function(profile) {
+      if (profile.error) return;
+      var panel = document.getElementById('lb-profile-' + wid);
+      if (!panel) return;
+      var s = profile.stats || {};
+      var v = profile.volume || {};
+      var sh = '<div class="lb-profile-stats">';
+      sh += '<div class="lb-profile-stat"><div class="val">'+(s.trades||'--')+'</div><div class="lbl">Total Trades</div></div>';
+      sh += '<div class="lb-profile-stat"><div class="val" style="color:#10B981">+$'+fmtUSD(s.largestWin||0)+'</div><div class="lbl">Largest Win</div></div>';
+      sh += '<div class="lb-profile-stat"><div class="val">'+(s.views?s.views.toLocaleString():'--')+'</div><div class="lbl">Profile Views</div></div>';
+      sh += '<div class="lb-profile-stat"><div class="val">$'+fmtUSD(v.amount||0)+'</div><div class="lbl">Total Volume</div></div>';
+      sh += '</div>';
+      sh += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">';
+      sh += '<div class="lb-profile-stat"><div class="val" style="color:'+((v.pnl||0)>=0?'#10B981':'#EF4444')+'">'+ ((v.pnl||0)>=0?'+$':'-$')+fmtUSD(Math.abs(v.pnl||0))+'</div><div class="lbl">Net PnL</div></div>';
+      sh += '<div class="lb-profile-stat"><div class="val">$'+fmtUSD(Math.abs(v.realized||0))+'</div><div class="lbl">Realized</div></div>';
+      sh += '<div class="lb-profile-stat"><div class="val">$'+fmtUSD(Math.abs(v.unrealized||0))+'</div><div class="lbl">Unrealized</div></div>';
+      sh += '</div>';
+      var joined = s.joinDate ? new Date(s.joinDate).toLocaleDateString() : '--';
+      sh += '<div style="font-size:.6rem;color:#aaa;margin-top:4px">Joined: '+joined+'</div>';
+      var actionsDiv = panel.querySelector('.lb-profile-actions');
+      if (actionsDiv) { var c = document.createElement('div'); c.innerHTML = sh; panel.insertBefore(c, actionsDiv); }
+      var cd = profile.pnl_chart;
+      if (cd && cd['1M'] && cd['1M'].length > 1) drawMiniChart('lb-chart-'+wid, cd['1M']);
+      else if (cd && cd['ALL'] && cd['ALL'].length > 1) drawMiniChart('lb-chart-'+wid, cd['ALL']);
+    }).catch(function(e){console.log('Profile error:',e)});
+}
+
+function drawMiniChart(cid, data) {
+    var canvas = document.getElementById(cid);
+    if (!canvas || !data || data.length < 2) return;
+    var ctx = canvas.getContext('2d');
+    var cw = canvas.offsetWidth || 300;
+    var ch = 60;
+    canvas.width = cw; canvas.height = ch;
+    ctx.clearRect(0,0,cw,ch);
+    var vals = data.map(function(d){return d.p});
+    var mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals), rng = mx-mn||1;
+    var sx = cw/(vals.length-1);
+    var up = vals[vals.length-1] >= vals[0];
+    ctx.beginPath(); ctx.moveTo(0,ch);
+    for(var j=0;j<vals.length;j++){var x=j*sx,y=ch-((vals[j]-mn)/rng)*(ch-4)-2;ctx.lineTo(x,y)}
+    ctx.lineTo(cw,ch); ctx.closePath();
+    ctx.fillStyle = up ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'; ctx.fill();
+    ctx.beginPath();
+    for(var j=0;j<vals.length;j++){var x=j*sx,y=ch-((vals[j]-mn)/rng)*(ch-4)-2;if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+    ctx.strokeStyle = up ? '#10B981' : '#EF4444'; ctx.lineWidth = 1.5; ctx.stroke();
+}
+
+function followTrader(wallet) {
+    if (lbFollowing.has(wallet)) {
+      lbFollowing.delete(wallet);
+      safeFetch('/api/leaderboard/follow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet:wallet,action:'unfollow'})});
+    } else {
+      lbFollowing.add(wallet);
+      safeFetch('/api/leaderboard/follow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet:wallet,action:'follow'})});
+    }
+    localStorage.setItem('lb_following', JSON.stringify(Array.from(lbFollowing)));
+    renderLeaderboard();
+}
+
+function toggleFollowingFilter() {
+    lbShowFollowing = !lbShowFollowing;
+    var btn = document.getElementById('lb-following-btn');
+    if (btn) btn.classList.toggle('active', lbShowFollowing);
+    renderLeaderboard();
+}
+
+function loadFollowing() {
+    try { var s=localStorage.getItem('lb_following'); if(s){JSON.parse(s).forEach(function(w){lbFollowing.add(w)})} } catch(e){}
+    safeFetch('/api/leaderboard/following').then(function(r){return r.json()}).then(function(d){
+      if(d.following)d.following.forEach(function(w){lbFollowing.add(w)})
+    }).catch(function(){});
+}
+
+function loadTags() {
+    safeFetch('/api/leaderboard/tags').then(function(r){return r.json()}).then(function(tags){
+      lbTags = tags; renderLeaderboard();
+    }).catch(function(){});
+}
 
 
 </script>

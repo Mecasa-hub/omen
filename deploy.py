@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """OMEN Live Deployment — Real AI + MiroFish-Inspired UI."""
-import asyncio, json, logging, os, sys, hashlib, secrets, time, random
+import asyncio
+import sqlite3, json, logging, os, sys, hashlib, secrets, time, random
 from datetime import datetime, timezone
 from pathlib import Path
 import leaderboard as lb_module
@@ -570,6 +571,74 @@ async def leaderboard_refresh():
         lb_module._cache["ts"] = __import__("time").time()
         return {"status": "refreshed", "count": data.get("count", 0)}
     return {"status": "failed", "message": "Could not scrape Polymarket"}
+
+
+
+
+@app.get("/api/leaderboard/tags")
+async def leaderboard_tags():
+    """Get category tags for all leaderboard traders."""
+    data = lb_module.get_live_snapshot()
+    traders = data.get('traders', [])
+    tags = lb_module.get_trader_tags_batch(traders)
+    return tags
+
+@app.post("/api/leaderboard/follow")
+async def follow_trader(request: Request):
+    """Follow/unfollow a trader. Stores in DB."""
+    body = await request.json()
+    wallet = body.get('wallet', '')
+    action = body.get('action', 'follow')  # follow or unfollow
+
+    if not wallet:
+        return {"error": "wallet required"}
+
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
+
+    # Create follows table if not exists
+    c.execute("""CREATE TABLE IF NOT EXISTS trader_follows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        wallet TEXT NOT NULL,
+        user_id TEXT DEFAULT 'anonymous',
+        followed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(wallet, user_id)
+    )""")
+
+    if action == 'follow':
+        try:
+            c.execute("INSERT OR IGNORE INTO trader_follows (wallet, user_id) VALUES (?, ?)", (wallet, 'anonymous'))
+            conn.commit()
+            return {"status": "followed", "wallet": wallet}
+        except Exception as e:
+            return {"error": str(e)}
+    else:
+        c.execute("DELETE FROM trader_follows WHERE wallet = ? AND user_id = ?", (wallet, 'anonymous'))
+        conn.commit()
+        return {"status": "unfollowed", "wallet": wallet}
+
+@app.get("/api/leaderboard/following")
+async def get_following():
+    """Get list of followed trader wallets."""
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS trader_follows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        wallet TEXT NOT NULL,
+        user_id TEXT DEFAULT 'anonymous',
+        followed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(wallet, user_id)
+    )""")
+    c.execute("SELECT wallet FROM trader_follows WHERE user_id = ?", ('anonymous',))
+    wallets = [r[0] for r in c.fetchall()]
+    return {"following": wallets}
+
+@app.get("/api/leaderboard/trader/{wallet}")
+async def trader_profile(wallet: str):
+    """Get detailed trader profile from Polymarket."""
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, lb_module.scrape_trader_profile, wallet)
+    return data
 
 @app.websocket("/ws/war-room")
 async def war_room(websocket: WebSocket):

@@ -149,3 +149,162 @@ def get_live_snapshot():
         "traders": traders,
         "biggest_wins": data.get("biggest_wins", [])[:10]
     }
+
+
+# ─── TRADER PROFILE SCRAPER ───────────────────────────────────────────
+_profile_cache = {}  # wallet -> {data, ts}
+PROFILE_TTL = 120  # 2 min cache
+
+# Category keywords for auto-tagging
+CATEGORY_KEYWORDS = {
+    'crypto': ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'solana', 'sol', 'token', 'defi', 'nft', 'blockchain', 'binance', 'coinbase', 'dogecoin', 'xrp', 'cardano', 'polygon', 'matic', 'altcoin', 'memecoin', 'stablecoin'],
+    'sports': ['nba', 'nfl', 'mlb', 'nhl', 'soccer', 'football', 'basketball', 'baseball', 'tennis', 'golf', 'ufc', 'boxing', 'f1', 'formula', 'premier league', 'champions league', 'world cup', 'serie a', 'la liga', 'bundesliga', ' fc ', ' vs ', 'match', 'game ', 'playoff', 'championship', 'super bowl', 'stanley cup'],
+    'politics': ['trump', 'biden', 'election', 'president', 'congress', 'senate', 'democrat', 'republican', 'vote', 'poll', 'governor', 'mayor', 'political', 'impeach', 'cabinet', 'legislation', 'bill ', 'supreme court', 'gop', 'primary'],
+    'finance': ['stock', 'market', 'sp500', 'nasdaq', 'dow', 'fed', 'interest rate', 'inflation', 'gdp', 'recession', 'bull', 'bear', 'ipo', 'earnings', 'revenue', 'tesla', 'apple', 'nvidia', 'microsoft'],
+    'tech': ['ai ', 'artificial intelligence', 'openai', 'chatgpt', 'google', 'apple', 'meta', 'spacex', 'mars', 'launch', 'tech', 'software', 'chip', 'semiconductor', 'nvidia', 'robot'],
+    'entertainment': ['oscar', 'grammy', 'movie', 'film', 'music', 'album', 'celebrity', 'reality tv', 'streaming', 'netflix', 'disney', 'youtube', 'tiktok', 'viral'],
+    'world': ['war', 'peace', 'nato', 'china', 'russia', 'ukraine', 'israel', 'iran', 'climate', 'earthquake', 'hurricane', 'pandemic', 'covid', 'who ', 'un ', 'treaty'],
+}
+
+def classify_trader(events: list) -> dict:
+    """Classify trader by analyzing their trade events/markets."""
+    if not events:
+        return {'primary': 'mixed', 'tags': ['Mixed'], 'distribution': {}}
+
+    scores = {cat: 0 for cat in CATEGORY_KEYWORDS}
+    all_text = ' '.join(str(e).lower() for e in events)
+
+    for cat, keywords in CATEGORY_KEYWORDS.items():
+        for kw in keywords:
+            count = all_text.count(kw.lower())
+            scores[cat] += count
+
+    total = sum(scores.values())
+    if total == 0:
+        return {'primary': 'mixed', 'tags': ['Mixed'], 'distribution': {}}
+
+    distribution = {cat: round(score / total * 100, 1) for cat, score in scores.items() if score > 0}
+    sorted_cats = sorted(distribution.items(), key=lambda x: -x[1])
+
+    primary = sorted_cats[0][0] if sorted_cats else 'mixed'
+    # Tags: categories with >15% share
+    tags = [cat.title() for cat, pct in sorted_cats if pct >= 15]
+    if not tags:
+        tags = [sorted_cats[0][0].title()] if sorted_cats else ['Mixed']
+
+    return {'primary': primary, 'tags': tags, 'distribution': distribution}
+
+
+def scrape_trader_profile(wallet: str) -> dict:
+    """Scrape a single trader's Polymarket profile."""
+    import time as _time
+    now = _time.time()
+
+    # Check cache
+    if wallet in _profile_cache and now - _profile_cache[wallet]['ts'] < PROFILE_TTL:
+        return _profile_cache[wallet]['data']
+
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml'
+        }
+        r = requests.get(f'https://polymarket.com/profile/{wallet}', timeout=15, headers=headers)
+        if r.status_code != 200:
+            return {'error': f'HTTP {r.status_code}'}
+
+        match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text)
+        if not match:
+            return {'error': 'No SSR data found'}
+
+        nd = json.loads(match.group(1))
+        queries = nd.get('props', {}).get('pageProps', {}).get('dehydratedState', {}).get('queries', [])
+        pp = nd.get('props', {}).get('pageProps', {})
+
+        profile = {
+            'wallet': wallet,
+            'name': pp.get('username', ''),
+            'stats': {},
+            'volume': {},
+            'pnl_chart': {},
+            'user_data': {},
+            'positions_value': 0,
+        }
+
+        for q in queries:
+            key = q.get('queryKey', [])
+            data = q.get('state', {}).get('data', None)
+            key_str = str(key)
+
+            if 'user-stats' in key_str:
+                profile['stats'] = data or {}
+            elif '/api/profile/volume' in key_str:
+                profile['volume'] = data or {}
+            elif '/api/profile/userData' in key_str and isinstance(data, dict):
+                profile['user_data'] = {
+                    'id': data.get('id'),
+                    'name': data.get('name', ''),
+                    'pseudonym': data.get('pseudonym', ''),
+                    'created': data.get('createdAt', ''),
+                    'verified': data.get('verifiedBadge', False),
+                    'profileImage': data.get('profileImage', ''),
+                }
+                if not profile['name']:
+                    profile['name'] = data.get('name', '') or data.get('pseudonym', '')
+            elif 'positions' in key_str and 'value' in key_str and isinstance(data, (int, float)):
+                profile['positions_value'] = data
+            elif 'portfolio-pnl' in key_str and isinstance(data, list):
+                # Identify the timeframe from the key
+                tf = 'ALL'
+                for k in key:
+                    if k in ('1D', '1W', '1M', 'ALL'):
+                        tf = k
+                        break
+                profile['pnl_chart'][tf] = [{'t': p['t'], 'p': p['p']} for p in data]
+
+        # Get classification from leaderboard biggest_wins if available
+        cached = _cache.get('data')
+        events = []
+        if cached and 'biggest_wins' in cached:
+            for w in cached['biggest_wins']:
+                if w.get('wallet') == wallet or w.get('name') == profile['name']:
+                    events.append(w.get('event', ''))
+
+        # Also check trader's markets from leaderboard data
+        if cached and 'traders' in cached:
+            for t in cached['traders']:
+                if t.get('wallet') == wallet:
+                    events.append(t.get('name', ''))
+
+        profile['classification'] = classify_trader(events)
+
+        result = profile
+        _profile_cache[wallet] = {'data': result, 'ts': now}
+        return result
+
+    except Exception as e:
+        return {'error': str(e)}
+
+
+def get_trader_tags_batch(traders: list) -> dict:
+    """Get category tags for all traders from cached biggest_wins data."""
+    cached = _cache.get('data')
+    if not cached:
+        return {}
+
+    biggest_wins = cached.get('biggest_wins', [])
+    tags = {}
+
+    for t in traders:
+        wallet = t.get('wallet', '')
+        name = t.get('name', '')
+        # Collect all events this trader is associated with
+        events = []
+        for w in biggest_wins:
+            if w.get('wallet') == wallet or w.get('name') == name:
+                events.append(w.get('event', ''))
+
+        classification = classify_trader(events)
+        tags[wallet] = classification
+
+    return tags
