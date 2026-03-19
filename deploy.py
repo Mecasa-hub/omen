@@ -1093,19 +1093,23 @@ async def mirofish_status():
 
 @app.post("/api/oracle/premium")
 async def oracle_premium(request: Request):
-    """Premium Oracle — uses MiroFish for full knowledge graph analysis.
-    Requires credits (costs 5 credits per query)."""
+    """Premium Oracle — uses MiroFish for knowledge graph analysis.
+    Modes: fast (5 credits, ~30s) or deep (10 credits, ~3-5min)."""
+
     body = await request.json()
     question = body.get("question", "")
+    mode = body.get("mode", "fast")  # 'fast' or 'deep'
     if not question:
         return JSONResponse({"error": "Question required"}, status_code=400)
+    if mode not in ("fast", "deep"):
+        return JSONResponse({"error": "Mode must be 'fast' or 'deep'"}, status_code=400)
 
     user = await get_current_user(request)
     if not user:
         return JSONResponse({"error": "Login required"}, status_code=401)
 
-    # Check credits (premium costs 5 credits)
-    PREMIUM_COST = 5
+    # Check credits (fast=5, deep=10)
+    PREMIUM_COST = 5 if mode == "fast" else 10
     async with aiosqlite.connect(str(DB_PATH)) as db:
         cursor = await db.execute("SELECT credits FROM users WHERE id=?", (user["id"],))
         row = await cursor.fetchone()
@@ -1127,7 +1131,7 @@ async def oracle_premium(request: Request):
 
     try:
         # Run MiroFish prediction
-        mf_result = await mirofish_bridge.run_mirofish_prediction(question)
+        mf_result = await mirofish_bridge.run_mirofish_prediction(question, mode=mode)
 
         # Also run core 5 agents for the debate cards
         core_result = await run_oracle(question)
@@ -1135,6 +1139,7 @@ async def oracle_premium(request: Request):
         return JSONResponse({
             "question": question,
             "tier": "premium",
+            "mode": mode,
             "credits_used": PREMIUM_COST,
             "verdict": core_result["verdict"],
             "confidence": core_result["confidence"],

@@ -168,6 +168,26 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .tier-detail{font-size:.7rem;color:#999;font-family:'JetBrains Mono',monospace}
 .tier-eg{font-size:.7rem;color:#10B981;font-family:'JetBrains Mono',monospace}
 .crypto-badge{background:#111;border:1px solid #333;padding:4px 10px;border-radius:12px;font-size:.65rem;color:#999;font-family:'JetBrains Mono',monospace}
+
+/* Tier selector buttons */
+.tier-btn {
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:8px 16px;border:1px solid #333;border-radius:8px;
+  background:#111;color:#888;font-size:.7rem;font-weight:700;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;
+  transition:all .3s ease;min-width:90px;
+}
+.tier-btn:hover { border-color:#555;color:#ccc;background:#1a1a1a }
+.tier-btn.tier-active { border-color:#10B981;color:#10B981;background:#10B98112 }
+.tier-btn .tier-icon { font-size:1.1rem }
+.tier-btn .tier-sub { font-size:.55rem;font-weight:400;color:#666;white-space:nowrap }
+.tier-btn.tier-active .tier-sub { color:#10B98199 }
+#tier-btn-deep.tier-active { border-color:#8B5CF6;color:#8B5CF6;background:#8B5CF612 }
+#tier-btn-deep.tier-active .tier-sub { color:#8B5CF699 }
+#tier-btn-deep:hover { border-color:#8B5CF666 }
+#tier-btn-fast.tier-active { border-color:#F59E0B;color:#F59E0B;background:#F59E0B12 }
+#tier-btn-fast.tier-active .tier-sub { color:#F59E0B99 }
+#tier-btn-fast:hover { border-color:#F59E0B66 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 </head>
@@ -211,16 +231,21 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 <div class="page" id="page-oracle">
   <h2>Oracle Chamber</h2>
   <p class="subtitle">Five AI minds debate. 45 real AI agents vote. One verdict emerges.</p>
-  <!-- Tier Toggle -->
-  <div id="tier-toggle-wrap" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 0">
-    <span id="tier-free-label" style="color:#fff;font-size:.75rem;font-weight:700;font-family:'JetBrains Mono',monospace">FREE</span>
-    <label style="position:relative;display:inline-block;width:44px;height:22px;cursor:pointer">
-      <input type="checkbox" id="premium-toggle" onchange="toggleTier(this.checked)" style="opacity:0;width:0;height:0;position:absolute">
-      <span id="tier-slider" style="position:absolute;top:0;left:0;right:0;bottom:0;background:#333;border-radius:11px;transition:.3s"></span>
-      <span id="tier-knob" style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
-    </label>
-    <span id="tier-premium-label" style="color:#666;font-size:.75rem;font-weight:700;font-family:'JetBrains Mono',monospace">PREMIUM &#x1F41F;</span>
-    <span id="tier-cost-label" style="color:#555;font-size:.65rem;font-family:'JetBrains Mono',monospace;margin-left:4px">(5 credits &bull; MiroFish Knowledge Graph)</span>
+  <!-- Tier Selector (3 options) -->
+  <div id="tier-toggle-wrap" style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:8px 0;flex-wrap:wrap">
+    <button id="tier-btn-free" class="tier-btn tier-active" onclick="selectTier('free')">
+      <span class="tier-icon">&#x26A1;</span> FREE
+      <span class="tier-sub">45 AI Agents</span>
+    </button>
+    <button id="tier-btn-fast" class="tier-btn" onclick="selectTier('fast')">
+      <span class="tier-icon">&#x1F41F;</span> FAST
+      <span class="tier-sub">5 credits &middot; ~30s</span>
+    </button>
+    <button id="tier-btn-deep" class="tier-btn" onclick="selectTier('deep')">
+      <span class="tier-icon">&#x1F9E0;</span> DEEP DIVE
+      <span class="tier-sub">10 credits &middot; ~3min</span>
+    </button>
+    <span id="tier-desc" style="margin-left:12px;font-size:.65rem;font-family:'JetBrains Mono',monospace;color:#888">Real-time AI swarm &mdash; 45 parallel Gemini agents</span>
     <span id="mf-status" style="margin-left:auto;font-size:.6rem;font-family:'JetBrains Mono',monospace;color:#555"></span>
   </div>
   <div class="oracle-input-wrap">
@@ -1151,11 +1176,23 @@ function testBubbleMap(){
 }
 
 var currentTier='free';
-function toggleTier(isPremium){
-  currentTier=isPremium?'premium':'free';
-  var fl=$('tier-free-label'),pl=$('tier-premium-label'),knob=$('tier-knob'),slider=$('tier-slider');
-  if(isPremium){fl.style.color='#666';pl.style.color='#10B981';knob.style.left='24px';slider.style.background='#10B981';checkMiroFish()}
-  else{fl.style.color='#fff';pl.style.color='#666';knob.style.left='2px';slider.style.background='#333';$('mf-status').textContent=''}
+var currentMode='free';
+var tierDescs={
+  free:'Real-time AI swarm — 45 parallel Gemini agents',
+  fast:'MiroFish Ontology — entity-based agents from knowledge graph (~30s)',
+  deep:'MiroFish Deep Dive — full knowledge graph construction (~3-5 min)'
+};
+function selectTier(tier){
+  currentTier=(tier==='free')?'free':'premium';
+  currentMode=tier;
+  ['free','fast','deep'].forEach(function(t){
+    var btn=$('tier-btn-'+t);
+    if(btn){btn.classList.toggle('tier-active',t===tier)}
+  });
+  var desc=$('tier-desc');
+  if(desc) desc.textContent=tierDescs[tier]||'';
+  if(tier!=='free'){checkMiroFish()}
+  else{$('mf-status').textContent=''}
 }
 async function checkMiroFish(){
   try{const r=await fetch('/api/mirofish/status');const d=await r.json();
@@ -1176,9 +1213,9 @@ function askOracle(){
     const headers={'Content-Type':'application/json'};
     if(token) headers['Authorization']='Bearer '+token;
     const endpoint=currentTier==='premium'?'/api/oracle/premium':'/api/oracle/free';
-    const r=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify({question:q})});
-    if(r.status===402){$('verdict-wrap').innerHTML='<div style="color:#F59E0B;text-align:center;padding:24px">Not enough credits for Premium. Need 5 credits.</div>';$('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';return}
-    if(r.status===503){$('verdict-wrap').innerHTML='<div style="color:#F59E0B;text-align:center;padding:24px">MiroFish offline. Credits refunded. Try Free tier.</div>';$('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';return}
+    const r=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify({question:q,mode:currentMode})});
+    if(r.status===402){var needCredits=currentMode==='deep'?10:5;$('verdict-wrap').innerHTML='<div style="color:#F59E0B;text-align:center;padding:24px">Not enough credits. Need '+needCredits+' credits.</div>';$('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';return}
+    if(r.status===503){$('verdict-wrap').innerHTML='<div style="color:#F59E0B;text-align:center;padding:24px">MiroFish offline. Credits refunded. Try Free tier or try again later.</div>';$('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';return}
     const data=await r.json();
 
     // Reveal agent debate cards one by one
@@ -1200,7 +1237,10 @@ function askOracle(){
     // Show swarm counts
     const sv=data.swarm_votes;
     await new Promise(r=>setTimeout(r,2500));
-    var tierLabel=data.tier==='premium'?'<span style="color:#10B981;font-size:.65rem"> &#x1F41F; PREMIUM</span>':'<span style="color:#999;font-size:.65rem"> &#x2728; REAL AI</span>';
+    var tierLabel;
+    if(data.tier==='premium'&&data.mode==='deep') tierLabel='<span style="color:#8B5CF6;font-size:.65rem"> &#x1F9E0; DEEP DIVE</span>';
+    else if(data.tier==='premium') tierLabel='<span style="color:#F59E0B;font-size:.65rem"> &#x1F41F; FAST MiroFish</span>';
+    else tierLabel='<span style="color:#999;font-size:.65rem"> &#x2728; REAL AI</span>';
     $('swarm-counts').innerHTML='<span class="count-yes">YES: '+sv.yes+'</span>'+
       '<span class="mono" style="color:#999">/ '+(sv.total||45)+'</span>'+
       '<span class="count-no">NO: '+sv.no+'</span>'+tierLabel;
