@@ -21,6 +21,9 @@ from pydantic import BaseModel
 from typing import Optional
 import httpx
 import aiosqlite
+import jwt
+from eth_account.messages import encode_defunct
+from eth_account import Account
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s", stream=sys.stdout)
 logger = logging.getLogger("omen")
@@ -57,6 +60,8 @@ API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "google/gemini-2.0-flash-exp:free")
 DB_PATH = BASE_DIR / "data" / "omen.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+JWT_SECRET = os.getenv("JWT_SECRET", "fallback-change-me")
+_siwe_nonces: dict[str, float] = {}
 
 # ── Database ─────────────────────────────────────────────────────────────
 async def init_database():
@@ -80,6 +85,16 @@ async def init_database():
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 referral_code TEXT UNIQUE,
                 referred_by TEXT
+            );
+            CREATE TABLE IF NOT EXISTS auth_providers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                provider TEXT NOT NULL,
+                provider_uid TEXT NOT NULL,
+                provider_data TEXT DEFAULT '{}',
+                linked_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(provider, provider_uid),
+                FOREIGN KEY (user_id) REFERENCES users(id)
             );
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -200,16 +215,21 @@ async def init_database():
 def hash_password(p): return hashlib.sha256(p.encode()).hexdigest()
 def verify_password(p, h): return hash_password(p) == h
 def create_token(uid, uname):
-    import base64
-    payload = json.dumps({"id":uid,"username":uname,"exp":time.time()+86400})
-    return base64.b64encode(payload.encode()).decode()
+    payload = {"id": uid, "username": uname, "exp": time.time() + 86400}
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 def decode_token(token):
-    import base64
     try:
-        payload = json.loads(base64.b64decode(token).decode())
-        if payload.get("exp",0) < time.time(): return None
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"], options={"verify_exp": False})
+        if payload.get("exp", 0) < time.time(): return None
         return payload
-    except: return None
+    except Exception:
+        import base64 as b64
+        try:
+            payload = json.loads(b64.b64decode(token).decode())
+            if payload.get("exp", 0) < time.time(): return None
+            return payload
+        except Exception:
+            return None
 
 # ── REAL Oracle Engine ───────────────────────────────────────────────────
 AGENTS = {
@@ -345,6 +365,12 @@ class PaymentVerifyRequest(BaseModel):
     tx_hash: str
     sender: str = None
 
+class WalletLoginRequest(BaseModel):
+    address: str
+    signature: str
+    nonce: str
+    message: str
+
 class PredictionRequest(BaseModel):
     question: str
 
@@ -391,6 +417,57 @@ async def me(request: Request):
         cursor = await db.execute("SELECT credits FROM users WHERE id=?",(user["id"],))
         row = await cursor.fetchone()
         return {"username":user["username"],"credits":row[0] if row else 0}
+
+# ── SIWE (Sign In With Ethereum) ─────────────────────────────────────────
+@app.get("/api/auth/nonce")
+async def get_nonce():
+    nonce = secrets.token_hex(16)
+    _siwe_nonces[nonce] = time.time() + 300
+    now = time.time()
+    for k in [k for k, v in _siwe_nonces.items() if v < now]:
+        del _siwe_nonces[k]
+    return {"nonce": nonce}
+
+@app.post("/api/auth/wallet-login")
+async def wallet_login(req: WalletLoginRequest):
+    try:
+        nonce_expiry = _siwe_nonces.get(req.nonce)
+        if not nonce_expiry or nonce_expiry < time.time():
+            return JSONResponse({"error": "Invalid or expired nonce"}, 400)
+        del _siwe_nonces[req.nonce]
+        message = encode_defunct(text=req.message)
+        recovered = Account.recover_message(message, signature=req.signature)
+        if recovered.lower() != req.address.lower():
+            return JSONResponse({"error": "Signature verification failed"}, 401)
+        wallet_addr = recovered.lower()
+        short_addr = f"wallet_{wallet_addr[:6]}...{wallet_addr[-4:]}"
+        async with aiosqlite.connect(str(DB_PATH)) as db:
+            cursor = await db.execute("SELECT user_id FROM auth_providers WHERE provider=? AND provider_uid=?", ("wallet", wallet_addr))
+            row = await cursor.fetchone()
+            if row:
+                user_id = row[0]
+                cursor2 = await db.execute("SELECT username, credits FROM users WHERE id=?", (user_id,))
+                urow = await cursor2.fetchone()
+                if not urow:
+                    return JSONResponse({"error": "User not found"}, 404)
+                tok = create_token(user_id, urow[0])
+                return {"token": tok, "username": urow[0], "credits": urow[1], "wallet": wallet_addr}
+            else:
+                ref_code = secrets.token_hex(4)
+                dummy_hash = hash_password(secrets.token_hex(32))
+                await db.execute("INSERT INTO users (username, password_hash, referral_code) VALUES (?,?,?)", (short_addr, dummy_hash, ref_code))
+                await db.commit()
+                cursor2 = await db.execute("SELECT id, credits FROM users WHERE username=?", (short_addr,))
+                urow = await cursor2.fetchone()
+                user_id = urow[0]
+                await db.execute("INSERT INTO auth_providers (user_id, provider, provider_uid, provider_data) VALUES (?,?,?,?)", (user_id, "wallet", wallet_addr, json.dumps({"address": recovered})))
+                await db.commit()
+                tok = create_token(user_id, short_addr)
+                logger.info(f"New wallet user: {short_addr} (id={user_id})")
+                return {"token": tok, "username": short_addr, "credits": urow[1], "wallet": wallet_addr}
+    except Exception as e:
+        logger.error(f"Wallet login error: {e}")
+        return JSONResponse({"error": f"Wallet login failed: {str(e)}"}, 500)
 
 @app.post("/api/oracle/predict")
 async def predict(req: PredictionRequest, request: Request):
