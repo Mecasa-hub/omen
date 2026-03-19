@@ -3014,8 +3014,7 @@ function showResearchContext(research, timeMs) {
     el.style.display = 'block';
     // Truncate and format
     var text = research.substring(0, 500);
-    textEl.innerHTML = text.replace(/
-/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<span style="color:#00ff41">$1</span>');
+    textEl.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<span style="color:#00ff41">$1</span>');
     if (timeMs) {
       var titleEl = el.querySelector('.gv-research-title');
       if (titleEl) titleEl.textContent = 'RESEARCH CONTEXT (' + (timeMs/1000).toFixed(1) + 's)';
