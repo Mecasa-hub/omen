@@ -269,80 +269,6 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
       50% { opacity: 0.8; transform: scale(1.05); }
     }
 
-/* ============ GOD VIEW TERMINAL ============ */
-#page-godview{background:#000 !important;color:#00ff41;padding:0 !important;max-width:100% !important;overflow:hidden;font-family:'JetBrains Mono',monospace}
-#page-godview *{font-family:'JetBrains Mono',monospace}
-.gv-terminal{width:100%;height:calc(100vh - 56px);display:flex;flex-direction:column;background:#000;position:relative}
-.gv-topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-bottom:1px solid #1a3a1a;font-size:.7rem;flex-shrink:0}
-.gv-logo{display:flex;align-items:center;gap:8px}
-.gv-logo-dot{width:8px;height:8px;border-radius:50%;background:#00ff41;box-shadow:0 0 8px #00ff41;animation:gv-pulse 2s infinite}
-.gv-logo-text{color:#00ff41;font-weight:700;font-size:.8rem;letter-spacing:2px}
-.gv-sysinfo{display:flex;gap:16px;color:#666}
-.gv-sysinfo span{color:#888}
-.gv-sysinfo .gv-val{color:#00ff41}
-.gv-metrics{display:flex;align-items:center;gap:12px;padding:6px 16px;background:#050505;border-bottom:1px solid #1a3a1a;flex-shrink:0;overflow-x:auto}
-.gv-metric{display:flex;align-items:center;gap:6px;font-size:.65rem}
-.gv-metric-label{color:#555;text-transform:uppercase}
-.gv-metric-val{color:#00ff41;font-weight:700}
-.gv-metric-bar{width:60px;height:6px;background:#111;border-radius:3px;overflow:hidden}
-.gv-metric-bar-fill{height:100%;border-radius:3px;transition:width .5s}
-.gv-metric-bar-fill.green{background:#00ff41}
-.gv-metric-bar-fill.yellow{background:#ffaa00}
-.gv-metric-bar-fill.red{background:#ff4444}
-.gv-main{display:flex;flex:1;overflow:hidden}
-.gv-events{width:280px;border-right:1px solid #1a3a1a;display:flex;flex-direction:column;flex-shrink:0}
-.gv-events-header{padding:8px 12px;font-size:.65rem;color:#555;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #111}
-.gv-events-list{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#1a3a1a #000}
-.gv-event{padding:3px 12px;font-size:.6rem;color:#444;border-left:2px solid transparent;transition:all .3s}
-.gv-event.new{color:#00ff41;border-left-color:#00ff41;background:rgba(0,255,65,0.03)}
-.gv-event .gv-etime{color:#333}
-.gv-event .gv-eid{color:#00aa33;font-weight:700}
-.gv-event .gv-eaction{color:#666}
-.gv-event.highlight .gv-eaction{color:#00ff41}
-.gv-graph{flex:1;position:relative;overflow:hidden}
-.gv-graph svg{width:100%;height:100%}
-.gv-node rect{fill:#0d0d0d;stroke:#1a3a1a;stroke-width:1;rx:4;cursor:pointer;transition:all .3s}
-.gv-node:hover rect{stroke:#00ff41;fill:#0a1a0a}
-.gv-node.active rect{stroke:#00ff41;fill:#0a1a0a;stroke-width:2;filter:drop-shadow(0 0 6px rgba(0,255,65,0.4))}
-.gv-node .gv-ndot{fill:#333}
-.gv-node.online .gv-ndot{fill:#00ff41;filter:drop-shadow(0 0 4px #00ff41)}
-.gv-node .gv-nname{fill:#888;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace}
-.gv-node.online .gv-nname{fill:#00ff41}
-.gv-node .gv-nrole{fill:#444;font-size:7px;font-family:'JetBrains Mono',monospace}
-.gv-node.voting .gv-nname{fill:#ffaa00}
-.gv-node.voted-yes rect{stroke:#00ff41;stroke-width:2}
-.gv-node.voted-no rect{stroke:#ff4444;stroke-width:2}
-.gv-link{stroke:#111;stroke-width:1}
-.gv-link.active{stroke:#00ff41;stroke-width:1.5;stroke-dasharray:4 2;animation:gv-dash 1s linear infinite}
-.gv-link-label{fill:#333;font-size:7px;font-family:'JetBrains Mono',monospace}
-.gv-link.active .gv-link-label{fill:#00ff41}
-.gv-bottombar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0a0a0a;border-top:1px solid #1a3a1a;font-size:.65rem;flex-shrink:0}
-.gv-cmd{display:flex;align-items:center;gap:8px;flex:1}
-.gv-cmd-prompt{color:#00ff41}
-.gv-cmd-input{background:transparent;border:none;color:#00ff41;font-family:'JetBrains Mono',monospace;font-size:.7rem;flex:1;outline:none;caret-color:#00ff41}
-.gv-cmd-input::placeholder{color:#333}
-.gv-status{display:flex;gap:16px;color:#555}
-.gv-status .gv-active{color:#00ff41}
-.gv-detail-panel{position:absolute;right:0;top:0;width:300px;height:100%;background:#0a0a0a;border-left:1px solid #1a3a1a;transform:translateX(100%);transition:transform .3s;z-index:10;overflow-y:auto;padding:16px}
-.gv-detail-panel.open{transform:translateX(0)}
-.gv-detail-panel h3{color:#00ff41;font-size:.8rem;margin:0 0 12px;letter-spacing:1px}
-.gv-detail-panel .gv-dp-field{margin-bottom:8px}
-.gv-detail-panel .gv-dp-label{color:#555;font-size:.6rem;text-transform:uppercase;letter-spacing:1px}
-.gv-detail-panel .gv-dp-value{color:#ccc;font-size:.7rem;margin-top:2px}
-.gv-detail-panel .gv-dp-trait-bar{width:100%;height:4px;background:#111;border-radius:2px;margin-top:4px}
-.gv-detail-panel .gv-dp-trait-fill{height:100%;border-radius:2px;background:#00ff41}
-.gv-detail-panel .gv-dp-close{position:absolute;top:8px;right:8px;color:#555;cursor:pointer;background:none;border:none;font-size:1rem}
-.gv-detail-panel .gv-dp-close:hover{color:#00ff41}
-.gv-boot-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;transition:opacity .5s}
-.gv-boot-overlay.hidden{opacity:0;pointer-events:none}
-.gv-boot-text{color:#00ff41;font-size:.7rem;max-width:600px;text-align:left;line-height:1.8}
-.gv-boot-text .gv-boot-line{opacity:0;animation:gv-bootline .3s forwards}
-.gv-boot-counter{color:#00ff41;font-size:2rem;font-weight:700;margin-top:20px}
-@keyframes gv-pulse{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes gv-dash{to{stroke-dashoffset:-6}}
-@keyframes gv-bootline{to{opacity:1}}
-@keyframes gv-scanline{0%{top:-100%}100%{top:100%}}
-.gv-scanline{position:absolute;top:-100%;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(0,255,65,0.1),transparent);z-index:5;animation:gv-scanline 4s linear infinite;pointer-events:none}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
@@ -789,17 +715,18 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .gv-event.highlight .gv-eaction{color:#00ff41}
 .gv-graph{flex:1;position:relative;overflow:hidden}
 .gv-graph svg{width:100%;height:100%}
-.gv-node rect{fill:#0d0d0d;stroke:#1a3a1a;stroke-width:1;rx:4;cursor:pointer;transition:all .3s}
-.gv-node:hover rect{stroke:#00ff41;fill:#0a1a0a}
-.gv-node.active rect{stroke:#00ff41;fill:#0a1a0a;stroke-width:2;filter:drop-shadow(0 0 6px rgba(0,255,65,0.4))}
+.gv-node .gv-ncircle{fill:#0a0f0a;stroke:#1a4a1a;stroke-width:1.5;cursor:pointer;transition:all .3s}
+.gv-node:hover .gv-ncircle{stroke:#00ff41;fill:#0a1a0a;filter:drop-shadow(0 0 8px rgba(0,255,65,0.3))}
+.gv-node.active .gv-ncircle{stroke:#00ff41;fill:#0a1a0a;stroke-width:2;filter:drop-shadow(0 0 10px rgba(0,255,65,0.5))}
+.gv-node.voted-yes .gv-ncircle{stroke:#00ff41;stroke-width:2;filter:drop-shadow(0 0 8px rgba(0,255,65,0.5))}
+.gv-node.voted-no .gv-ncircle{stroke:#ff4444;stroke-width:2;filter:drop-shadow(0 0 8px rgba(255,68,68,0.5))}
+.gv-node.voting .gv-ncircle{stroke:#ffaa00;filter:drop-shadow(0 0 6px rgba(255,170,0,0.5))}
 .gv-node .gv-ndot{fill:#333}
 .gv-node.online .gv-ndot{fill:#00ff41;filter:drop-shadow(0 0 4px #00ff41)}
 .gv-node .gv-nname{fill:#888;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace}
 .gv-node.online .gv-nname{fill:#00ff41}
 .gv-node .gv-nrole{fill:#444;font-size:7px;font-family:'JetBrains Mono',monospace}
 .gv-node.voting .gv-nname{fill:#ffaa00}
-.gv-node.voted-yes rect{stroke:#00ff41;stroke-width:2}
-.gv-node.voted-no rect{stroke:#ff4444;stroke-width:2}
 .gv-link{stroke:#111;stroke-width:1}
 .gv-link.active{stroke:#00ff41;stroke-width:1.5;stroke-dasharray:4 2;animation:gv-dash 1s linear infinite}
 .gv-link-label{fill:#333;font-size:7px;font-family:'JetBrains Mono',monospace}
@@ -811,12 +738,12 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .gv-cmd-input::placeholder{color:#333}
 .gv-status{display:flex;gap:16px;color:#555}
 .gv-status .gv-active{color:#00ff41}
-.gv-detail-panel{position:absolute;right:0;top:0;width:300px;height:100%;background:#0a0a0a;border-left:1px solid #1a3a1a;transform:translateX(100%);transition:transform .3s;z-index:10;overflow-y:auto;padding:16px}
+.gv-detail-panel{position:absolute;right:0;top:0;width:280px;height:100%;background:#0a0a0a;border-left:1px solid #1a3a1a;transform:translateX(100%);transition:transform .3s;z-index:10;overflow-y:auto;padding:12px;word-wrap:break-word;overflow-wrap:break-word}
 .gv-detail-panel.open{transform:translateX(0)}
 .gv-detail-panel h3{color:#00ff41;font-size:.8rem;margin:0 0 12px;letter-spacing:1px}
 .gv-detail-panel .gv-dp-field{margin-bottom:8px}
 .gv-detail-panel .gv-dp-label{color:#555;font-size:.6rem;text-transform:uppercase;letter-spacing:1px}
-.gv-detail-panel .gv-dp-value{color:#ccc;font-size:.7rem;margin-top:2px}
+.gv-detail-panel .gv-dp-value{color:#ccc;font-size:.65rem;margin-top:2px;word-wrap:break-word;overflow-wrap:break-word;max-width:100%}
 .gv-detail-panel .gv-dp-trait-bar{width:100%;height:4px;background:#111;border-radius:2px;margin-top:4px}
 .gv-detail-panel .gv-dp-trait-fill{height:100%;border-radius:2px;background:#00ff41}
 .gv-detail-panel .gv-dp-close{position:absolute;top:8px;right:8px;color:#555;cursor:pointer;background:none;border:none;font-size:1rem}
@@ -2663,8 +2590,14 @@ function startGodView() {
 
 function buildGVGraph() {
   var container = document.getElementById('gv-graph');
-  var w = container.clientWidth;
-  var h = container.clientHeight;
+  var w = container.clientWidth || container.offsetWidth || 800;
+  var h = container.clientHeight || container.offsetHeight || 500;
+
+  // Safety: if container not yet sized, retry
+  if (w < 100 || h < 100) {
+    setTimeout(buildGVGraph, 200);
+    return;
+  }
 
   container.innerHTML = '';
 
@@ -2672,32 +2605,45 @@ function buildGVGraph() {
     .attr('width', w).attr('height', h)
     .style('background', '#000');
 
+  // Dot grid background
+  for (var gx = 0; gx < w; gx += 30) {
+    for (var gy = 0; gy < h; gy += 30) {
+      svg.append('circle').attr('cx', gx).attr('cy', gy).attr('r', 0.5).attr('fill', '#1a3a1a').attr('opacity', 0.4);
+    }
+  }
+
   // Build nodes
   var nodes = gvAgents.map(function(a, i) {
+    var angle = (2 * Math.PI * i) / gvAgents.length;
+    var radius = Math.min(w, h) * 0.35;
     return {
       id: a.codename,
       role: a.role || 'AGENT',
       index: i,
       agentData: a,
-      x: w/2 + (Math.random() - 0.5) * w * 0.6,
-      y: h/2 + (Math.random() - 0.5) * h * 0.6
+      x: w/2 + radius * Math.cos(angle) + (Math.random() - 0.5) * 40,
+      y: h/2 + radius * Math.sin(angle) + (Math.random() - 0.5) * 40
     };
   });
 
-  // Build links based on allies/rivals
+  // Build links based on allies
   var links = [];
   var nodeMap = {};
   nodes.forEach(function(n) { nodeMap[n.id] = n; });
-
   gvAgents.forEach(function(a) {
     (a.allies || []).forEach(function(ally) {
-      if (nodeMap[ally]) {
-        links.push({ source: a.codename, target: ally, type: 'ally' });
-      }
+      if (nodeMap[ally]) links.push({ source: a.codename, target: ally, type: 'ally' });
     });
   });
-
-  // Deduplicate links
+  // Add random connections for visual density if few allies
+  if (links.length < 30) {
+    for (var li = 0; li < 40; li++) {
+      var a = nodes[Math.floor(Math.random() * nodes.length)];
+      var b = nodes[Math.floor(Math.random() * nodes.length)];
+      if (a.id !== b.id) links.push({ source: a.id, target: b.id, type: 'sync' });
+    }
+  }
+  // Deduplicate
   var seen = {};
   links = links.filter(function(l) {
     var key = [l.source, l.target].sort().join('-');
@@ -2706,30 +2652,24 @@ function buildGVGraph() {
     return true;
   });
 
-  // Force simulation
+  // Force simulation - tighter clustering
+  var nodeRadius = Math.max(14, Math.min(22, Math.min(w, h) / 40));
   gvSimulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(function(d){return d.id}).distance(100).strength(0.3))
-    .force('charge', d3.forceManyBody().strength(-200))
-    .force('center', d3.forceCenter(w/2, h/2))
-    .force('collision', d3.forceCollide().radius(45))
-    .force('x', d3.forceX(w/2).strength(0.05))
-    .force('y', d3.forceY(h/2).strength(0.05));
+    .force('link', d3.forceLink(links).id(function(d){return d.id}).distance(60).strength(0.4))
+    .force('charge', d3.forceManyBody().strength(-120))
+    .force('center', d3.forceCenter(w/2, h/2).strength(0.1))
+    .force('collision', d3.forceCollide().radius(nodeRadius + 4))
+    .force('x', d3.forceX(w/2).strength(0.08))
+    .force('y', d3.forceY(h/2).strength(0.08));
 
   // Draw links
-  var linkGroup = svg.append('g');
-  var linkEls = linkGroup.selectAll('line')
+  var linkEls = svg.append('g').selectAll('line')
     .data(links).enter().append('line')
-    .attr('class', 'gv-link')
-    .attr('stroke', function(d) { return d.type === 'ally' ? '#0a2a0a' : '#2a0a0a'; });
+    .attr('stroke', function(d) { return d.type === 'ally' ? '#0f3f0f' : '#0a1a0a'; })
+    .attr('stroke-width', function(d) { return d.type === 'ally' ? 1.5 : 0.5; })
+    .attr('opacity', 0.6);
 
-  // Draw link labels
-  var linkLabels = linkGroup.selectAll('text')
-    .data(links).enter().append('text')
-    .attr('class', 'gv-link-label')
-    .text(function() { return GV_OPERATIONS[Math.floor(Math.random() * GV_OPERATIONS.length)]; })
-    .attr('text-anchor', 'middle');
-
-  // Draw nodes
+  // Draw nodes as circles with glow
   var nodeGroup = svg.append('g');
   var nodeEls = nodeGroup.selectAll('g')
     .data(nodes).enter().append('g')
@@ -2743,29 +2683,50 @@ function buildGVGraph() {
       .on('end', function(event, d) { if (!event.active) gvSimulation.alphaTarget(0); d.fx = null; d.fy = null; })
     );
 
-  // Node background rect
-  nodeEls.append('rect')
-    .attr('width', 80).attr('height', 32)
-    .attr('x', -40).attr('y', -16)
-    .attr('rx', 4);
+  // Outer glow ring
+  nodeEls.append('circle')
+    .attr('r', nodeRadius + 3)
+    .attr('fill', 'none')
+    .attr('stroke', '#00ff41')
+    .attr('stroke-width', 0.5)
+    .attr('opacity', 0.15);
 
-  // Status dot
+  // Main circle
+  nodeEls.append('circle')
+    .attr('class', 'gv-ncircle')
+    .attr('r', nodeRadius)
+    .attr('fill', '#0a0f0a')
+    .attr('stroke', '#1a4a1a')
+    .attr('stroke-width', 1.5);
+
+  // Status dot (inner)
   nodeEls.append('circle')
     .attr('class', 'gv-ndot')
-    .attr('cx', -32).attr('cy', -4)
-    .attr('r', 3);
+    .attr('cx', 0).attr('cy', -nodeRadius + 5)
+    .attr('r', 2.5)
+    .attr('fill', '#00ff41')
+    .style('filter', 'drop-shadow(0 0 3px #00ff41)');
 
-  // Agent name
+  // Agent name (short, centered)
   nodeEls.append('text')
     .attr('class', 'gv-nname')
-    .attr('x', -22).attr('y', -3)
-    .text(function(d) { return d.id; });
+    .attr('x', 0).attr('y', 1)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#00ff41')
+    .attr('font-size', Math.max(6, nodeRadius * 0.55) + 'px')
+    .attr('font-weight', '700')
+    .attr('font-family', "'JetBrains Mono',monospace")
+    .text(function(d) { return d.id.substring(0, 5); });
 
-  // Agent role
+  // Agent role (below)
   nodeEls.append('text')
     .attr('class', 'gv-nrole')
-    .attr('x', -22).attr('y', 8)
-    .text(function(d) { return d.role.substring(0, 12); });
+    .attr('x', 0).attr('y', nodeRadius + 10)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#444')
+    .attr('font-size', '6px')
+    .attr('font-family', "'JetBrains Mono',monospace")
+    .text(function(d) { return d.role.substring(0, 10); });
 
   // Simulation tick
   gvSimulation.on('tick', function() {
@@ -2775,15 +2736,19 @@ function buildGVGraph() {
       .attr('x2', function(d){return d.target.x})
       .attr('y2', function(d){return d.target.y});
 
-    linkLabels
-      .attr('x', function(d){return (d.source.x + d.target.x)/2})
-      .attr('y', function(d){return (d.source.y + d.target.y)/2});
-
     nodeEls.attr('transform', function(d) {
-      d.x = Math.max(45, Math.min(w - 45, d.x));
-      d.y = Math.max(20, Math.min(h - 20, d.y));
+      d.x = Math.max(nodeRadius + 5, Math.min(w - nodeRadius - 5, d.x));
+      d.y = Math.max(nodeRadius + 5, Math.min(h - nodeRadius - 5, d.y));
       return 'translate(' + d.x + ',' + d.y + ')';
     });
+  });
+
+  // Resize handler
+  window.addEventListener('resize', function() {
+    if (document.querySelector('.page.active')?.id === 'page-godview') {
+      gvInitialized = false;
+      initGodView();
+    }
   });
 }
 
