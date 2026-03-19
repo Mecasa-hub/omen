@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://person-rhythm-application-kinase.trycloudflare.com" target="_blank"><strong>🌐 Live Demo</strong></a> •
+  <a href="https://suit-activation-nano-ashley.trycloudflare.com" target="_blank"><strong>🌐 Live Demo</strong></a> •
     <a href="#quick-start">Quick Start</a> •
   <a href="#features">Features</a> •
   <a href="#how-it-works">How It Works</a> •
@@ -29,7 +29,7 @@
 
 ## 🌐 Live Demo
 
-> **[➡️ Try OMEN Live](https://person-rhythm-application-kinase.trycloudflare.com)**
+> **[➡️ Try OMEN Live](https://suit-activation-nano-ashley.trycloudflare.com)**
 >
 > Full access to the AI Oracle, Auto-Pilot, Backtesting, Whale Tracking, and more.
 
