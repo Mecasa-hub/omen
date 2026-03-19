@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OMEN - The Oracle Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--black:#000;--white:#FFF;--bg:#FAFAFA;--border:#EAEAEA;--gray:#666;--light-gray:#999;--accent:#FF4500}
+body{font-family:'Space Grotesk',system-ui,sans-serif;background:var(--white);color:var(--black);min-height:100vh}
+.mono{font-family:'JetBrains Mono',monospace}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#f1f1f1}::-webkit-scrollbar-thumb{background:#000}
+.navbar{height:56px;background:var(--black);color:var(--white);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:100}
+.nav-brand{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1rem;letter-spacing:2px;cursor:pointer}
+.nav-links{display:flex;gap:4px}
+.nav-link{color:#999;text-decoration:none;font-size:.75rem;font-weight:600;padding:8px 16px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;transition:color .2s;cursor:pointer;border:none;background:none}
+.nav-link:hover,.nav-link.active{color:#fff}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#999}
+.btn-sm{padding:6px 14px;font-size:.7rem;font-weight:600;border:1px solid #333;background:transparent;color:#fff;cursor:pointer;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;text-transform:uppercase;transition:all .2s}
+.btn-sm:hover{background:#fff;color:#000}
+.page{display:none;max-width:1100px;margin:0 auto;padding:40px 32px}.page.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+.stat-card{border:1px solid var(--border);padding:24px;transition:all .2s}.stat-card:hover{border-color:#000;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;font-weight:500}
+.oracle-input-wrap{position:relative;margin-bottom:32px}
+.oracle-input{width:100%;padding:20px 24px;font-size:1rem;border:1px solid var(--border);background:var(--white);font-family:'Space Grotesk',sans-serif;outline:none;transition:border .2s}.oracle-input:focus{border-color:#000}.oracle-input::placeholder{color:#ccc}
+.oracle-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);padding:10px 24px;background:#000;color:#fff;border:none;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .2s}.oracle-btn:hover{background:#333}.oracle-btn:disabled{opacity:.3;cursor:not-allowed}
+.war-room{display:none}.war-room.active{display:block}
+.agents-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:32px}
+.agent-card{border:1px solid var(--border);padding:16px;position:relative;transition:all .3s}.agent-card.revealed{border-color:#000}
+.agent-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;color:#fff;margin-bottom:10px}
+.agent-name{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;margin-bottom:2px}
+.agent-role{font-size:.65rem;color:var(--light-gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.agent-reasoning{font-size:.8rem;line-height:1.6;color:#333;min-height:60px;opacity:0;transition:opacity .5s}.agent-card.revealed .agent-reasoning{opacity:1}
+.agent-vote{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:3px 8px;letter-spacing:1px;margin-top:8px;border:1px solid}
+.vote-yes{color:#10B981;border-color:#10B981;background:#10B9811a}.vote-no{color:#EF4444;border-color:#EF4444;background:#EF44441a}
+.swarm-section{margin:32px 0;text-align:center}
+.swarm-label{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--light-gray);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px}
+.swarm-grid{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;max-width:600px;margin:0 auto 16px;padding:20px;border:1px solid var(--border)}
+.swarm-dot{width:8px;height:8px;border-radius:1px;background:#E5E5E5;transition:background .4s ease}.swarm-dot.yes{background:#10B981}.swarm-dot.no{background:#EF4444}
+.swarm-counts{display:flex;justify-content:center;gap:24px;font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.count-yes{color:#10B981;font-weight:600}.count-no{color:#EF4444;font-weight:600}
+.verdict-card{border:2px solid #000;padding:32px;text-align:center;margin:32px 0}
+.verdict-label{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--light-gray);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.verdict-text{font-size:2.5rem;font-weight:700;margin-bottom:8px}
+.verdict-conf{font-family:'JetBrains Mono',monospace;font-size:1.2rem;color:var(--gray)}
+.whale-row{display:flex;justify-content:center;gap:8px;margin-top:16px}
+.whale-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem}.whale-dot.agree{border-color:#10B981;color:#10B981}.whale-dot.disagree{border-color:#EF4444;color:#EF4444}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{font-family:'JetBrains Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--light-gray);font-weight:600;text-align:left;padding:12px 16px;border-bottom:1px solid var(--border)}
+td{padding:12px 16px;border-bottom:1px solid #F5F5F5}tr:hover td{background:#FAFAFA}
+.whale-name{font-weight:600}.whale-pnl{font-family:'JetBrains Mono',monospace;font-weight:600;color:#10B981}
+.packages-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.pkg-card{border:1px solid var(--border);padding:24px;text-align:center;transition:all .2s}.pkg-card:hover{border-color:#000}.pkg-card.featured{border:2px solid #000}
+.pkg-name{font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;color:var(--light-gray);margin-bottom:8px}
+.pkg-credits{font-size:2rem;font-weight:700;margin-bottom:4px}
+.pkg-price{font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--gray)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px)}.modal-overlay.active{display:flex}
+.modal-box{background:#fff;width:380px;padding:32px;border:1px solid var(--border)}
+.modal-title{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;margin-bottom:24px;text-align:center;letter-spacing:1px}
+.form-input{width:100%;padding:12px 16px;border:1px solid var(--border);font-family:'Space Grotesk',sans-serif;font-size:.9rem;margin-bottom:12px;outline:none}.form-input:focus{border-color:#000}
+.form-btn{width:100%;padding:12px;background:#000;color:#fff;border:none;font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:8px}.form-btn:hover{background:#333}
+.form-switch{text-align:center;margin-top:16px;font-size:.8rem;color:var(--gray)}.form-switch a{color:#000;cursor:pointer;font-weight:600}
+.form-error{color:#EF4444;font-size:.75rem;text-align:center;margin-bottom:8px;min-height:18px}
+.loading{display:inline-block;width:16px;height:16px;border:2px solid #E5E5E5;border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.section-header{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--light-gray);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;gap:12px}.section-header::after{content:'';flex:1;height:1px;background:var(--border)}
+h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray);font-size:.9rem;margin-bottom:32px}
+.pay-card{border:2px solid #000;padding:32px;text-align:center;margin-bottom:32px}
+.pay-network{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#10B981;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.net-dot{width:8px;height:8px;border-radius:50%;background:#10B981;display:inline-block;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pay-address{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:600;padding:12px;background:#F5F5F5;cursor:pointer;word-break:break-all;transition:background .2s}.pay-address:hover{background:#EAEAEA}
+.pay-copy{font-size:.7rem;color:var(--light-gray);margin-top:8px}
+.pay-tokens{display:flex;justify-content:center;gap:8px;margin-top:16px}
+.token-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;padding:4px 12px;border:1px solid var(--border);letter-spacing:.5px}
+.pay-note{font-size:.75rem;color:var(--gray);margin-top:12px}
+.verify-wrap{position:relative;margin-bottom:16px}
+.verify-ok{border:1px solid #10B981;padding:20px;margin-top:16px}.verify-ok .vr-label{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#10B981;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}.verify-ok .vr-credits{font-size:2rem;font-weight:700;color:#10B981}
+.verify-fail{border:1px solid #EF4444;padding:20px;margin-top:16px;color:#EF4444;font-size:.85rem}
+.poly-status{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--gray);display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 12px;border:1px solid var(--border);width:fit-content}
+.trade-panel{border:1px solid var(--border);padding:24px;margin-bottom:16px}
+#markets-list .mkt-row{padding:10px 16px;border-bottom:1px solid #F5F5F5;cursor:pointer;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;transition:background .1s}#markets-list .mkt-row:hover{background:#FAFAFA}
+.trade-ok{border:1px solid #10B981;padding:16px;font-size:.85rem;color:#10B981}
+.trade-err{border:1px solid #EF4444;padding:16px;font-size:.85rem;color:#EF4444}
+/* Phase 3 Styles */
+.alert-bell{cursor:pointer;font-size:1.2rem;position:relative;padding:4px 8px}
+.alert-badge{position:absolute;top:-2px;right:-2px;background:#EF4444;color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;font-family:'JetBrains Mono',monospace}
+.alert-panel{position:fixed;top:50px;right:20px;width:360px;max-height:500px;background:#111;border:1px solid #333;border-radius:8px;z-index:1000;display:none;overflow-y:auto}
+.alert-panel.show{display:block}
+.alert-item{padding:12px 16px;border-bottom:1px solid #222;cursor:pointer}
+.alert-item:hover{background:#1a1a1a}
+.alert-item.unread{border-left:3px solid #3B82F6}
+.alert-item .alert-title{font-weight:600;font-size:.85rem}
+.alert-item .alert-msg{color:#999;font-size:.75rem;margin-top:4px}
+.alert-item .alert-time{color:#666;font-size:.65rem;margin-top:4px}
+.risk-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+.risk-card{background:#111;border:1px solid #333;border-radius:8px;padding:20px;cursor:pointer;text-align:center;transition:all .2s}
+.risk-card:hover,.risk-card.active{border-color:#fff}
+.risk-card.active{background:#1a1a1a}
+.risk-card h4{margin:8px 0 4px}
+.risk-card p{color:#999;font-size:.75rem}
+.risk-card .risk-stat{font-family:'JetBrains Mono',monospace;font-size:.8rem;margin-top:8px;color:#aaa}
+.toggle-switch{position:relative;width:48px;height:24px;display:inline-block}
+.toggle-switch input{display:none}
+.toggle-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#333;border-radius:12px;cursor:pointer;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#666;border-radius:50%;transition:.3s}
+.toggle-switch input:checked+.toggle-slider{background:#10B981}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(24px);background:#fff}
+.autopilot-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.autopilot-status{display:flex;align-items:center;gap:12px}
+.status-dot{width:12px;height:12px;border-radius:50%;background:#666}
+.status-dot.active{background:#10B981;box-shadow:0 0 8px #10B981}
+.backtest-config{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
+.backtest-config label{font-size:.75rem;color:#999;text-transform:uppercase;letter-spacing:1px}
+.backtest-results{margin-top:24px}
+.result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:16px 0}
+.result-card{background:#111;border:1px solid #333;border-radius:8px;padding:16px;text-align:center}
+.result-card .value{font-size:1.8rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+.result-card .label{font-size:.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.result-card.positive .value{color:#10B981}
+.result-card.negative .value{color:#EF4444}
+.detail-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.8rem}
+.detail-table th{text-align:left;padding:8px 12px;border-bottom:1px solid #333;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:1px;font-size:.7rem}
+.detail-table td{padding:8px 12px;border-bottom:1px solid #1a1a1a}
+.detail-table tr:hover{background:#111}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600}
+.badge-green{background:#10B98122;color:#10B981}
+.badge-red{background:#EF444422;color:#EF4444}
+.badge-blue{background:#3B82F622;color:#3B82F6}
+.portfolio-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:16px 0}
+.portfolio-stat{background:#111;border:1px solid #333;border-radius:8px;padding:16px}
+.portfolio-stat .stat-value{font-size:1.4rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+.portfolio-stat .stat-label{font-size:.7rem;color:#999;text-transform:uppercase;margin-top:4px}
+.discover-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:16px 0}
+.discover-card{background:#111;border:1px solid #333;border-radius:8px;padding:16px}
+.discover-card .whale-addr{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#999}
+.discover-card .whale-stats{display:flex;gap:16px;margin-top:8px;font-size:.8rem}
+.discover-card .whale-stat{text-align:center}
+.discover-card .whale-stat .val{font-weight:700}
+.discover-card .whale-stat .lbl{font-size:.65rem;color:#999}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-brand" onclick="navigate('dashboard')">OMEN</div>
+  <div class="nav-links">
+    <button class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">Dashboard</button>
+    <button class="nav-link" data-page="oracle" onclick="navigate('oracle')">Oracle</button>
+    <button class="nav-link" data-page="whales" onclick="navigate('whales')">Whales</button>
+    <button class="nav-link" data-page="trading" onclick="navigate('trading')">Trading</button>
+    <button class="nav-link" data-page="credits" onclick="navigate('credits')">Credits</button>
+    <button class="nav-link" data-page="portfolio" onclick="navigate('portfolio')">Portfolio</button>
+    <button class="nav-link" data-page="autopilot" onclick="navigate('autopilot')">Auto-Pilot</button>
+    <button class="nav-link" data-page="backtest" onclick="navigate('backtest')">Backtest</button>
+  </div>
+  <div class="nav-right">
+    <span class="alert-bell" id="alert-bell" onclick="toggleAlerts()" title="Alerts">&#128276;<span class="alert-badge" id="alert-badge" style="display:none">0</span></span>
+    <span class="nav-user" id="nav-user"></span>
+    <button class="btn-sm" id="auth-btn" onclick="showAuth()">Login</button>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="section-header">System Overview</div>
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-value" id="st-predictions">--</div><div class="stat-label">Predictions</div></div>
+    <div class="stat-card"><div class="stat-value" id="st-winrate">--</div><div class="stat-label">Win Rate</div></div>
+    <div class="stat-card"><div class="stat-value" id="st-whales">--</div><div class="stat-label">Active Whales</div></div>
+    <div class="stat-card"><div class="stat-value" id="st-streak">--</div><div class="stat-label">Oracle Streak</div></div>
+  </div>
+  <div class="section-header">Quick Oracle</div>
+  <div class="oracle-input-wrap">
+    <input class="oracle-input" id="dash-oracle-input" placeholder="Ask the Oracle anything..." onkeydown="if(event.key==='Enter')dashPredict()">
+    <button class="oracle-btn" onclick="dashPredict()">Ask</button>
+  </div>
+</div>
+
+<!-- ORACLE -->
+<div class="page" id="page-oracle">
+  <h2>Oracle Chamber</h2>
+  <p class="subtitle">Five AI minds debate. 1,200 agents vote. One verdict emerges.</p>
+  <div class="oracle-input-wrap">
+    <input class="oracle-input" id="oracle-input" placeholder="Will Bitcoin exceed $100k by end of year?" onkeydown="if(event.key==='Enter')askOracle()">
+    <button class="oracle-btn" id="oracle-go" onclick="askOracle()">Consult Oracle</button>
+  </div>
+  <div class="war-room" id="war-room">
+    <div class="section-header">Agent Debate</div>
+    <div class="agents-grid" id="agents-grid"></div>
+    <div class="swarm-section">
+      <div class="swarm-label">Swarm Intelligence Matrix - 1,200 Agents</div>
+      <div class="swarm-grid" id="swarm-grid"></div>
+      <div class="swarm-counts" id="swarm-counts"></div>
+    </div>
+    <div id="verdict-wrap"></div>
+  </div>
+</div>
+
+<!-- WHALES -->
+<div class="page" id="page-whales">
+  <h2>Whale Tracker</h2>
+  <p class="subtitle">Live on-chain tracking of Polymarket whale wallets on Polygon.</p>
+  <div class="poly-status" id="poly-status"><span class="net-dot"></span> Polygon Block: <span class="mono" id="poly-block">--</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:24px">
+    <button class="btn-sm" onclick="loadWhales()" style="border-color:#333;color:#000">DB Whales</button>
+    <button class="btn-sm" onclick="loadLiveWhales()" style="border-color:#333;color:#000">Live On-Chain</button>
+  </div>
+  <div class="table-wrap"><table><thead><tr id="whale-thead"><th>#</th><th>Name</th><th>Win Rate</th><th>Trades</th><th>30d PnL</th><th>Volume</th><th>Specialty</th></tr></thead><tbody id="whale-tbody"></tbody></table></div>
+</div>
+
+<!-- TRADING -->
+<div class="page" id="page-trading">
+  <h2>Trading</h2>
+  <p class="subtitle">Connect your Polymarket wallet. Trade manually, copy whales, or let the Oracle decide.</p>
+  <div class="section-header">Wallet Connection</div>
+  <div id="wallet-status-wrap">
+    <div id="wallet-disconnected">
+      <div class="pay-card" style="text-align:left;border-color:var(--border)">
+        <div style="font-weight:600;margin-bottom:4px">Connect Polymarket Wallet</div>
+        <div style="font-size:.8rem;color:var(--gray);margin-bottom:16px">Enter your Polymarket API credentials from polymarket.com &gt; Settings &gt; API.</div>
+        <input class="form-input" id="pm-key" placeholder="API Key">
+        <input class="form-input" id="pm-secret" placeholder="API Secret" type="password">
+        <input class="form-input" id="pm-pass" placeholder="Passphrase" type="password">
+        <button class="form-btn" onclick="connectWallet()" id="connect-btn">Connect Wallet</button>
+        <div class="form-error" id="wallet-error" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div id="wallet-connected" style="display:none">
+      <div class="pay-card" style="border-color:#10B981">
+        <div class="pay-network"><span class="net-dot"></span> Polymarket Connected</div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:12px">
+          <button class="btn-sm" onclick="disconnectWallet()" style="border-color:#EF4444;color:#EF4444">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section-header">Trading Modes</div>
+  <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card" style="cursor:pointer" onclick="showTradePanel('manual')"><div class="stat-value" style="font-size:1.5rem">MANUAL</div><div class="stat-label">Pick markets & trade</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="showTradePanel('oracle')"><div class="stat-value" style="font-size:1.5rem">ORACLE</div><div class="stat-label">Auto-bet on verdicts</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="showTradePanel('copy')"><div class="stat-value" style="font-size:1.5rem">COPY</div><div class="stat-label">Mirror whale positions</div></div>
+  </div>
+  <div id="trade-panel-manual" class="trade-panel" style="display:none">
+    <div class="section-header">Manual Trade</div>
+    <button class="btn-sm" onclick="loadMarkets()" style="border-color:#333;color:#000;margin-bottom:16px">Load Markets</button>
+    <div id="markets-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);margin-bottom:16px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <input class="form-input" id="trade-token" placeholder="Token ID">
+      <select class="form-input" id="trade-side" style="padding:12px"><option value="BUY">BUY (Yes)</option><option value="SELL">SELL (No)</option></select>
+      <input class="form-input" id="trade-price" placeholder="Price (0.01-0.99)" type="number" step="0.01">
+      <input class="form-input" id="trade-size" placeholder="Size (USDC)" type="number" step="1">
+    </div>
+    <button class="form-btn" onclick="placeTrade()" id="place-btn" style="margin-top:12px">Place Order</button>
+    <div id="trade-result" style="margin-top:12px"></div>
+  </div>
+  <div id="trade-panel-oracle" class="trade-panel" style="display:none">
+    <div class="section-header">Oracle Auto-Trade</div>
+    <p style="font-size:.85rem;color:var(--gray);margin-bottom:16px">Ask a question. Oracle analyzes, then auto-bets on the closest Polymarket market.</p>
+    <input class="oracle-input" id="oracle-trade-q" placeholder="Will Bitcoin exceed $100k by end of year?" style="margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <input class="form-input" id="oracle-trade-amt" placeholder="Bet amount (USDC)" type="number" value="5">
+      <input class="form-input" id="oracle-trade-conf" placeholder="Min confidence %" type="number" value="65">
+    </div>
+    <button class="form-btn" onclick="oracleTrade()" id="oracle-trade-btn" style="margin-top:12px">Consult Oracle and Trade</button>
+    <div id="oracle-trade-result" style="margin-top:12px"></div>
+  </div>
+  <div id="trade-panel-copy" class="trade-panel" style="display:none">
+    <div class="section-header">Copy Trade</div>
+    <p style="font-size:.85rem;color:var(--gray);margin-bottom:16px">Mirror the latest trade from a whale wallet.</p>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+      <input class="form-input" id="copy-address" placeholder="Whale wallet address (0x...)">
+      <input class="form-input" id="copy-max" placeholder="Max USDC" type="number" value="10">
+    </div>
+    <button class="form-btn" onclick="copyTrade()" id="copy-btn" style="margin-top:12px">Copy Latest Trade</button>
+    <div id="copy-result" style="margin-top:12px"></div>
+  </div>
+  <div class="section-header" style="margin-top:32px">Trade History</div>
+  <div class="table-wrap"><table><thead><tr><th>Time</th><th>Source</th><th>Market</th><th>Side</th><th>Price</th><th>Size</th><th>Status</th></tr></thead><tbody id="history-tbody"><tr><td colspan="7" class="mono" style="text-align:center;color:var(--light-gray);padding:24px">No trades yet</td></tr></tbody></table></div>
+</div>
+
+<!-- CREDITS -->
+<div class="page" id="page-credits">
+  <h2>Credits</h2>
+  <p class="subtitle">Pay with crypto on Polygon. No subscriptions.</p>
+  <div class="section-header">Payment Address</div>
+  <div class="pay-card">
+    <div class="pay-network"><span class="net-dot"></span> Polygon Network</div>
+    <div class="pay-address" id="pay-address" onclick="copyAddr()">0x135C480C813451eF443A2F60cfaD49EA7197B855</div>
+    <div class="pay-copy" id="pay-copy">Click to copy</div>
+    <div class="pay-tokens"><span class="token-badge">MATIC</span><span class="token-badge">USDC</span><span class="token-badge">USDC.e</span></div>
+    <div class="pay-note mono">MATIC Price: $<span id="matic-price">--</span></div>
+  </div>
+  <div class="section-header">Credit Tiers</div>
+  <div class="packages-grid" id="pkg-grid"></div>
+  <div class="section-header">Verify Payment</div>
+  <div class="verify-wrap">
+    <input class="oracle-input" id="tx-hash-input" placeholder="Paste your Polygon transaction hash (0x...)">
+    <button class="oracle-btn" onclick="verifyPayment()" id="verify-btn">Verify</button>
+  </div>
+  <div id="verify-result"></div>
+</div>
+
+
+<!-- ALERT PANEL -->
+<div class="alert-panel" id="alert-panel">
+  <div style="padding:12px 16px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-weight:700;font-size:.85rem">Notifications</span>
+    <button class="btn-sm" onclick="markAllRead()" style="font-size:.65rem">Mark all read</button>
+  </div>
+  <div id="alerts-list"><div style="padding:24px;text-align:center;color:#666">No notifications</div></div>
+</div>
+
+<!-- PORTFOLIO PAGE -->
+<div class="page" id="page-portfolio">
+  <h2>Portfolio</h2>
+  <p class="subtitle">Track your positions, PnL, and win rate</p>
+  <div class="portfolio-stats" id="portfolio-stats">
+    <div class="portfolio-stat"><div class="stat-value" id="pf-trades">0</div><div class="stat-label">Total Trades</div></div>
+    <div class="portfolio-stat"><div class="stat-value" id="pf-open">0</div><div class="stat-label">Open Positions</div></div>
+    <div class="portfolio-stat"><div class="stat-value" id="pf-winrate">0%</div><div class="stat-label">Win Rate</div></div>
+    <div class="portfolio-stat"><div class="stat-value" id="pf-pnl">$0</div><div class="stat-label">Total PnL</div></div>
+  </div>
+  <div class="section-header">Trade Breakdown</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card"><h4>By Source</h4><div id="pf-by-source" class="mono" style="font-size:.8rem">--</div></div>
+    <div class="card"><h4>By Side</h4><div id="pf-by-side" class="mono" style="font-size:.8rem">--</div></div>
+  </div>
+  <div class="section-header">Recent Trades</div>
+  <table class="detail-table" id="pf-recent">
+    <thead><tr><th>Market</th><th>Side</th><th>Size</th><th>Source</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody id="pf-trades-body"><tr><td colspan="6" style="text-align:center;color:#666;padding:24px">No trades yet. Start trading to see your portfolio.</td></tr></tbody>
+  </table>
+</div>
+
+<!-- AUTO-PILOT PAGE -->
+<div class="page" id="page-autopilot">
+  <h2>Auto-Pilot</h2>
+  <p class="subtitle">Fully automated trading powered by Oracle AI + Whale Intelligence</p>
+  <div class="autopilot-header">
+    <div class="autopilot-status">
+      <div class="status-dot" id="ap-dot"></div>
+      <span id="ap-status-text" style="font-weight:600">Disabled</span>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="ap-toggle" onchange="toggleAutopilot()">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <div class="section-header">Risk Profile</div>
+  <div class="risk-cards" id="risk-cards">
+    <div class="risk-card" data-profile="conservative" onclick="selectProfile('conservative')">
+      <div style="font-size:2rem">&#128737;</div>
+      <h4>Conservative</h4>
+      <p>High confidence only. Small bets. Whale agreement required.</p>
+      <div class="risk-stat">Min conf: 80% | Max bet: $10 | Daily: $50</div>
+    </div>
+    <div class="risk-card active" data-profile="balanced" onclick="selectProfile('balanced')">
+      <div style="font-size:2rem">&#9878;</div>
+      <h4>Balanced</h4>
+      <p>Medium confidence. Moderate bets. No whale requirement.</p>
+      <div class="risk-stat">Min conf: 65% | Max bet: $25 | Daily: $150</div>
+    </div>
+    <div class="risk-card" data-profile="aggressive" onclick="selectProfile('aggressive')">
+      <div style="font-size:2rem">&#128293;</div>
+      <h4>Aggressive</h4>
+      <p>Lower confidence threshold. Larger bets. Maximum opportunities.</p>
+      <div class="risk-stat">Min conf: 55% | Max bet: $50 | Daily: $300</div>
+    </div>
+  </div>
+  <div class="section-header">Today's Stats</div>
+  <div class="portfolio-stats">
+    <div class="portfolio-stat"><div class="stat-value" id="ap-trades-today">0</div><div class="stat-label">Trades Today</div></div>
+    <div class="portfolio-stat"><div class="stat-value" id="ap-spent-today">$0</div><div class="stat-label">Spent Today</div></div>
+    <div class="portfolio-stat"><div class="stat-value" id="ap-last-scan">--</div><div class="stat-label">Last Scan</div></div>
+    <div class="portfolio-stat"><div class="stat-value" id="ap-last-trade">--</div><div class="stat-label">Last Trade</div></div>
+  </div>
+  <div style="margin-top:24px;text-align:center">
+    <button class="oracle-btn" onclick="scanMarkets()" id="ap-scan-btn" style="width:auto;padding:12px 32px">Scan Markets Now</button>
+  </div>
+</div>
+
+<!-- BACKTEST PAGE -->
+<div class="page" id="page-backtest">
+  <h2>Backtest</h2>
+  <p class="subtitle">Test Oracle accuracy against resolved Polymarket markets</p>
+  <div class="section-header">Configuration</div>
+  <div class="backtest-config">
+    <div>
+      <label>Agent Count</label>
+      <select class="oracle-input" id="bt-agents" style="height:40px">
+        <option value="3">3 agents (fast)</option>
+        <option value="5" selected>5 agents (balanced)</option>
+        <option value="10">10 agents (thorough)</option>
+      </select>
+    </div>
+    <div>
+      <label>Min Confidence</label>
+      <select class="oracle-input" id="bt-conf" style="height:40px">
+        <option value="50">50% (all trades)</option>
+        <option value="60" selected>60% (moderate)</option>
+        <option value="70">70% (selective)</option>
+        <option value="80">80% (high only)</option>
+      </select>
+    </div>
+    <div>
+      <label>Markets to Test</label>
+      <select class="oracle-input" id="bt-limit" style="height:40px">
+        <option value="5">5 markets (quick)</option>
+        <option value="10" selected>10 markets</option>
+        <option value="20">20 markets (thorough)</option>
+      </select>
+    </div>
+  </div>
+  <div style="text-align:center;margin:24px 0">
+    <button class="oracle-btn" onclick="runBacktest()" id="bt-run-btn" style="width:auto;padding:12px 32px">Run Backtest</button>
+  </div>
+  <div class="backtest-results" id="bt-results" style="display:none">
+    <div class="section-header">Results</div>
+    <div class="result-grid" id="bt-result-grid"></div>
+    <div class="section-header">Prediction Details</div>
+    <table class="detail-table">
+      <thead><tr><th>Market</th><th>Predicted</th><th>Actual</th><th>Confidence</th><th>Correct</th><th>PnL</th></tr></thead>
+      <tbody id="bt-details-body"></tbody>
+    </table>
+  </div>
+  <div class="section-header" style="margin-top:32px">Previous Backtests</div>
+  <div id="bt-history"><div style="text-align:center;color:#666;padding:16px">No previous backtests</div></div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="auth-title">LOGIN</div>
+    <div class="form-error" id="auth-error"></div>
+    <input class="form-input" id="auth-user" placeholder="Username">
+    <input class="form-input" id="auth-pass" placeholder="Password" type="password" onkeydown="if(event.key==='Enter')doAuth()">
+    <button class="form-btn" onclick="doAuth()">Submit</button>
+    <div class="form-switch"><span id="auth-switch-text">No account?</span> <a onclick="toggleAuthMode()" id="auth-switch-link">Register</a></div>
+    <div style="text-align:center;margin-top:12px"><a style="font-size:.7rem;color:#999;cursor:pointer" onclick="closeAuth()">Close</a></div>
+  </div>
+</div>
+
+<script>
+let token=localStorage.getItem('omen_token'),username=localStorage.getItem('omen_user'),authMode='login';
+const $=id=>document.getElementById(id);
+
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  document.querySelector('[data-page="'+page+'"]').classList.add('active');
+  if(page==='dashboard')loadStats();
+  if(page==='whales')loadWhales();
+  if(page==='credits')loadPackages();
+  if(page==='trading'){checkWalletStatus();loadHistory();}
+  if(page==='portfolio')loadPortfolio();
+  if(page==='autopilot')loadAutopilot();
+  if(page==='backtest')loadBacktestHistory();
+}
+function updateAuth(){
+  if(token&&username){$('nav-user').textContent=username;$('auth-btn').textContent='Logout';$('auth-btn').onclick=()=>{token=null;username=null;localStorage.removeItem('omen_token');localStorage.removeItem('omen_user');updateAuth()}}
+  else{$('nav-user').textContent='';$('auth-btn').textContent='Login';$('auth-btn').onclick=showAuth}
+}
+function showAuth(){$('auth-modal').classList.add('active');authMode='login';$('auth-title').textContent='LOGIN';$('auth-error').textContent=''}
+function closeAuth(){$('auth-modal').classList.remove('active')}
+function toggleAuthMode(){authMode=authMode==='login'?'register':'login';$('auth-title').textContent=authMode.toUpperCase();$('auth-switch-text').textContent=authMode==='login'?'No account?':'Have account?';$('auth-switch-link').textContent=authMode==='login'?'Register':'Login';$('auth-error').textContent=''}
+async function doAuth(){
+  const u=$('auth-user').value.trim(),p=$('auth-pass').value;
+  if(!u||!p){$('auth-error').textContent='Fill all fields';return}
+  try{const r=await fetch('/api/auth/'+authMode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const d=await r.json();if(d.token){token=d.token;username=d.username;localStorage.setItem('omen_token',token);localStorage.setItem('omen_user',username);updateAuth();closeAuth()}else $('auth-error').textContent=d.error||'Failed'}catch(e){$('auth-error').textContent='Network error'}
+}
+async function loadStats(){
+  try{const r=await fetch('/api/dashboard/stats');const d=await r.json();$('st-predictions').textContent=d.total_predictions;$('st-winrate').textContent=d.win_rate+'%';$('st-whales').textContent=d.active_whales;$('st-streak').textContent=d.oracle_streak}catch(e){}
+}
+async function loadWhales(){
+  $('whale-thead').innerHTML='<th>#</th><th>Name</th><th>Win Rate</th><th>Trades</th><th>30d PnL</th><th>Volume</th><th>Specialty</th>';
+  try{const r=await fetch('/api/whales');const d=await r.json();
+  $('whale-tbody').innerHTML=d.map((w,i)=>'<tr><td class="mono">'+(i+1)+'</td><td class="whale-name">'+w.name+'</td><td class="mono">'+w.win_rate+'%</td><td class="mono">'+w.total_trades.toLocaleString()+'</td><td class="whale-pnl">$'+w.profit_30d.toLocaleString()+'</td><td class="mono">$'+w.volume_total.toLocaleString()+'</td><td>'+w.specialty+'</td></tr>').join('')}catch(e){}
+}
+async function loadLiveWhales(){
+  $('whale-thead').innerHTML='<th>#</th><th>Name</th><th>MATIC</th><th>USDC</th><th>Total Txs</th><th>Recent Vol</th><th>Status</th>';
+  $('whale-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px"><span class="loading"></span> Querying Polygon...</td></tr>';
+  try{const r=await fetch('/api/whales/live');const d=await r.json();
+  $('whale-tbody').innerHTML=d.map((w,i)=>'<tr><td class="mono">'+(i+1)+'</td><td class="whale-name" style="color:'+w.color+'">'+w.name+'</td><td class="mono">'+w.matic_balance+'</td><td class="mono whale-pnl">$'+w.usdc_balance.toLocaleString()+'</td><td class="mono">'+w.total_txs.toLocaleString()+'</td><td class="mono">$'+w.recent_volume.toLocaleString()+'</td><td>'+(w.active?'<span style="color:#10B981">Active</span>':'<span style="color:#999">Idle</span>')+'</td></tr>').join('')}catch(e){$('whale-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;color:#EF4444">Failed</td></tr>'}
+}
+async function loadPolygonStatus(){
+  try{const r=await fetch('/api/polygon/status');const d=await r.json();if($('poly-block')&&d.block_number)$('poly-block').textContent='#'+d.block_number.toLocaleString()}catch(e){}
+}
+function dashPredict(){const q=$('dash-oracle-input').value.trim();if(q){navigate('oracle');$('oracle-input').value=q;askOracle()}}
+async function askOracle(){
+  const q=$('oracle-input').value.trim();if(!q)return;
+  $('oracle-go').disabled=true;$('oracle-go').innerHTML='<span class="loading"></span>';$('war-room').classList.add('active');$('agents-grid').innerHTML='';$('swarm-grid').innerHTML='';$('swarm-counts').innerHTML='';$('verdict-wrap').innerHTML='';
+  let dots=[];for(let i=0;i<1200;i++){const d=document.createElement('div');d.className='swarm-dot';$('swarm-grid').appendChild(d);dots.push(d)}
+  try{
+    const headers={'Content-Type':'application/json'};if(token)headers['Authorization']='Bearer '+token;
+    const r=await fetch('/api/oracle/predict',{method:'POST',headers,body:JSON.stringify({question:q})});const data=await r.json();
+    for(let i=0;i<data.debates.length;i++){const a=data.debates[i];await new Promise(r=>setTimeout(r,400));$('agents-grid').innerHTML+='<div class="agent-card revealed"><div class="agent-avatar" style="background:'+a.color+'">'+a.icon+'</div><div class="agent-name">'+a.agent+'</div><div class="agent-role">'+a.role+'</div><div class="agent-reasoning">'+a.reasoning+'</div><div class="agent-vote '+(a.vote==='YES'?'vote-yes':'vote-no')+'">'+a.vote+' '+a.confidence+'%</div></div>';}
+    const sv=data.swarm_votes;let assignments=[];for(let i=0;i<1200;i++)assignments.push(i<sv.yes?'yes':'no');
+    for(let i=assignments.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[assignments[i],assignments[j]]=[assignments[j],assignments[i]]}
+    for(let i=0;i<1200;i++){const col=i%30,row=Math.floor(i/30);const dist=Math.sqrt((col-15)**2+(row-20)**2);setTimeout(()=>{dots[i].classList.add(assignments[i])},dist*40+Math.random()*80)}
+    await new Promise(r=>setTimeout(r,1500));
+    $('swarm-counts').innerHTML='<span class="count-yes">YES: '+sv.yes+'</span><span class="mono" style="color:#999">/ 1,200</span><span class="count-no">NO: '+sv.no+'</span>';
+    await new Promise(r=>setTimeout(r,500));
+    let wh='';for(let i=0;i<data.whale_agreement.total;i++)wh+='<div class="whale-dot '+(i<data.whale_agreement.agree?'agree':'disagree')+'">'+(i<data.whale_agreement.agree?'V':'X')+'</div>';
+    $('verdict-wrap').innerHTML='<div class="verdict-card"><div class="verdict-label">Oracle Verdict</div><div class="verdict-text">'+data.verdict+'</div><div class="verdict-conf">'+data.confidence+'% confidence</div><div style="margin-top:16px"><div class="swarm-label">Whale Agreement</div><div class="whale-row">'+wh+'</div></div></div>';
+  }catch(e){$('verdict-wrap').innerHTML='<div style="color:#EF4444;text-align:center;padding:24px">Error: '+e.message+'</div>'}
+  $('oracle-go').disabled=false;$('oracle-go').textContent='Consult Oracle';
+}
+function copyAddr(){navigator.clipboard.writeText('0x135C480C813451eF443A2F60cfaD49EA7197B855').then(()=>{$('pay-copy').textContent='Copied!';$('pay-copy').style.color='#10B981';setTimeout(()=>{$('pay-copy').textContent='Click to copy';$('pay-copy').style.color=''},2000)})}
+async function loadPackages(){
+  try{const r=await fetch('/api/payments/info');const d=await r.json();
+  $('pkg-grid').innerHTML=d.credit_rates.map((p,i)=>'<div class="pkg-card'+(i===1?' featured':'')+'"><div class="pkg-name">'+p.tier+'</div><div class="pkg-credits">'+p.example.split('=')[1].trim()+'</div><div class="stat-label" style="margin-bottom:8px">'+p.rate+'</div><div class="pkg-price">Min $'+p.min_usd+'</div></div>').join('');
+  const pr=await fetch('/api/payments/matic-price');const pd=await pr.json();if($('matic-price'))$('matic-price').textContent=pd.matic_usd.toFixed(2)}catch(e){}
+}
+async function verifyPayment(){
+  const tx=$('tx-hash-input').value.trim();if(!tx||!tx.startsWith('0x')){$('verify-result').innerHTML='<div class="verify-fail">Enter a valid tx hash starting with 0x</div>';return}
+  $('verify-btn').disabled=true;$('verify-btn').innerHTML='<span class="loading"></span>';
+  try{const headers={'Content-Type':'application/json'};if(token)headers['Authorization']='Bearer '+token;
+  const r=await fetch('/api/payments/verify',{method:'POST',headers,body:JSON.stringify({tx_hash:tx})});const d=await r.json();
+  if(d.verified){let h='<div class="verify-ok"><div class="vr-label">Payment Verified</div><div class="vr-credits">+'+d.credits_awarded+' credits</div><div style="margin-top:12px;font-size:.8rem;color:#666">';if(d.value_usdc)h+='Amount: $'+d.value_usdc+' USDC<br>';else if(d.value_matic)h+='Amount: '+d.value_matic+' MATIC ($'+d.value_usd+')<br>';h+='Block: '+d.block;if(d.new_balance)h+='<br>New Balance: '+d.new_balance+' credits';h+='</div></div>';$('verify-result').innerHTML=h}
+  else $('verify-result').innerHTML='<div class="verify-fail">'+d.error+'</div>'}catch(e){$('verify-result').innerHTML='<div class="verify-fail">Network error</div>'}
+  $('verify-btn').disabled=false;$('verify-btn').textContent='Verify';
+}
+function showTradePanel(mode){document.querySelectorAll('.trade-panel').forEach(p=>p.style.display='none');var panel=document.getElementById('trade-panel-'+mode);if(panel)panel.style.display='block'}
+async function checkWalletStatus(){
+  if(!token)return;try{const r=await fetch('/api/trading/wallet-status',{headers:{'Authorization':'Bearer '+token}});const d=await r.json();
+  if(d.connected){$('wallet-disconnected').style.display='none';$('wallet-connected').style.display='block'}else{$('wallet-disconnected').style.display='block';$('wallet-connected').style.display='none'}}catch(e){}
+}
+async function connectWallet(){
+  const k=$('pm-key').value.trim(),s=$('pm-secret').value.trim(),p=$('pm-pass').value.trim();
+  if(!k||!s||!p){$('wallet-error').textContent='All fields required';return}
+  $('connect-btn').disabled=true;$('connect-btn').innerHTML='<span class="loading"></span>';
+  try{const r=await fetch('/api/trading/connect-wallet',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({api_key:k,api_secret:s,api_passphrase:p})});const d=await r.json();
+  if(d.status==='connected'){checkWalletStatus();$('wallet-error').textContent=''}else $('wallet-error').textContent=d.error||'Failed'}catch(e){$('wallet-error').textContent='Network error'}
+  $('connect-btn').disabled=false;$('connect-btn').textContent='Connect Wallet';
+}
+async function disconnectWallet(){if(!confirm('Disconnect wallet?'))return;try{await fetch('/api/trading/disconnect',{method:'DELETE',headers:{'Authorization':'Bearer '+token}});checkWalletStatus()}catch(e){}}
+async function loadMarkets(){
+  $('markets-list').innerHTML='<div style="padding:16px;text-align:center"><span class="loading"></span></div>';
+  try{const r=await fetch('/api/trading/markets?limit=20');const d=await r.json();
+  if(!d.length){$('markets-list').innerHTML='<div style="padding:16px;color:var(--gray)">No markets found</div>';return}
+  $('markets-list').innerHTML=d.map(m=>{const tid=m.tokens&&m.tokens[0]?m.tokens[0].token_id||'':'';return '<div class="mkt-row" onclick="selectMarket(\''+tid+'\')"><span style="flex:1;font-weight:500">'+m.question+'</span><span class="mono" style="font-size:.65rem;color:#999">'+tid.substring(0,16)+'...</span></div>'}).join('')}catch(e){$('markets-list').innerHTML='<div style="padding:16px;color:#EF4444">Failed</div>'}
+}
+function selectMarket(tid){$('trade-token').value=tid}
+async function placeTrade(){
+  const tid=$('trade-token').value.trim(),side=$('trade-side').value,price=parseFloat($('trade-price').value),size=parseFloat($('trade-size').value);
+  if(!tid||!size){$('trade-result').innerHTML='<div class="trade-err">Fill token ID and size</div>';return}
+  $('place-btn').disabled=true;$('place-btn').innerHTML='<span class="loading"></span>';
+  try{const body={token_id:tid,side:side,size:size};if(price)body.price=price;
+  const r=await fetch('/api/trading/order',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});const d=await r.json();
+  if(d.success)$('trade-result').innerHTML='<div class="trade-ok">Order placed! ID: '+d.order_id+'</div>';else $('trade-result').innerHTML='<div class="trade-err">'+(d.error||'Failed')+'</div>'}catch(e){$('trade-result').innerHTML='<div class="trade-err">Network error</div>'}
+  $('place-btn').disabled=false;$('place-btn').textContent='Place Order';loadHistory();
+}
+async function oracleTrade(){
+  const q=$('oracle-trade-q').value.trim(),amt=parseFloat($('oracle-trade-amt').value)||5,conf=parseFloat($('oracle-trade-conf').value)||65;
+  if(!q){$('oracle-trade-result').innerHTML='<div class="trade-err">Enter a question</div>';return}
+  $('oracle-trade-btn').disabled=true;$('oracle-trade-btn').innerHTML='<span class="loading"></span> Consulting...';
+  try{const r=await fetch('/api/trading/oracle-trade',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({question:q,amount:amt,min_confidence:conf})});const d=await r.json();
+  if(d.success){$('oracle-trade-result').innerHTML='<div class="trade-ok">Oracle: <b>'+d.oracle_verdict+'</b> ('+d.oracle_confidence+'%)<br>Market: '+d.market+'<br>Order: '+d.order_id+'</div>'}
+  else{let h='<div class="trade-err">';if(d.oracle)h+='Oracle: '+d.oracle.verdict+' ('+d.oracle.confidence+'%) | ';h+=(d.error||'Failed')+'</div>';$('oracle-trade-result').innerHTML=h}}catch(e){$('oracle-trade-result').innerHTML='<div class="trade-err">Network error</div>'}
+  $('oracle-trade-btn').disabled=false;$('oracle-trade-btn').textContent='Consult Oracle and Trade';loadHistory();
+}
+async function copyTrade(){
+  const addr=$('copy-address').value.trim(),max=parseFloat($('copy-max').value)||10;
+  if(!addr){$('copy-result').innerHTML='<div class="trade-err">Enter whale address</div>';return}
+  $('copy-btn').disabled=true;$('copy-btn').innerHTML='<span class="loading"></span>';
+  try{const r=await fetch('/api/trading/copy-trade',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({whale_address:addr,max_amount:max})});const d=await r.json();
+  if(d.success)$('copy-result').innerHTML='<div class="trade-ok">Copied! Side: '+d.side+' Size: $'+d.size+'</div>';else $('copy-result').innerHTML='<div class="trade-err">'+(d.error||'Failed')+'</div>'}catch(e){$('copy-result').innerHTML='<div class="trade-err">Network error</div>'}
+  $('copy-btn').disabled=false;$('copy-btn').textContent='Copy Latest Trade';loadHistory();
+}
+async function loadHistory(){
+  if(!token)return;try{const r=await fetch('/api/trading/history',{headers:{'Authorization':'Bearer '+token}});const d=await r.json();
+  if(!d.length)return;$('history-tbody').innerHTML=d.map(t=>'<tr><td class="mono" style="font-size:.7rem">'+t.created_at+'</td><td><span class="token-badge">'+t.source+'</span></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">'+(t.market_question||t.token_id||'-')+'</td><td class="mono">'+(t.side==='BUY'?'<span style="color:#10B981">BUY</span>':'<span style="color:#EF4444">SELL</span>')+'</td><td class="mono">'+t.price+'</td><td class="mono">$'+t.size+'</td><td class="mono">'+t.status+'</td></tr>').join('')}catch(e){}
+}
+updateAuth();loadStats();loadPolygonStatus();checkWalletStatus();
+
+
+// ── Phase 3: Portfolio ─────────────────────────────────────
+async function loadPortfolio(){
+  if(!token) return;
+  try{
+    const r=await fetch('/api/portfolio',{headers:{'Authorization':'Bearer '+token}});
+    const d=await r.json();
+    $('pf-trades').textContent=d.total_trades||0;
+    $('pf-open').textContent=d.open_positions||0;
+    $('pf-winrate').textContent=(d.win_rate||0)+'%';
+    $('pf-pnl').textContent='$'+(d.total_pnl||0).toFixed(2);
+    $('pf-pnl').style.color=d.total_pnl>=0?'#10B981':'#EF4444';
+    // Source breakdown
+    const src=d.by_source||{};
+    $('pf-by-source').innerHTML=Object.keys(src).length?Object.entries(src).map(([k,v])=>'<div>'+k+': '+v.count+' trades ($'+v.volume.toFixed(0)+')</div>').join(''):'No trades yet';
+    // Side breakdown
+    const side=d.by_side||{};
+    $('pf-by-side').innerHTML=(side.buy||side.sell)?'<div>Buy: '+(side.buy||0)+'</div><div>Sell: '+(side.sell||0)+'</div>':'No trades yet';
+    // Recent trades
+    const trades=d.recent_trades||[];
+    if(trades.length){
+      $('pf-trades-body').innerHTML=trades.slice(0,15).map(t=>'<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">'+(t.market_question||'--').substr(0,40)+'</td><td><span class="badge '+(t.side==='BUY'?'badge-green':'badge-red')+'">'+(t.side||'--')+'</span></td><td class="mono">$'+(t.size||0)+'</td><td>'+(t.source||'manual')+'</td><td>'+(t.status||'--')+'</td><td class="mono" style="font-size:.7rem">'+(t.created_at||'').substr(0,16)+'</td></tr>').join('');
+    }
+  }catch(e){console.error('Portfolio load error:',e)}
+}
+
+// ── Phase 3: Alerts ────────────────────────────────────────
+let alertPanelOpen=false;
+async function loadAlerts(){
+  if(!token)return;
+  try{
+    const r=await fetch('/api/alerts/count',{headers:{'Authorization':'Bearer '+token}});
+    const d=await r.json();
+    const badge=$('alert-badge');
+    if(d.unread>0){badge.textContent=d.unread;badge.style.display='inline'}
+    else{badge.style.display='none'}
+  }catch(e){}
+}
+async function toggleAlerts(){
+  alertPanelOpen=!alertPanelOpen;
+  const panel=$('alert-panel');
+  if(alertPanelOpen){
+    panel.classList.add('show');
+    try{
+      const r=await fetch('/api/alerts',{headers:{'Authorization':'Bearer '+token}});
+      const alerts=await r.json();
+      if(alerts.length){
+        $('alerts-list').innerHTML=alerts.map(a=>'<div class="alert-item'+(a.read?'':' unread')+'" onclick="markAlertRead('+a.id+')"><div class="alert-title">'+a.title+'</div><div class="alert-msg">'+a.message+'</div><div class="alert-time">'+((a.created_at||'').substr(0,16))+'</div></div>').join('');
+      }else{$('alerts-list').innerHTML='<div style="padding:24px;text-align:center;color:#666">No notifications</div>'}
+    }catch(e){}
+  }else{panel.classList.remove('show')}
+}
+async function markAlertRead(id){
+  try{await fetch('/api/alerts/read',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({alert_id:id})});loadAlerts()}catch(e){}
+}
+async function markAllRead(){
+  try{await fetch('/api/alerts/read',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({})});loadAlerts();$('alert-badge').style.display='none'}catch(e){}
+}
+
+// ── Phase 3: Auto-Pilot ────────────────────────────────────
+let currentProfile='balanced';
+async function loadAutopilot(){
+  if(!token)return;
+  try{
+    const r=await fetch('/api/autopilot',{headers:{'Authorization':'Bearer '+token}});
+    const d=await r.json();
+    $('ap-toggle').checked=d.enabled;
+    $('ap-dot').classList.toggle('active',d.enabled);
+    $('ap-status-text').textContent=d.enabled?'Active':'Disabled';
+    $('ap-status-text').style.color=d.enabled?'#10B981':'#999';
+    currentProfile=d.risk_profile||'balanced';
+    document.querySelectorAll('.risk-card').forEach(c=>{c.classList.toggle('active',c.dataset.profile===currentProfile)});
+    $('ap-trades-today').textContent=d.stats?.trades_today||0;
+    $('ap-spent-today').textContent='$'+(d.stats?.spent_today||0).toFixed(2);
+    $('ap-last-scan').textContent=d.last_scan?(d.last_scan).substr(11,5):'--';
+    $('ap-last-trade').textContent=d.last_trade?(d.last_trade).substr(11,5):'--';
+  }catch(e){console.error('Autopilot load error:',e)}
+}
+function selectProfile(p){
+  currentProfile=p;
+  document.querySelectorAll('.risk-card').forEach(c=>{c.classList.toggle('active',c.dataset.profile===p)});
+}
+async function toggleAutopilot(){
+  if(!token){alert('Login first');$('ap-toggle').checked=false;return}
+  const enabled=$('ap-toggle').checked;
+  try{
+    await fetch('/api/autopilot/update',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({enabled,risk_profile:currentProfile})});
+    loadAutopilot();
+  }catch(e){console.error(e)}
+}
+async function scanMarkets(){
+  if(!token){alert('Login first');return}
+  const btn=$('ap-scan-btn');
+  btn.textContent='Scanning...';
+  btn.disabled=true;
+  try{
+    const r=await fetch('/api/autopilot/scan',{method:'POST',headers:{'Authorization':'Bearer '+token}});
+    const d=await r.json();
+    if(d.error){alert(d.error)}
+    else{alert('Scan initiated with '+d.profile+' profile')}
+  }catch(e){alert('Scan failed: '+e.message)}
+  btn.textContent='Scan Markets Now';
+  btn.disabled=false;
+}
+
+// ── Phase 3: Backtest ──────────────────────────────────────
+async function runBacktest(){
+  if(!token){alert('Login first');return}
+  const btn=$('bt-run-btn');
+  btn.textContent='Running...';
+  btn.disabled=true;
+  try{
+    const r=await fetch('/api/backtest/run',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({agent_count:parseInt($('bt-agents').value),min_confidence:parseInt($('bt-conf').value),limit:parseInt($('bt-limit').value)})});
+    const d=await r.json();
+    if(d.error){alert('Backtest error: '+d.error);btn.textContent='Run Backtest';btn.disabled=false;return}
+    // Show results
+    $('bt-results').style.display='block';
+    $('bt-result-grid').innerHTML=
+      '<div class="result-card '+(d.accuracy>=60?'positive':'negative')+'"><div class="value">'+d.accuracy+'%</div><div class="label">Accuracy</div></div>'+
+      '<div class="result-card"><div class="value">'+d.predictions+'</div><div class="label">Predictions</div></div>'+
+      '<div class="result-card '+(d.simulated_pnl>=0?'positive':'negative')+'"><div class="value">$'+d.simulated_pnl+'</div><div class="label">Simulated PnL</div></div>'+
+      '<div class="result-card"><div class="value">'+d.avg_confidence+'%</div><div class="label">Avg Confidence</div></div>';
+    // Details table
+    const details=d.details||[];
+    $('bt-details-body').innerHTML=details.map(r=>'<tr><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">'+r.question+'</td><td><span class="badge '+(r.predicted==='YES'?'badge-green':'badge-red')+'">'+r.predicted+'</span></td><td><span class="badge '+(r.actual==='YES'?'badge-green':'badge-red')+'">'+r.actual+'</span></td><td class="mono">'+r.confidence+'%</td><td>'+(r.correct?'&#10003;':'&#10007;')+'</td><td class="mono" style="color:'+(r.pnl>=0?'#10B981':'#EF4444')+'">$'+r.pnl+'</td></tr>').join('');
+    loadBacktestHistory();
+  }catch(e){alert('Backtest failed: '+e.message)}
+  btn.textContent='Run Backtest';
+  btn.disabled=false;
+}
+async function loadBacktestHistory(){
+  if(!token)return;
+  try{
+    const r=await fetch('/api/backtest/history',{headers:{'Authorization':'Bearer '+token}});
+    const hist=await r.json();
+    if(hist.length){
+      $('bt-history').innerHTML='<table class="detail-table"><thead><tr><th>Date</th><th>Markets</th><th>Accuracy</th><th>PnL</th></tr></thead><tbody>'+hist.map(h=>'<tr><td class="mono" style="font-size:.7rem">'+(h.created_at||'').substr(0,16)+'</td><td>'+h.markets_tested+'</td><td class="mono">'+(h.accuracy||0)+'%</td><td class="mono" style="color:'+(h.simulated_pnl>=0?'#10B981':'#EF4444')+'">$'+h.simulated_pnl+'</td></tr>').join('')+'</tbody></table>';
+    }
+  }catch(e){}
+}
+
+// ── Phase 3: Navigation Updates ────────────────────────────
+// Navigation is handled in main navigate function
+
+// Poll alerts every 30s
+setInterval(()=>{if(token)loadAlerts()},30000);
+// Initial load
+setTimeout(()=>{if(token)loadAlerts()},2000);
+
+
+// Close alert panel on click outside
+document.addEventListener('click',function(e){
+  if(alertPanelOpen && !e.target.closest('.alert-panel') && !e.target.closest('.alert-bell')){
+    alertPanelOpen=false;$('alert-panel').classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>

@@ -11,29 +11,37 @@
 <p align="center">
   <a href="#features"><img src="https://img.shields.io/badge/AI_Agents-1200+-7C3AED?style=for-the-badge&logo=openai&logoColor=white" alt="AI Agents"></a>
   <a href="#whale-intelligence"><img src="https://img.shields.io/badge/Whales_Tracked-50+-F59E0B?style=for-the-badge&logo=ethereum&logoColor=white" alt="Whales"></a>
-  <a href="#pricing"><img src="https://img.shields.io/badge/Trade_Fee-1%25-10B981?style=for-the-badge&logo=stripe&logoColor=white" alt="Trade Fee"></a>
+  <a href="#pricing"><img src="https://img.shields.io/badge/Crypto_Payments-Polygon-7C3AED?style=for-the-badge&logo=polygon&logoColor=white" alt="Polygon"></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Deploy-1_Click-3B82F6?style=for-the-badge&logo=docker&logoColor=white" alt="Deploy"></a>
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> •
+  <a href="https://person-rhythm-application-kinase.trycloudflare.com" target="_blank"><strong>🌐 Live Demo</strong></a> •
+    <a href="#quick-start">Quick Start</a> •
   <a href="#features">Features</a> •
   <a href="#how-it-works">How It Works</a> •
   <a href="#pricing">Pricing</a> •
-  <a href="#deployment">Deploy</a> •
+  <a href="#trading">Trading</a> •
   <a href="docs/API.md">API Docs</a>
 </p>
 
 ---
+
+## 🌐 Live Demo
+
+> **[➡️ Try OMEN Live](https://person-rhythm-application-kinase.trycloudflare.com)**
+>
+> Full access to the AI Oracle, Auto-Pilot, Backtesting, Whale Tracking, and more.
+
 
 ## 🎯 What is OMEN?
 
 OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](https://polymarket.com). It combines:
 
 - 🧠 **Swarm Intelligence** — 1,200 AI agents debate outcomes and reach consensus
-- 🐋 **Whale Intelligence** — Track and copy the smartest Polymarket wallets
-- ⚡ **Auto-Execution** — One-click betting with automatic trade placement
-- 💰 **Pay-As-You-Go** — No subscriptions. Buy credits. Trade. Profit.
+- 🐋 **Whale Intelligence** — Live on-chain tracking of top Polymarket wallets on Polygon
+- 📊 **Real Trading** — Manual, Oracle-driven, and copy-trade execution via Polymarket CLOB
+- 💰 **Crypto Payments** — Pay with MATIC/USDC on Polygon. No subscriptions.
 
 > Users don't configure APIs. They don't set up models. They don't study charts.
 > They ask OMEN a question. The swarm deliberates. A verdict appears.
@@ -45,16 +53,33 @@ OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](
 
 <p align="center">
   <img src="docs/screenshots/dashboard.png" alt="OMEN Dashboard" width="90%">
+  <br><em>Dashboard — System overview with quick Oracle access</em>
 </p>
 
 <table>
   <tr>
-    <td align="center"><strong>🔮 Oracle Chamber</strong></td>
-    <td align="center"><strong>🐋 Whale Leaderboard</strong></td>
+    <td align="center"><strong>🔮 Oracle War Room</strong></td>
+    <td align="center"><strong>🐋 Whale Tracker</strong></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/oracle.png" alt="Oracle Chat" width="100%"></td>
-    <td><img src="docs/screenshots/whales.png" alt="Whale Leaderboard" width="100%"></td>
+    <td><img src="docs/screenshots/oracle.png" alt="Oracle War Room" width="100%"></td>
+    <td><img src="docs/screenshots/whales.png" alt="Whale Tracker" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>5 AI agents debate live, 1,200-dot swarm matrix votes</em></td>
+    <td align="center"><em>Live on-chain whale tracking on Polygon</em></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>📊 Trading</strong></td>
+    <td align="center"><strong>💳 Credits</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/trading.png" alt="Trading" width="100%"></td>
+    <td><img src="docs/screenshots/credits.png" alt="Credits" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Manual, Oracle auto-trade, and whale copy-trade</em></td>
+    <td align="center"><em>Crypto payments on Polygon with tiered credit packages</em></td>
   </tr>
 </table>
 
@@ -62,9 +87,9 @@ OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](
 
 ## ✨ Features
 
-### 🔮 Oracle Chamber — Ask Anything
+### 🔮 Oracle Chamber — Real AI Debates
 
-The Oracle uses a **5-agent swarm** with distinct personalities:
+The Oracle uses a **5-agent swarm** powered by **Gemini 2.0 Flash** with distinct personalities:
 
 | Agent | Role | Style |
 |-------|------|-------|
@@ -74,58 +99,45 @@ The Oracle uses a **5-agent swarm** with distinct personalities:
 | 🟡 **Maverick** | Contrarian | Challenges consensus |
 | 🟣 **Clio** | Historian | Historical patterns and precedent |
 
-Agents debate in real-time → Vote → Reach consensus → Generate verdict with confidence score.
+Agents make **real LLM API calls** → Debate independently → Vote → 1,200-dot swarm matrix animates → Verdict with confidence score.
 
-### ⚔️ War Room — Watch 1,200 AI Agents Debate Live
+### ⚔️ War Room — 1,200 AI Agents Vote Live
 
-> *This is not a chatbot. This is a war room where thousands of AI minds clash in real-time.*
+- Each agent card reveals sequentially with real AI reasoning
+- **1,200-dot swarm matrix** with ripple animation shows consensus forming
+- Green = YES, Red = NO — watch the swarm converge in real-time
+- Whale agreement dots overlay for confidence boost
+- Final verdict card with confidence percentage
 
-<p align="center">
-  <img src="docs/screenshots/warroom.png" alt="OMEN War Room - AI agents debating live" width="95%">
-</p>
+### 🐋 Whale Intelligence — Live On-Chain
 
-- 🟢 **Bull Analysts** — Find every reason to buy
-- 🔴 **Bear Analysts** — Challenge every assumption
-- 🔵 **Statisticians** — Pure probability and Monte Carlo simulations
-- 🟡 **Contrarians** — Fade the crowd, exploit public bias
-- 🟣 **Historians** — Pattern match against decades of data
-- **Screen-record the debates and share on TikTok/X** — built for virality
+- **Live Polygon blockchain tracking** via `polygon-bor-rpc.publicnode.com`
+- Real MATIC and USDC balances for tracked wallets
+- Transaction count and recent volume monitoring
+- **Polymarket CTF Exchange detection** — flags trades to Polymarket contracts
+- DB whales with historical stats: win rate, PnL, volume, specialty
+- **Copy any whale** — one click to mirror their latest trade
 
-#### 🧬 The Swarm Matrix — 1,200 Agents, One Verdict
+### 📊 Trading — Three Modes
 
-<p align="center">
-  <img src="docs/screenshots/swarm.png" alt="OMEN Swarm Intelligence Matrix - 1200 agents voting" width="95%">
-</p>
+| Mode | Description |
+|------|-------------|
+| **Manual** | Browse live Polymarket markets → select → set price/size → place limit order |
+| **Oracle Auto-Trade** | Ask Oracle → AI analyzes → auto-places bet on matching Polymarket market |
+| **Copy Trade** | Enter whale address → mirrors their latest Polymarket position |
 
-> Each dot is one autonomous AI agent. Green = YES. Red = NO. Yellow = Abstain.
-> Watch consensus form in real-time as 1,200 agents analyze, debate, and vote independently.
+**Safety built-in:**
+- 🔒 **API-only credentials** — no private keys stored, only Polymarket API creds
+- 📊 **Liquidity check** — rejects trades on illiquid orderbooks (spread > $0.50)
+- 🛡️ **Risk controls** — max bet $50, daily limit $200, stop-loss 35%
+- 🔐 **Fernet encryption** — all credentials encrypted at rest
 
-**Why swarm intelligence beats single AI models:**
-- Single models hallucinate. **Swarms converge on truth.**
-- 1,200 agents with different strategies cancel out individual bias
-- Whale wallet behavior overlaid as a **confidence multiplier**
-- When the swarm AND whales agree → highest-conviction signals
+### 💰 Crypto Payments — Polygon
 
-### 🐋 Whale Intelligence
-
-- **Position-delta monitoring** — detects whale trades in real-time
-- **50+ tracked wallets** ranked by win rate, PnL, and volume
-- **Copy any whale** — one click to mirror their trades
-- **Whale consensus** — when whales agree with the Oracle, confidence increases
-
-### 🤖 Auto-Pilot Mode
-
-- Set your risk level: 🟢 Conservative | 🟡 Balanced | 🔴 Aggressive
-- Set daily budget
-- OMEN finds high-confidence predictions → auto-bets → manages exits
-- Hands-free profit generation
-
-### 💬 Personal AI Chat
-
-- Each user gets a dedicated AI assistant with memory
-- Ask questions, adjust strategy, get insights
-- "Why did the Oracle pick Lakers?" → Full reasoning breakdown
-- **10 free messages** included with every account, then 1 credit per message
+- **Wallet:** `0x135C480C813451eF443A2F60cfaD49EA7197B855`
+- **Accepted:** MATIC, USDC, USDC.e on Polygon
+- **Verification:** On-chain transaction hash verification via Polygon RPC
+- **Auto-credit:** Credits added automatically after blockchain confirmation
 
 ---
 
@@ -133,11 +145,12 @@ Agents debate in real-time → Vote → Reach consensus → Generate verdict wit
 
 ```
 ┌─ USER ──────────────────────────────────────────────────┐
-│  "Will the Lakers beat the Celtics tonight?"            │
+│  "Will Bitcoin exceed $150k by end of 2026?"            │
 └──────────────────────┬──────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────┐
 │                 🔮 ORACLE ENGINE                        │
+│           Gemini 2.0 Flash via OpenRouter               │
 │                                                         │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────┐ ┌─────┐  │
 │  │  Atlas   │ │ Nemesis │ │  Quant  │ │ Mav │ │Clio │  │
@@ -145,20 +158,31 @@ Agents debate in real-time → Vote → Reach consensus → Generate verdict wit
 │  └────┬─────┘ └────┬────┘ └────┬────┘ └──┬──┘ └──┬──┘  │
 │       └────────────┼──────────┼─────────┼───────┘      │
 │                    ▼          ▼         ▼              │
-│              ╔═══════════════════════════════╗          │
-│              ║  VERDICT: LAKERS WIN — 72%    ║          │
-│              ╚═══════════════════════════════╝          │
+│         ╔════════════════════════════════════╗          │
+│         ║  1,200 SWARM AGENTS VOTE           ║          │
+│         ║  663 YES / 537 NO                  ║          │
+│         ╚════════════════════════════════════╝          │
+│                         │                              │
+│              ╔══════════▼════════════════╗              │
+│              ║  VERDICT: YES — 72%       ║              │
+│              ╚═══════════════════════════╝              │
 └──────────────────────┬──────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────┐
-│                 🐋 WHALE LAYER                          │
-│  @0p0jogggg: BUY ✅  @Sharky: BUY ✅  @King: SELL ❌   │
-│  Whale Agreement: 2/3 → Confidence BOOST → 78%         │
+│                 🐋 WHALE LAYER (Polygon)                │
+│  Live blockchain tracking via RPC                       │
+│  Whale agreement: 5/8 → Confidence BOOST                │
 └──────────────────────┬──────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────┐
-│                 ⚡ EXECUTION ENGINE                      │
-│  User clicks "Bet $5" → CLOB order → Polymarket        │
+│                 📊 TRADING ENGINE                        │
+│  Manual | Oracle Auto-Trade | Copy Trade                │
+│  User's Polymarket API → py-clob-client → CLOB          │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────┐
+│                 💰 PAYMENT LAYER                         │
+│  Polygon blockchain: MATIC/USDC → On-chain verify       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -166,85 +190,64 @@ Agents debate in real-time → Vote → Reach consensus → Generate verdict wit
 
 ## 💰 Pricing
 
-### Getting Started — It's Almost Free
+### Getting Started — 50 Free Credits
 
-Every new account gets **50 free credits** + **10 free AI chat messages** to try everything.
+Every new account gets **50 free credits** to try everything.
 
-### Credit Packages
+### Credit Packages (Crypto — Polygon)
 
-| Package | Credits | Price | Best For |
-|---------|---------|-------|----------|
-| **Starter** | 50 credits | $5 | Try it out |
-| ⭐ **Popular** | 120 credits | $10 | Regular users |
-| **Pro** | 300 credits | $20 | Active traders |
-| **Whale** | 1,000 credits | $50 | Power users |
+| Package | Credits | Price | Rate |
+|---------|---------|-------|------|
+| **Starter** | 50 credits | $5 | 10 credits/$1 |
+| ⭐ **Popular** | 120 credits | $10 | 12 credits/$1 |
+| **Pro** | 300 credits | $20 | 15 credits/$1 |
+| 🐋 **Whale** | 1,000 credits | $50 | 20 credits/$1 |
 
 ### What Credits Cost
 
-| Action | Cost | What You Get |
-|--------|------|-------------|
-| 🔮 **Oracle Prediction** | 1 credit | AI swarm verdict + confidence score + whale signals |
-| 💬 **AI Chat Message** | 1 credit | Personal AI assistant (first 10 messages free) |
-| 👁️ **Whale Deep Dive** | 1 credit | Full whale analysis: positions, history, win streaks |
-| 🤖 **Auto-Pilot Bet** | 2 credits | Fully automated bet placement + exit management |
-| 🏆 **Leaderboard** | Free | Browse top whale rankings anytime |
-| 🔮 **Daily Free Oracle** | Free | 1 free prediction every day — no credits needed |
-
-### Trading Fees
-
-Simple, transparent, and low:
-
-| Fee | Amount | When |
-|-----|--------|------|
-| **Trade Fee** | 1% of bet | When OMEN places a bet for you |
-| **Win Fee** | 1% of profit | Only when you win — if you lose, we charge nothing |
-
-> **Example:** You bet $20 through OMEN → $0.20 trade fee. You win $16 profit → $0.16 win fee. **Total cost: $0.36** for a $16 profit.
-
-> 💡 No monthly subscriptions. No hidden fees. No lock-in. Just pay for what you use.
+| Action | Cost |
+|--------|------|
+| 🔮 **Oracle Prediction** | 1 credit |
+| 🐋 **Whale Deep Dive** | 1 credit |
+| 🤖 **Auto-Trade Bet** | 2 credits |
+| 🏆 **Leaderboard** | Free |
 
 ---
 
 ## 🚀 Quick Start
 
-### Docker (Recommended)
+### Quick Deploy (Recommended)
 
 ```bash
 git clone https://github.com/Mecasa-hub/omen.git
 cd omen
-cp .env.example .env  # Add your API keys
-docker-compose up -d
+cp .env.example .env  # Add your OpenRouter API key
+pip install aiosqlite httpx aiohttp pydantic uvicorn fastapi cryptography py-clob-client
+python -m uvicorn deploy:app --host 0.0.0.0 --port 8888
+# OMEN is live at http://localhost:8888
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| API Docs | http://localhost:8000/docs |
-| WebSocket | ws://localhost:8000/ws |
-
-### Quick Deploy (No Docker)
+### Docker
 
 ```bash
 git clone https://github.com/Mecasa-hub/omen.git
 cd omen
-pip install aiosqlite httpx aiohttp pydantic pydantic-settings uvicorn fastapi
-python deploy.py
-# OMEN is live at http://localhost:8888
+cp .env.example .env
+docker-compose up -d
 ```
 
 ### Environment Variables
 
 ```env
 # Required
-DATABASE_URL=postgresql://user:pass@localhost/omen
-JWT_SECRET=your-secret-key
-
-# AI Engine (we provide defaults)
-LLM_API_KEY=your-openrouter-key
+OPENROUTER_API_KEY=your-openrouter-key
 LLM_MODEL=google/gemini-2.0-flash-001
 
-# Polymarket
-POLYMARKET_API_URL=https://clob.polymarket.com
+# Payment wallet (pre-configured)
+PAYMENT_WALLET=0x135C480C813451eF443A2F60cfaD49EA7197B855
+
+# Polymarket (users provide their own API keys in the UI)
+# No server-side trading keys needed
 ```
 
 ---
@@ -253,29 +256,25 @@ POLYMARKET_API_URL=https://clob.polymarket.com
 
 ```
 omen/
-├── backend/
-│   ├── auth/          # JWT authentication & user management
-│   ├── oracle/        # Swarm AI prediction engine
-│   ├── whale/         # Whale tracking & copy-trading
-│   ├── trading/       # Order execution & portfolio
-│   ├── credits/       # Pay-as-you-go credit system
-│   ├── chat/          # Personal AI chat per user
-│   ├── social/        # Brag cards, X bot, referrals
-│   ├── main.py        # FastAPI application entry
-│   └── config.py      # Environment configuration
-├── frontend/
-│   ├── src/
-│   │   ├── views/     # Dashboard, Oracle, Whales, etc.
-│   │   ├── components/# Reusable UI components
-│   │   └── stores/    # Pinia state management
-│   └── package.json
-├── deploy.py          # Lightweight deployment (SQLite)
-├── whale_discovery.py # Auto-discover profitable wallets
-├── x_whale_bot.py     # X/Twitter whale alert bot
-├── docs/              # Architecture, API, deployment guides
-├── tests/             # Comprehensive test suite
-├── scripts/           # DB migration, whale seeding
-├── docker-compose.yml # One-command deployment
+├── deploy.py           # FastAPI app — all routes + Oracle engine (31KB)
+├── ui.html             # MiroFish-inspired frontend (37KB)
+├── trading.py          # Polymarket CLOB trading module (14KB)
+├── whale_tracker.py    # Live Polygon blockchain whale tracking
+├── payments.py         # Polygon crypto payment verification
+├── .env                # API keys and configuration
+├── data/               # SQLite database
+├── docs/
+│   ├── screenshots/    # Dashboard, Oracle, Whales, Trading, Credits
+│   ├── API.md          # Full API reference
+│   ├── ARCHITECTURE.md # System design
+│   ├── DEPLOYMENT.md   # Production setup guide
+│   ├── CREDITS.md      # Credit system mechanics
+│   └── VIRAL_STRATEGY.md
+├── backend/            # Original modular backend (reference)
+├── frontend/           # Vue 3 source (optional)
+├── tests/              # Test suite
+├── scripts/            # DB migration, whale seeding
+├── docker-compose.yml
 └── README.md
 ```
 
@@ -285,27 +284,71 @@ omen/
 
 | Layer | Technology |
 |-------|------------|
-| **Backend** | FastAPI, Python 3.11+, SQLAlchemy, Celery |
-| **Frontend** | Vue 3, Vite, Tailwind CSS, Pinia |
-| **Database** | PostgreSQL, Redis (SQLite for quick deploy) |
-| **AI Engine** | Multi-agent swarm (Gemini Flash / GPT-4o) |
-| **Execution** | Polymarket CLOB API |
-| **Auth** | JWT + OAuth2 |
-| **Deploy** | Docker, Cloudflare Tunnel |
+| **Backend** | FastAPI, Python 3.11+, aiosqlite |
+| **Frontend** | Embedded HTML/CSS/JS (MiroFish aesthetic) |
+| **AI Engine** | Gemini 2.0 Flash via OpenRouter (multi-agent swarm) |
+| **Trading** | py-clob-client → Polymarket CLOB API |
+| **Blockchain** | Polygon RPC (whale tracking + payment verification) |
+| **Payments** | MATIC/USDC on Polygon (on-chain verification) |
+| **Security** | JWT auth, Fernet-encrypted credentials |
+| **Fonts** | JetBrains Mono + Space Grotesk |
 
 ---
 
-## 🔥 Built for Virality
+## 🗺️ Roadmap
 
-| Feature | How It Spreads |
-|---------|----------------|
-| 🎬 **War Room** | Screen-record AI debates → TikTok/Reels |
-| 🏆 **Oracle Streak** | "🔥 OMEN is on a 12-win streak!" |
-| 📸 **Brag Cards** | Auto-generated win screenshots to share |
-| 🐋 **Whale Alerts** | X bot tweets whale moves 24/7 |
-| 🎁 **Free Daily Oracle** | 1 free prediction/day hooks users |
-| 🤝 **Referrals** | 10% credit bonus for invites |
-| 📊 **Public Leaderboard** | Top whales ranked — SEO magnet |
+#
+### 🧠 Phase 3: Intelligence Suite
+
+| Feature | Description |
+|---------|-------------|
+| **Advanced Swarm** | 45 AI agents across 9 categories (Technical, Macro, Sentiment, Crypto, Sports, Risk, Timing, Fundamental) |
+| **Auto-Pilot** | Fully automated trading with 3 risk profiles (Conservative, Balanced, Aggressive) |
+| **Backtesting** | Test Oracle accuracy against real resolved Polymarket markets |
+| **Portfolio Tracker** | Track positions, PnL, win rate, trade breakdown |
+| **Alert System** | Real-time notifications for whale moves, Oracle streaks, trade results |
+| **Whale Discovery** | Auto-detect profitable wallets from Polymarket trade data |
+
+## ✅ Phase 1 — Foundation (Complete)
+- [x] 🔮 Oracle Engine with 5-agent AI swarm (Gemini 2.0 Flash)
+- [x] 🎨 MiroFish-inspired minimal UI (black & white theme)
+- [x] ⚔️ War Room with 1,200-dot animated swarm matrix
+- [x] 🐋 Live whale tracking on Polygon blockchain
+- [x] 💰 Crypto payments (MATIC/USDC on Polygon)
+- [x] 📊 Polymarket market discovery via Gamma API
+- [x] 🔐 JWT authentication + encrypted credential storage
+- [x] 📈 Dashboard with system stats
+
+### ✅ Phase 2 — Trading (Complete)
+- [x] 📊 Manual trading via Polymarket CLOB
+- [x] 🔮 Oracle auto-trade (AI verdict → auto-bet)
+- [x] 🐋 Copy trading (mirror whale positions)
+- [x] 🛡️ Liquidity checks + risk controls
+- [x] 🔐 Per-user encrypted API credential storage
+- [x] 📜 Trade history logging
+
+### 🔨 Phase 3 — Intelligence (Complete)
+- [ ] 🧬 Advanced swarm — 50+ agent personas with specialized strategies
+- [ ] 📊 Backtesting engine — test strategies against historical data
+- [ ] 🐋 Whale discovery — auto-detect new profitable wallets
+- [ ] 📈 Portfolio tracker — aggregate positions, PnL, win rate
+- [ ] 🔔 Alert system — whale moves, Oracle streaks, market events
+
+### 🔮 Phase 4 — Scale
+- [ ] 🤖 Auto-pilot mode — fully automated trading based on Oracle + whales
+- [ ] 📱 Mobile app (React Native)
+- [ ] 🌐 Multi-chain support (Azuro, Overtime Markets)
+- [ ] 💬 AI chat assistant with memory per user
+- [ ] 🤖 Telegram bot for alerts and quick trades
+- [ ] 🎬 Brag cards + social sharing for viral growth
+
+### 🌍 Phase 5 — Ecosystem
+- [ ] 🏪 Whale marketplace — subscribe to top traders' strategies
+- [ ] 🏆 Public leaderboard with SEO optimization
+- [ ] 🤝 Referral system — 10% credit bonus for invites
+- [ ] 🐦 X/Twitter whale alert bot
+- [ ] 🌍 Multi-language support
+- [ ] 🏛️ DAO governance for platform decisions
 
 ---
 
@@ -318,24 +361,6 @@ omen/
 | [Deployment Guide](docs/DEPLOYMENT.md) | Production setup |
 | [Credit System](docs/CREDITS.md) | Pay-as-you-go mechanics |
 | [Viral Strategy](docs/VIRAL_STRATEGY.md) | Growth hacking playbook |
-
----
-
-## 🗺️ Roadmap
-
-- [x] 🔮 Oracle Engine (5-agent swarm)
-- [x] 🐋 Whale Tracking & Copy Trading
-- [x] 💳 Credit System (pay-as-you-go)
-- [x] 🤖 Auto-Pilot Mode
-- [x] 💬 Personal AI Chat (10 free + credits)
-- [x] 📊 Dashboard & Analytics
-- [x] 🔍 Whale Discovery Engine
-- [x] 🐦 X Whale Alert Bot
-- [ ] 📱 Mobile App (React Native)
-- [ ] 🌐 Multi-chain (Azuro, Overtime)
-- [ ] 🏪 Whale Marketplace
-- [ ] 🤖 Telegram Bot
-- [ ] 🌍 Multi-language Support
 
 ---
 

@@ -1,54 +1,12 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-.venv/
-*.egg-info/
-dist/
-build/
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Docker
-*.log
-docker-compose.override.yml
-
-# Database
-*.db
-*.sqlite3
-postgres_data/
-redis_data/
-
-# Build outputs
-frontend/dist/
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Misc
+*.bak_*
 *.bak
-*.tmp
+_part*.py
+_part*.txt
+*_new.py
+__pycache__/
+*.pyc
+data/omen.db
+.env
+venv/
+node_modules/
+*.log

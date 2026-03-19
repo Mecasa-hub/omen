@@ -1436,3 +1436,184 @@ OMEN provides auto-generated interactive API docs:
 - **Swagger UI:** `https://omen.market/docs`
 - **ReDoc:** `https://omen.market/redoc`
 - **OpenAPI JSON:** `https://omen.market/openapi.json`
+
+---
+
+## Trading API (NEW)
+
+### Wallet Management
+
+#### `POST /api/trading/connect-wallet`
+Connect Polymarket wallet with API credentials.
+
+**Auth Required:** Yes
+
+**Body:**
+```json
+{
+  "api_key": "your-polymarket-api-key",
+  "api_secret": "your-polymarket-api-secret",
+  "api_passphrase": "your-polymarket-passphrase"
+}
+```
+
+**Response:**
+```json
+{"status": "connected", "message": "Polymarket wallet connected successfully"}
+```
+
+#### `GET /api/trading/wallet-status`
+Check wallet connection status.
+
+**Auth Required:** Yes
+
+**Response:**
+```json
+{"connected": true, "auto_oracle": false, "copy_trade": false, "risk_config": {...}}
+```
+
+#### `DELETE /api/trading/disconnect`
+Disconnect wallet and delete stored credentials.
+
+**Auth Required:** Yes
+
+---
+
+### Market Discovery
+
+#### `GET /api/trading/markets?limit=20`
+Fetch active Polymarket markets via Gamma API.
+
+**Response:**
+```json
+[
+  {
+    "condition_id": "0x826608...",
+    "question": "Will Bitcoin exceed $150k by end of 2026?",
+    "tokens": [{"token_id": "7546712...", "outcome": "Yes"}, {"token_id": "2453287...", "outcome": "No"}],
+    "volume": 99975.0,
+    "liquidity": 50000.0,
+    "active": true
+  }
+]
+```
+
+#### `GET /api/trading/price/{token_id}`
+Get current price for a market token.
+
+#### `GET /api/trading/orderbook/{token_id}`
+Get full orderbook (bids/asks) for a token.
+
+---
+
+### Order Execution
+
+#### `POST /api/trading/order`
+Place a limit or market order.
+
+**Auth Required:** Yes (wallet must be connected)
+
+**Body:**
+```json
+{
+  "token_id": "7546712961590831...",
+  "side": "BUY",
+  "price": 0.65,
+  "size": 10.0
+}
+```
+
+**Response:**
+```json
+{"success": true, "order_id": "abc-123", "status": "placed", "token_id": "...", "side": "BUY", "price": 0.65, "size": 10.0}
+```
+
+#### `POST /api/trading/oracle-trade`
+Ask Oracle + auto-place bet on matching market.
+
+**Auth Required:** Yes
+
+**Body:**
+```json
+{
+  "question": "Will Bitcoin exceed $150k by end of 2026?",
+  "amount": 5.0,
+  "min_confidence": 65.0
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "order_id": "def-456",
+  "oracle_verdict": "YES",
+  "oracle_confidence": 72,
+  "market": "Will Bitcoin exceed $150k by end of 2026?"
+}
+```
+
+#### `POST /api/trading/copy-trade`
+Copy the latest trade from a whale wallet.
+
+**Auth Required:** Yes
+
+**Body:**
+```json
+{
+  "whale_address": "0xd91cfccfabd3a...",
+  "max_amount": 10.0
+}
+```
+
+---
+
+### Order Management
+
+#### `GET /api/trading/orders`
+Get all open orders. **Auth Required:** Yes
+
+#### `DELETE /api/trading/orders/{order_id}`
+Cancel a specific order. **Auth Required:** Yes
+
+#### `DELETE /api/trading/orders`
+Cancel all open orders. **Auth Required:** Yes
+
+---
+
+### Trade History & Settings
+
+#### `GET /api/trading/history`
+Get user's trade history (last 50). **Auth Required:** Yes
+
+#### `PUT /api/trading/settings`
+Update trading settings (auto_oracle, copy_trade, risk_config). **Auth Required:** Yes
+
+**Body:**
+```json
+{
+  "auto_oracle": true,
+  "copy_trade": false,
+  "risk_config": {
+    "max_bet_size": 50.0,
+    "daily_limit": 200.0,
+    "stop_loss_pct": 35.0,
+    "min_confidence": 65.0
+  }
+}
+```
+
+---
+
+### Risk Controls (Built-in)
+
+| Control | Default | Description |
+|---------|---------|-------------|
+| `max_bet_size` | $50 | Maximum single bet |
+| `daily_limit` | $200 | Maximum daily spend |
+| `stop_loss_pct` | 35% | Stop loss percentage |
+| `min_confidence` | 65% | Minimum Oracle confidence for auto-trade |
+| `copy_trade_max` | $20 | Maximum copy trade size |
+| `max_open_orders` | 10 | Maximum concurrent orders |
+| **Liquidity Check** | Auto | Rejects trades on spreads > $0.50 or extreme books |
+
