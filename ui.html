@@ -2553,9 +2553,71 @@ var gvTokensProcessed = 0;
 var gvRunning = false;
 var gvCurrentQuestion = null;
 var gvAgentVotes = {};
+var gvNodes = [];
+var gvLinkData = [];
+var gvSvg = null;
+var gvNodeGroup = null;
+var gvLinkGroup = null;
+var gvW = 800;
+var gvH = 500;
+var gvCenterNode = null;
+var gvActiveAgentCount = 0;
 
 var GV_OPERATIONS = ['SYNC','JOIN','FORK','SEAL','PULL','ACK','PIPE','AGREE','COUNTER','FLIP','RELAY','SIGN','MERGE','SPLIT','VOTE','QUERY','INDEX','CACHE','EMIT','PROBE'];
 var GV_ACTIONS = ['consensus reached','data recv','token gen','prompt tokenized','encrypt done','shard balanced','cache hit 98%','route found','schema valid','rebalance complete','fork detected','anomaly flag','heartbeat ok','merge complete','opinion locked','vote cast','confidence updated','memory recalled','pattern matched','signal detected','reasoning chain built','bias check passed','calibration ok'];
+
+// Real data source URLs for each agent role
+var AGENT_SOURCES = {
+  'MASTER CTRL':    [{label:'CoinGecko',url:'https://www.coingecko.com'},{label:'TradingView',url:'https://www.tradingview.com'},{label:'DeFi Llama',url:'https://defillama.com'}],
+  'TRAVERSE':       [{label:'Etherscan',url:'https://etherscan.io'},{label:'DeFi Llama',url:'https://defillama.com'}],
+  'EMBED ORD':      [{label:'Pinecone',url:'https://www.pinecone.io'},{label:'Hugging Face',url:'https://huggingface.co'}],
+  'NEURAL ORG':     [{label:'TensorFlow',url:'https://www.tensorflow.org'},{label:'Papers',url:'https://arxiv.org/list/cs.AI/recent'}],
+  'ENCRYPT':        [{label:'CertiK',url:'https://www.certik.com'},{label:'Chainalysis',url:'https://www.chainalysis.com'}],
+  'TASK ROUTE':     [{label:'Queue',url:'https://docs.celeryq.dev'},{label:'Redis',url:'https://redis.io'}],
+  'DISCOVERY':      [{label:'Google News',url:'https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB'},{label:'CoinDesk',url:'https://www.coindesk.com'}],
+  'STATE REP':      [{label:'Glassnode',url:'https://glassnode.com'},{label:'Dune',url:'https://dune.com'}],
+  'MOMENTUM':       [{label:'TradingView',url:'https://www.tradingview.com/chart'},{label:'Binance',url:'https://www.binance.com/en/markets'}],
+  'SPLIT BEAM':     [{label:'Messari',url:'https://messari.io'},{label:'The Block',url:'https://www.theblock.co'}],
+  'HUB LINK':       [{label:'Polygon',url:'https://polygonscan.com'},{label:'Alchemy',url:'https://www.alchemy.com'}],
+  'AGGREGATOR':     [{label:'1inch',url:'https://1inch.io'},{label:'DefiPulse',url:'https://www.defipulse.com'}],
+  'SCOUT':          [{label:'Twitter/X',url:'https://x.com/search?q=crypto'},{label:'Reddit',url:'https://www.reddit.com/r/cryptocurrency'}],
+  'CONSENSUS':      [{label:'Polymarket',url:'https://polymarket.com'},{label:'Metaculus',url:'https://www.metaculus.com'}],
+  'ILLUMINATE':     [{label:'arXiv',url:'https://arxiv.org/list/q-fin/recent'},{label:'SSRN',url:'https://www.ssrn.com'}],
+  'GEOPOLITICS':    [{label:'Reuters',url:'https://www.reuters.com/world'},{label:'OFAC',url:'https://sanctionssearch.ofac.treas.gov'}],
+  'SLOW BURN':      [{label:'Macro Trends',url:'https://www.macrotrends.net'},{label:'FRED',url:'https://fred.stlouisfed.org'}],
+  'COLD LOGIC':     [{label:'Wolfram',url:'https://www.wolframalpha.com'},{label:'Our World',url:'https://ourworldindata.org'}],
+  'NARRATIVE':      [{label:'LunarCrush',url:'https://lunarcrush.com'},{label:'Santiment',url:'https://santiment.net'}],
+  'MACRO ECON':     [{label:'FRED',url:'https://fred.stlouisfed.org'},{label:'BLS',url:'https://www.bls.gov'}],
+  'SPEED TRADE':    [{label:'Binance Book',url:'https://www.binance.com/en/orderbook/BTC_USDT'},{label:'Kaiko',url:'https://www.kaiko.com'}],
+  'MKT DEPTH':      [{label:'CoinGlass',url:'https://www.coinglass.com'},{label:'Nansen',url:'https://www.nansen.ai'}],
+  'WHALE TRACK':    [{label:'Whale Alert',url:'https://whale-alert.io'},{label:'Arkham',url:'https://www.arkhamintelligence.com'}],
+  'SHIFT DETECT':   [{label:'TradingView',url:'https://www.tradingview.com/screener'},{label:'Alt Index',url:'https://www.alternative.me/crypto/fear-and-greed-index'}],
+  'SENTIMENT':      [{label:'Fear&Greed',url:'https://www.alternative.me/crypto/fear-and-greed-index'},{label:'LunarCrush',url:'https://lunarcrush.com'}],
+  'CATALYST':       [{label:'CoinMarketCal',url:'https://coinmarketcal.com'},{label:'Earnings',url:'https://www.earningswhispers.com'}],
+  'PATTERN':        [{label:'TradingView',url:'https://www.tradingview.com/chart'},{label:'StockCharts',url:'https://stockcharts.com'}],
+  'COMPLEXITY':     [{label:'Complexity',url:'https://complexity-explorer.santafe.edu'},{label:'Entropy',url:'https://en.wikipedia.org/wiki/Entropy_(information_theory)'}],
+  'ENERGY':         [{label:'Hashrate',url:'https://www.blockchain.com/explorer/charts/hash-rate'},{label:'Cambridge',url:'https://ccaf.io/cbnsi/cbeci'}],
+  'ASIA MKT':       [{label:'CoinPost JP',url:'https://coinpost.jp'},{label:'8BTC CN',url:'https://www.8btc.com'}],
+  'CORRELATION':    [{label:'IntoTheBlock',url:'https://app.intotheblock.com'},{label:'CoinMetrics',url:'https://coinmetrics.io'}],
+  'STORY WEAVE':    [{label:'Decrypt',url:'https://decrypt.co'},{label:'The Defiant',url:'https://thedefiant.io'}],
+  'UNCERTAINTY':    [{label:'CBOE VIX',url:'https://www.cboe.com/tradable_products/vix'},{label:'Deribit',url:'https://www.deribit.com'}],
+  'BREAKOUT':       [{label:'TradingView',url:'https://www.tradingview.com/screener/crypto'},{label:'CryptoQuant',url:'https://cryptoquant.com'}],
+  'DARK POOL':      [{label:'Arkham',url:'https://www.arkhamintelligence.com'},{label:'Nansen',url:'https://www.nansen.ai'}],
+  'STEADY HAND':    [{label:'CoinGlass',url:'https://www.coinglass.com/LiquidationMap'},{label:'Laevitas',url:'https://app.laevitas.ch'}],
+  'SIMPLIFIER':     [{label:'CoinGecko',url:'https://www.coingecko.com'},{label:'Messari',url:'https://messari.io'}],
+  'FUNDAMENTALS':   [{label:'Token Terminal',url:'https://tokenterminal.com'},{label:'DeFi Llama',url:'https://defillama.com'}],
+  'CONTRARIAN':     [{label:'Augur',url:'https://augur.net'},{label:'Kalshi',url:'https://kalshi.com'}],
+  'SHADOW':         [{label:'Chainalysis',url:'https://www.chainalysis.com'},{label:'Elliptic',url:'https://www.elliptic.co'}],
+  'RISK MGMT':      [{label:'CoinGlass',url:'https://www.coinglass.com/LiquidationMap'},{label:'Skew',url:'https://www.skew.com'}],
+  'MICRO ALPHA':    [{label:'DEXScreener',url:'https://dexscreener.com'},{label:'GeckoTerminal',url:'https://www.geckoterminal.com'}],
+  'EXOTIC MKT':     [{label:'CoinGecko',url:'https://www.coingecko.com/en/categories'},{label:'DappRadar',url:'https://dappradar.com'}],
+  'YIELD SEEK':     [{label:'DeFi Llama',url:'https://defillama.com/yields'},{label:'Aave',url:'https://app.aave.com'}],
+  'FINAL ARBITER':  [{label:'All Votes',url:'#'},{label:'Consensus',url:'#'}]
+};
+
+function getAgentSources(role) {
+  return AGENT_SOURCES[role] || [{label:'Data Feed',url:'https://www.coingecko.com'},{label:'Analysis',url:'https://www.tradingview.com'}];
+}
 
 function initGodView() {
   if (gvInitialized) return;
@@ -2602,7 +2664,7 @@ function runBootSequence() {
 
   var bootLines = [
     '> omen.sys.init()',
-    'Loading OMEN Oracle Machine v2.0.1...',
+    'Loading OMEN Oracle Machine v2.1.0...',
     'Initializing memory vault: /agents/vault/',
     'Loading behavioral profiles... 45 agents found',
     'Connecting to Gemini 2.0 Flash engine...',
@@ -2619,10 +2681,8 @@ function runBootSequence() {
     setTimeout(function() {
       var span = document.createElement('div');
       span.className = 'gv-boot-line';
-      span.style.animationDelay = '0s';
       span.textContent = line;
-      if (line.startsWith('>')) span.style.color = '#00ff41';
-      else span.style.color = '#666';
+      span.style.color = line.startsWith('>') ? '#00ff41' : '#666';
       textEl.appendChild(span);
       textEl.scrollTop = textEl.scrollHeight;
     }, i * lineDelay);
@@ -2634,11 +2694,10 @@ function runBootSequence() {
     setTimeout(function() {
       counterEl.textContent = (i + 1) + ' / 45';
       document.getElementById('gv-agent-count').textContent = (i + 1) + '/45';
-
       var span = document.createElement('div');
       span.className = 'gv-boot-line';
       span.style.color = '#00aa33';
-      span.textContent = '  [A' + String(i+1).padStart(2,'0') + '] ' + agent.codename + ' — ' + (agent.role || 'ONLINE');
+      span.textContent = '  [A' + String(i+1).padStart(2,'0') + '] ' + agent.codename + ' \u2014 ' + (agent.role || 'ONLINE');
       textEl.appendChild(span);
       textEl.scrollTop = textEl.scrollHeight;
 
@@ -2648,9 +2707,8 @@ function runBootSequence() {
           done.className = 'gv-boot-line';
           done.style.color = '#00ff41';
           done.style.fontWeight = '700';
-          done.textContent = '✓ ALL 45 AGENTS ONLINE - SWARM READY';
+          done.textContent = '\u2713 ALL 45 AGENTS ONLINE - SWARM READY';
           textEl.appendChild(done);
-
           setTimeout(function() {
             bootEl.classList.add('hidden');
             startGodView();
@@ -2665,232 +2723,644 @@ function startGodView() {
   gvRunning = true;
   document.getElementById('gv-net').textContent = 'Synced';
   document.getElementById('gv-pool').textContent = 'Active';
-  document.getElementById('gv-swarm').textContent = 'Healthy';
+  document.getElementById('gv-swarm').textContent = 'Idle';
   buildGVGraph();
   startGVEvents();
   startGVMetrics();
   startGVUptime();
 }
 
+// ============== NEW PROGRESSIVE SWARM GRAPH ==============
+
 function buildGVGraph() {
   var container = document.getElementById('gv-graph');
-  var w = container.clientWidth || container.offsetWidth || 800;
-  var h = container.clientHeight || container.offsetHeight || 500;
-
-  // Safety: if container not yet sized, retry
-  if (w < 100 || h < 100) {
-    setTimeout(buildGVGraph, 200);
-    return;
-  }
-
+  gvW = container.clientWidth || container.offsetWidth || 800;
+  gvH = container.clientHeight || container.offsetHeight || 500;
+  if (gvW < 100 || gvH < 100) { setTimeout(buildGVGraph, 200); return; }
   container.innerHTML = '';
 
-  var svg = d3.select('#gv-graph').append('svg')
-    .attr('width', w).attr('height', h)
+  gvSvg = d3.select('#gv-graph').append('svg')
+    .attr('width', gvW).attr('height', gvH)
     .style('background', '#000');
 
-  // Dot grid background
-  for (var gx = 0; gx < w; gx += 30) {
-    for (var gy = 0; gy < h; gy += 30) {
-      svg.append('circle').attr('cx', gx).attr('cy', gy).attr('r', 0.5).attr('fill', '#1a3a1a').attr('opacity', 0.4);
+  // Dot grid
+  for (var gx = 0; gx < gvW; gx += 30) {
+    for (var gy = 0; gy < gvH; gy += 30) {
+      gvSvg.append('circle').attr('cx', gx).attr('cy', gy).attr('r', 0.5).attr('fill', '#1a3a1a').attr('opacity', 0.3);
     }
   }
 
-  // Build nodes
-  var nodes = gvAgents.map(function(a, i) {
-    var angle = (2 * Math.PI * i) / gvAgents.length;
-    var radius = Math.min(w, h) * 0.35;
-    return {
-      id: a.codename,
-      role: a.role || 'AGENT',
-      index: i,
-      agentData: a,
-      x: w/2 + radius * Math.cos(angle) + (Math.random() - 0.5) * 40,
-      y: h/2 + radius * Math.sin(angle) + (Math.random() - 0.5) * 40
-    };
-  });
+  // Layers
+  gvLinkGroup = gvSvg.append('g').attr('class', 'gv-links-layer');
+  gvNodeGroup = gvSvg.append('g').attr('class', 'gv-nodes-layer');
 
-  // Build links based on allies
-  var links = [];
-  var nodeMap = {};
-  nodes.forEach(function(n) { nodeMap[n.id] = n; });
-  gvAgents.forEach(function(a) {
-    (a.allies || []).forEach(function(ally) {
-      if (nodeMap[ally]) links.push({ source: a.codename, target: ally, type: 'ally' });
+  // Single pulsing OMEN center node
+  gvCenterNode = { id: 'OMEN', type: 'center', role: 'ORACLE', x: gvW/2, y: gvH/2, fx: gvW/2, fy: gvH/2, r: 35 };
+  gvNodes = [gvCenterNode];
+  gvLinkData = [];
+  gvActiveAgentCount = 0;
+
+  var centerG = gvNodeGroup.append('g').attr('class', 'gv-center-node')
+    .attr('transform', 'translate(' + gvW/2 + ',' + gvH/2 + ')');
+
+  // Animated pulse rings
+  var pulse1 = centerG.append('circle').attr('r', 40).attr('fill', 'none')
+    .attr('stroke', '#00ff41').attr('stroke-width', 1).attr('opacity', 0.15);
+  pulse1.append('animate').attr('attributeName','r').attr('values','38;58;38').attr('dur','3s').attr('repeatCount','indefinite');
+  pulse1.append('animate').attr('attributeName','opacity').attr('values','0.15;0.3;0.15').attr('dur','3s').attr('repeatCount','indefinite');
+
+  var pulse2 = centerG.append('circle').attr('r', 55).attr('fill', 'none')
+    .attr('stroke', '#00ff41').attr('stroke-width', 0.5).attr('opacity', 0.08);
+  pulse2.append('animate').attr('attributeName','r').attr('values','50;75;50').attr('dur','4.5s').attr('repeatCount','indefinite');
+
+  // Main body
+  centerG.append('circle').attr('r', 35).attr('fill', '#050f05')
+    .attr('stroke', '#00ff41').attr('stroke-width', 2)
+    .style('filter', 'drop-shadow(0 0 15px rgba(0,255,65,0.5))');
+  centerG.append('text').attr('text-anchor','middle').attr('y',-5)
+    .attr('fill','#00ff41').attr('font-size','13px').attr('font-weight','700')
+    .attr('font-family',"'JetBrains Mono',monospace").text('OMEN');
+  centerG.append('text').attr('text-anchor','middle').attr('y',12)
+    .attr('fill','#007711').attr('font-size','7px')
+    .attr('font-family',"'JetBrains Mono',monospace").text('ORACLE v2.1');
+
+  // Idle prompt
+  gvSvg.append('text').attr('id','gv-idle-text')
+    .attr('x', gvW/2).attr('y', gvH/2 + 65)
+    .attr('text-anchor','middle').attr('fill','#333').attr('font-size','10px')
+    .attr('font-family',"'JetBrains Mono',monospace")
+    .text('Enter a question to activate the swarm...');
+
+  // Init dormant simulation
+  gvSimulation = d3.forceSimulation(gvNodes)
+    .force('charge', d3.forceManyBody().strength(-50))
+    .force('center', d3.forceCenter(gvW/2, gvH/2).strength(0.05))
+    .force('collision', d3.forceCollide().radius(function(d){return (d.r||12)+8;}))
+    .force('x', d3.forceX(gvW/2).strength(0.02))
+    .force('y', d3.forceY(gvH/2).strength(0.02))
+    .alpha(0.05)
+    .on('tick', gvTick);
+
+  // Resize handler
+  window.addEventListener('resize', function() {
+    if (document.querySelector('.page.active') && document.querySelector('.page.active').id === 'page-godview') {
+      gvInitialized = false; initGodView();
+    }
+  });
+}
+
+function gvTick() {
+  gvLinkGroup.selectAll('line')
+    .attr('x1', function(d){return d.source.x;})
+    .attr('y1', function(d){return d.source.y;})
+    .attr('x2', function(d){return d.target.x;})
+    .attr('y2', function(d){return d.target.y;});
+
+  gvNodeGroup.selectAll('.gv-agent-group')
+    .attr('transform', function(d) {
+      d.x = Math.max(25, Math.min(gvW - 25, d.x));
+      d.y = Math.max(25, Math.min(gvH - 25, d.y));
+      return 'translate(' + d.x + ',' + d.y + ')';
     });
-  });
-  // Add random connections for visual density if few allies
-  if (links.length < 30) {
-    for (var li = 0; li < 40; li++) {
-      var a = nodes[Math.floor(Math.random() * nodes.length)];
-      var b = nodes[Math.floor(Math.random() * nodes.length)];
-      if (a.id !== b.id) links.push({ source: a.id, target: b.id, type: 'sync' });
+}
+
+function clearSwarmForNewQuestion() {
+  // Remove all agent nodes and source nodes, keep center
+  gvNodes = gvNodes.filter(function(n) { return n.type === 'center'; });
+  gvLinkData = [];
+  gvAgentVotes = {};
+  gvActiveAgentCount = 0;
+
+  // Remove drawn elements
+  gvNodeGroup.selectAll('.gv-agent-group').remove();
+  gvLinkGroup.selectAll('line').remove();
+  d3.select('.gv-verdict-overlay').remove();
+  d3.select('#gv-idle-text').remove();
+
+  // Reset simulation
+  gvSimulation.nodes(gvNodes);
+  gvSimulation.force('link', null);
+  gvSimulation.alpha(0.05).restart();
+
+  // Update counter
+  document.getElementById('gv-agent-count').textContent = '0/45';
+}
+
+function addAgentToSwarm(agent, vote, delay) {
+  setTimeout(function() {
+    gvActiveAgentCount++;
+    var angle = (2 * Math.PI * gvActiveAgentCount) / 45;
+    var isYes = vote && vote.vote === 'YES';
+    var conf = vote ? vote.confidence : 50;
+    var agentR = Math.max(10, Math.min(18, 8 + conf / 15));
+    var sources = getAgentSources(agent.role || '');
+    var outerR = Math.min(gvW, gvH) * 0.32;
+
+    // Agent node
+    var node = {
+      id: agent.codename, type: 'agent', role: agent.role || 'AGENT',
+      agentData: agent, vote: vote,
+      x: gvW/2 + outerR * Math.cos(angle) + (Math.random()-0.5)*40,
+      y: gvH/2 + outerR * Math.sin(angle) + (Math.random()-0.5)*40,
+      r: agentR
+    };
+    gvNodes.push(node);
+
+    // Source sub-nodes
+    sources.forEach(function(src, si) {
+      var srcAngle = angle + (si - (sources.length-1)/2) * 0.35;
+      var srcR = outerR + 40 + si * 15;
+      var srcNode = {
+        id: agent.codename + '_src_' + si, type: 'source',
+        label: src.label, url: src.url, parent: agent.codename,
+        x: gvW/2 + srcR * Math.cos(srcAngle) + (Math.random()-0.5)*20,
+        y: gvH/2 + srcR * Math.sin(srcAngle) + (Math.random()-0.5)*20,
+        r: 5
+      };
+      gvNodes.push(srcNode);
+      gvLinkData.push({ source: agent.codename, target: srcNode.id, type: 'source' });
+    });
+
+    // Link agent to center
+    gvLinkData.push({ source: 'OMEN', target: agent.codename, type: 'agent' });
+
+    // Link to 2-3 nearby agents
+    var otherAgents = gvNodes.filter(function(n){return n.type==='agent' && n.id!==agent.codename;});
+    var connectCount = Math.min(2, otherAgents.length);
+    for (var ci = 0; ci < connectCount; ci++) {
+      var tgt = otherAgents[Math.floor(Math.random() * otherAgents.length)];
+      gvLinkData.push({ source: agent.codename, target: tgt.id, type: 'peer' });
     }
-  }
-  // Deduplicate
+
+    // Store vote
+    if (vote) gvAgentVotes[agent.codename] = vote;
+
+    // Redraw graph
+    updateGVGraph(agent.codename, isYes, conf);
+
+    // Update counter
+    document.getElementById('gv-agent-count').textContent = gvActiveAgentCount + '/45';
+
+    // Event log
+    var voteStr = vote ? vote.vote + ' (' + conf.toFixed(0) + '%)' : 'CONNECTING';
+    var srcNames = sources.map(function(s){return s.label;}).join(', ');
+    addGVEvent(agent.codename + ' \u2192 ' + voteStr + ' via [' + srcNames + ']', vote && vote.vote === 'YES');
+  }, delay);
+}
+
+function updateGVGraph(newNodeId, isYes, confidence) {
+  // Deduplicate links
   var seen = {};
-  links = links.filter(function(l) {
-    var key = [l.source, l.target].sort().join('-');
+  gvLinkData = gvLinkData.filter(function(l) {
+    var sId = typeof l.source === 'object' ? l.source.id : l.source;
+    var tId = typeof l.target === 'object' ? l.target.id : l.target;
+    var key = [sId, tId].sort().join('|');
     if (seen[key]) return false;
     seen[key] = true;
     return true;
   });
 
-  // Force simulation - tighter clustering
-  var nodeRadius = Math.max(14, Math.min(22, Math.min(w, h) / 40));
-  gvSimulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(function(d){return d.id}).distance(60).strength(0.4))
-    .force('charge', d3.forceManyBody().strength(-120))
-    .force('center', d3.forceCenter(w/2, h/2).strength(0.1))
-    .force('collision', d3.forceCollide().radius(nodeRadius + 4))
-    .force('x', d3.forceX(w/2).strength(0.08))
-    .force('y', d3.forceY(h/2).strength(0.08));
+  // Update simulation
+  gvSimulation.nodes(gvNodes);
+  gvSimulation.force('link', d3.forceLink(gvLinkData).id(function(d){return d.id;}).distance(function(d){
+    if (d.type==='source') return 28;
+    if (d.type==='agent') return 90;
+    return 55;
+  }).strength(function(d){
+    if (d.type==='source') return 0.9;
+    if (d.type==='agent') return 0.15;
+    return 0.1;
+  }));
+  gvSimulation.force('charge', d3.forceManyBody().strength(function(d){
+    if (d.type==='center') return -200;
+    if (d.type==='source') return -15;
+    return -60;
+  }));
+  gvSimulation.alpha(0.6).restart();
 
-  // Draw links
-  var linkEls = svg.append('g').selectAll('line')
-    .data(links).enter().append('line')
-    .attr('stroke', function(d) { return d.type === 'ally' ? '#0f3f0f' : '#0a1a0a'; })
-    .attr('stroke-width', function(d) { return d.type === 'ally' ? 1.5 : 0.5; })
-    .attr('opacity', 0.6);
+  // --- Redraw LINKS ---
+  var linkSel = gvLinkGroup.selectAll('line').data(gvLinkData, function(d){
+    var sId = typeof d.source==='object'?d.source.id:d.source;
+    var tId = typeof d.target==='object'?d.target.id:d.target;
+    return sId+'|'+tId;
+  });
+  linkSel.exit().remove();
+  linkSel.enter().append('line')
+    .attr('stroke', function(d){
+      if (d.type==='source') return '#0a2a0a';
+      if (d.type==='agent') return '#0f3f0f';
+      return '#0a1a0a';
+    })
+    .attr('stroke-width', function(d){ return d.type==='source'?0.4:d.type==='agent'?1.2:0.6; })
+    .attr('opacity', 0)
+    .transition().duration(600).attr('opacity', function(d){ return d.type==='source'?0.25:0.45; });
 
-  // Draw nodes as circles with glow
-  var nodeGroup = svg.append('g');
-  var nodeEls = nodeGroup.selectAll('g')
-    .data(nodes).enter().append('g')
-    .attr('class', 'gv-node online')
-    .attr('id', function(d) { return 'gv-node-' + d.id; })
-    .style('cursor', 'pointer')
-    .on('click', function(event, d) { showGVDetail(d); })
+  // --- Redraw NODES (agents + sources) ---
+  var nodeSel = gvNodeGroup.selectAll('.gv-agent-group')
+    .data(gvNodes.filter(function(n){return n.type!=='center';}), function(d){return d.id;});
+  nodeSel.exit().remove();
+
+  var newNodes = nodeSel.enter().append('g')
+    .attr('class','gv-agent-group')
+    .attr('id', function(d){return 'gv-node-'+d.id;})
+    .style('cursor', function(d){return d.type==='agent'?'pointer':d.url?'pointer':'default';})
+    .style('opacity', 0)
+    .on('click', function(event, d){
+      if (d.type==='agent') showGVDetail(d);
+      else if (d.type==='source' && d.url && d.url!=='#') window.open(d.url, '_blank');
+    })
     .call(d3.drag()
-      .on('start', function(event, d) { if (!event.active) gvSimulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag', function(event, d) { d.fx = event.x; d.fy = event.y; })
-      .on('end', function(event, d) { if (!event.active) gvSimulation.alphaTarget(0); d.fx = null; d.fy = null; })
+      .on('start', function(event,d){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y;})
+      .on('drag', function(event,d){d.fx=event.x; d.fy=event.y;})
+      .on('end', function(event,d){if(!event.active) gvSimulation.alphaTarget(0); d.fx=null; d.fy=null;})
     );
 
-  // Outer glow ring
-  nodeEls.append('circle')
-    .attr('r', nodeRadius + 3)
-    .attr('fill', 'none')
-    .attr('stroke', '#00ff41')
-    .attr('stroke-width', 0.5)
-    .attr('opacity', 0.15);
+  // Agent bubbles
+  newNodes.filter(function(d){return d.type==='agent';}).each(function(d) {
+    var g = d3.select(this);
+    var isY = d.vote && d.vote.vote === 'YES';
+    var col = isY ? '#00ff41' : '#ff4444';
+    var bgCol = isY ? '#051505' : '#150505';
+    var glowCol = isY ? 'rgba(0,255,65,0.3)' : 'rgba(255,68,68,0.3)';
 
-  // Main circle
-  nodeEls.append('circle')
-    .attr('class', 'gv-ncircle')
-    .attr('r', nodeRadius)
-    .attr('fill', '#0a0f0a')
-    .attr('stroke', '#1a4a1a')
-    .attr('stroke-width', 1.5);
-
-  // Status dot (inner)
-  nodeEls.append('circle')
-    .attr('class', 'gv-ndot')
-    .attr('cx', 0).attr('cy', -nodeRadius + 5)
-    .attr('r', 2.5)
-    .attr('fill', '#00ff41')
-    .style('filter', 'drop-shadow(0 0 3px #00ff41)');
-
-  // Agent name (short, centered)
-  nodeEls.append('text')
-    .attr('class', 'gv-nname')
-    .attr('x', 0).attr('y', 1)
-    .attr('text-anchor', 'middle')
-    .attr('fill', '#00ff41')
-    .attr('font-size', Math.max(6, nodeRadius * 0.55) + 'px')
-    .attr('font-weight', '700')
-    .attr('font-family', "'JetBrains Mono',monospace")
-    .text(function(d) { return d.id.substring(0, 5); });
-
-  // Agent role (below)
-  nodeEls.append('text')
-    .attr('class', 'gv-nrole')
-    .attr('x', 0).attr('y', nodeRadius + 10)
-    .attr('text-anchor', 'middle')
-    .attr('fill', '#444')
-    .attr('font-size', '6px')
-    .attr('font-family', "'JetBrains Mono',monospace")
-    .text(function(d) { return d.role.substring(0, 10); });
-
-  // Simulation tick
-  gvSimulation.on('tick', function() {
-    linkEls
-      .attr('x1', function(d){return d.source.x})
-      .attr('y1', function(d){return d.source.y})
-      .attr('x2', function(d){return d.target.x})
-      .attr('y2', function(d){return d.target.y});
-
-    nodeEls.attr('transform', function(d) {
-      d.x = Math.max(nodeRadius + 5, Math.min(w - nodeRadius - 5, d.x));
-      d.y = Math.max(nodeRadius + 5, Math.min(h - nodeRadius - 5, d.y));
-      return 'translate(' + d.x + ',' + d.y + ')';
-    });
+    // Outer glow
+    g.append('circle').attr('r', d.r+5).attr('fill','none')
+      .attr('stroke', col).attr('stroke-width', 0.6).attr('opacity', 0.2);
+    // Body
+    g.append('circle').attr('class','gv-agent-body').attr('r', d.r).attr('fill', bgCol)
+      .attr('stroke', col).attr('stroke-width', 1.5)
+      .style('filter', 'drop-shadow(0 0 8px '+glowCol+')');
+    // Status dot
+    g.append('circle').attr('cx',0).attr('cy',-d.r+4).attr('r',2.5)
+      .attr('fill', col).style('filter','drop-shadow(0 0 4px '+col+')');
+    // Name
+    g.append('text').attr('text-anchor','middle').attr('y', 1)
+      .attr('fill', col).attr('font-size', Math.max(5,d.r*0.5)+'px')
+      .attr('font-weight','700').attr('font-family',"'JetBrains Mono',monospace")
+      .text(d.id.substring(0,5));
+    // Role
+    g.append('text').attr('text-anchor','middle').attr('y', d.r+11)
+      .attr('fill','#555').attr('font-size','5px')
+      .attr('font-family',"'JetBrains Mono',monospace")
+      .text((d.role||'').substring(0,12));
   });
 
-  // Resize handler
-  window.addEventListener('resize', function() {
-    if (document.querySelector('.page.active')?.id === 'page-godview') {
-      gvInitialized = false;
-      initGodView();
+  // Source sub-bubbles (smaller, clickable)
+  newNodes.filter(function(d){return d.type==='source';}).each(function(d) {
+    var g = d3.select(this);
+    // Outer ring
+    g.append('circle').attr('r', 7).attr('fill','#060d06')
+      .attr('stroke','#1a4a1a').attr('stroke-width', 0.5).attr('opacity', 0.8);
+    // Inner dot
+    g.append('circle').attr('r', 2).attr('fill','#00aa33').attr('opacity', 0.6);
+    // Label
+    g.append('text').attr('text-anchor','middle').attr('y', 13)
+      .attr('fill','#2a6a2a').attr('font-size','4px')
+      .attr('font-family',"'JetBrains Mono',monospace")
+      .text(d.label.substring(0,10));
+    // Underline if clickable
+    if (d.url && d.url !== '#') {
+      g.append('title').text('Click to open: ' + d.url);
+      g.on('mouseover', function(){d3.select(this).select('circle').attr('stroke','#00ff41').attr('stroke-width',1.5);})
+        .on('mouseout', function(){d3.select(this).select('circle').attr('stroke','#1a4a1a').attr('stroke-width',0.5);});
+    }
+  });
+
+  // Animate in
+  newNodes.transition().duration(500).style('opacity', 1);
+}
+
+// ============== VERDICT DISPLAY ==============
+
+function showGVVerdict(consensus, data) {
+  d3.select('#gv-idle-text').remove();
+  d3.select('.gv-verdict-overlay').remove();
+
+  var yesVotes = consensus.yes_count || consensus.yes_votes || 0;
+  var noVotes = consensus.no_count || consensus.no_votes || 0;
+  var total = yesVotes + noVotes;
+  var yesPct = total > 0 ? (yesVotes / total * 100).toFixed(1) : '0';
+  var noPct = total > 0 ? (noVotes / total * 100).toFixed(1) : '0';
+  var verdict = yesVotes > noVotes ? 'YES' : 'NO';
+  var verdictColor = verdict === 'YES' ? '#00ff41' : '#ff4444';
+  var bgColor = verdict === 'YES' ? '#051505' : '#150505';
+  var avgConf = parseFloat(consensus.avg_confidence || 50);
+
+  var verdictG = gvSvg.append('g').attr('class','gv-verdict-overlay')
+    .attr('transform','translate('+gvW/2+','+(gvH-55)+')');
+
+  // Background panel
+  verdictG.append('rect').attr('x',-220).attr('y',-40).attr('width',440).attr('height',75)
+    .attr('rx',8).attr('fill', bgColor).attr('stroke', verdictColor).attr('stroke-width',1.5)
+    .attr('opacity', 0.95).style('filter','drop-shadow(0 0 15px '+verdictColor+'44)');
+
+  // Header
+  verdictG.append('text').attr('text-anchor','middle').attr('y',-20)
+    .attr('fill','#666').attr('font-size','8px').attr('letter-spacing','3px')
+    .attr('font-family',"'JetBrains Mono',monospace").text('SWARM CONSENSUS');
+
+  // Main verdict
+  verdictG.append('text').attr('text-anchor','middle').attr('y',6)
+    .attr('fill', verdictColor).attr('font-size','22px').attr('font-weight','700')
+    .attr('font-family',"'JetBrains Mono',monospace")
+    .style('filter','drop-shadow(0 0 10px '+verdictColor+'66)')
+    .text(verdict + ' \u2014 ' + yesPct + '%');
+
+  // Details
+  verdictG.append('text').attr('text-anchor','middle').attr('y',24)
+    .attr('fill','#888').attr('font-size','7px')
+    .attr('font-family',"'JetBrains Mono',monospace")
+    .text(yesVotes+' YES / '+noVotes+' NO  |  Confidence: '+avgConf.toFixed(0)+'%  |  Agents: '+total);
+
+  // Faction summary if available
+  if (data && data.factions && data.factions.length > 0) {
+    var factionText = data.factions.map(function(f){return f.name+':'+f.count;}).join('  |  ');
+    verdictG.append('text').attr('text-anchor','middle').attr('y',24)
+      .attr('fill','#555').attr('font-size','5.5px')
+      .attr('font-family',"'JetBrains Mono',monospace")
+      .text(factionText);
+  }
+
+  // Update UI
+  var cmdInput = document.getElementById('gv-cmd-input');
+  if (cmdInput) { cmdInput.placeholder = 'Verdict: '+verdict+' ('+yesPct+'%) \u2014 Ask another question...'; cmdInput.value = ''; }
+  document.getElementById('gv-pool').textContent = 'Complete';
+  document.getElementById('gv-swarm').textContent = 'Consensus';
+}
+
+// ============== SUBMIT QUESTION ==============
+
+async function gvSubmitQuestion() {
+  var input = document.getElementById('gv-cmd-input');
+  var question = input.value.trim();
+  if (!question) return;
+  question = question.replace(/^omen\.oracle\.predict\s*["']?/i, '').replace(/["']$/, '');
+  if (!question) return;
+
+  gvCurrentQuestion = question;
+  input.value = '';
+  input.placeholder = 'Processing: ' + question.substring(0, 40) + '...';
+
+  document.getElementById('gv-pool').textContent = 'Processing';
+  document.getElementById('gv-swarm').textContent = 'Activating';
+
+  // Clear old swarm, start fresh from center node
+  clearSwarmForNewQuestion();
+
+  addGVEvent('\u25B6 SCENARIO: "' + question.substring(0, 60) + '"', true);
+  addGVEvent('Activating research pipeline...', false);
+
+  // Show round indicators
+  activateRound('research');
+
+  try {
+    var resp = await fetch('/api/godview/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: question})
+    });
+
+    if (resp.ok) {
+      var data = await resp.json();
+      if (data.votes) {
+        // Show research
+        if (data.research_context) {
+          completeRound('research');
+          showResearchContext(data.research_context, data.research_time_ms);
+        }
+        // Stream votes progressively
+        streamVotesProgressively(data.votes, data.consensus, data);
+      }
+    } else {
+      simulateLocalVotes(question);
+    }
+  } catch(e) {
+    simulateLocalVotes(question);
+  }
+}
+
+function streamVotesProgressively(votes, consensus, fullData) {
+  var shuffled = votes.sort(function(){return Math.random()-0.5;});
+  var round1 = shuffled.filter(function(v){return (v.round||1)===1;});
+  var round2 = shuffled.filter(function(v){return (v.round||1)===2;});
+  var allVotes = round1.length > 0 ? round1.concat(round2) : shuffled;
+
+  activateRound('1');
+  addGVEvent('\u2501\u2501\u2501 ROUND 1: INITIAL VOTE \u2501\u2501\u2501', false);
+  document.getElementById('gv-swarm').textContent = 'Voting R1';
+
+  var delay = 0;
+  var round2Started = false;
+
+  allVotes.forEach(function(v, i) {
+    delay += 120 + Math.random() * 250;
+
+    // Detect round 2 transition
+    if (!round2Started && (v.round||1) === 2) {
+      round2Started = true;
+      delay += 1200;
+      var transDelay = delay - 600;
+      setTimeout(function() {
+        completeRound('1');
+        activateRound('2');
+        addGVEvent('\u2501\u2501\u2501 ROUND 2: DEBATE PHASE \u2501\u2501\u2501', false);
+        addGVEvent(round2.length + ' agents re-evaluating...', false);
+        document.getElementById('gv-swarm').textContent = 'Debating R2';
+      }, transDelay);
+    }
+
+    // Find matching agent
+    var agent = gvAgents.find(function(a){return a.codename === v.codename;}) || {codename: v.codename, role: 'AGENT'};
+
+    // Add agent to swarm progressively
+    addAgentToSwarm(agent, v, delay);
+
+    gvTokensProcessed += Math.floor(2000 + Math.random() * 8000);
+
+    // After last vote: show factions + verdict
+    if (i === allVotes.length - 1) {
+      setTimeout(function() {
+        completeRound('2');
+
+        // Show factions
+        if (fullData && fullData.factions) {
+          activateRound('factions');
+          showFactions(fullData.factions, fullData.vote_changes);
+          addGVEvent('\u2501\u2501\u2501 FACTIONS FORMED \u2501\u2501\u2501', false);
+          fullData.factions.forEach(function(f) {
+            addGVEvent(f.name + ': ' + f.count + ' agents (leader: ' + f.leader + ')', false);
+          });
+          if (fullData.vote_changes && fullData.vote_changes.length > 0) {
+            addGVEvent('\u2501\u2501\u2501 VOTE FLIPS: ' + fullData.vote_changes.length + ' \u2501\u2501\u2501', true);
+            fullData.vote_changes.forEach(function(vc) {
+              addGVEvent(vc.codename + ' flipped ' + vc.from + ' \u2192 ' + vc.to, true);
+            });
+          }
+          completeRound('factions');
+        }
+
+        // Show verdict
+        setTimeout(function() {
+          activateRound('consensus');
+          var finalConsensus = consensus || calculateConsensus(allVotes);
+          showGVVerdict(finalConsensus, fullData);
+          completeRound('consensus');
+          addGVEvent('\u2550\u2550\u2550 FINAL VERDICT: ' + (finalConsensus.direction||'') + ' (' + (finalConsensus.percentage||'') + '%) \u2550\u2550\u2550', true);
+        }, 1200);
+      }, delay + 800);
     }
   });
 }
 
+function simulateLocalVotes(question) {
+  addGVEvent('API unavailable \u2014 running local simulation...', false);
+  activateRound('1');
+  var votes = gvAgents.map(function(a) {
+    return {
+      codename: a.codename, id: a.id,
+      vote: Math.random() > 0.4 ? 'YES' : 'NO',
+      confidence: 45 + Math.random() * 50,
+      reasoning: a.codename + ' analyzed via ' + (a.expertise ? a.expertise[0] : a.role),
+      round: 1
+    };
+  });
+  streamVotesProgressively(votes, null, null);
+}
+
+function calculateConsensus(votes) {
+  var yes = votes.filter(function(v){return v.vote==='YES';}).length;
+  var total = votes.length;
+  var avgConf = votes.reduce(function(s,v){return s+(v.confidence||50);},0)/total;
+  return {
+    direction: yes > total/2 ? 'YES' : 'NO',
+    percentage: (yes/total*100).toFixed(1),
+    yes_count: yes, no_count: total - yes,
+    avg_confidence: avgConf.toFixed(1)
+  };
+}
+
+function showResearchContext(research, timeMs) {
+  var el = document.getElementById('gv-research');
+  var textEl = document.getElementById('gv-research-text');
+  if (el && textEl) {
+    el.style.display = 'block';
+    var text = research.substring(0, 500);
+    textEl.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<span style="color:#00ff41">$1</span>');
+    if (timeMs) {
+      var titleEl = el.querySelector('.gv-research-title');
+      if (titleEl) titleEl.textContent = 'RESEARCH CONTEXT (' + (timeMs/1000).toFixed(1) + 's)';
+    }
+    addGVEvent('RESEARCH loaded (' + (timeMs/1000).toFixed(1) + 's)', false);
+  }
+}
+
+function showRoundIndicators(rounds) {
+  var container = document.getElementById('gv-rounds');
+  if (container) container.style.display = 'flex';
+}
+function activateRound(roundId) {
+  var el = document.getElementById('gv-round-' + roundId);
+  if (el) { document.querySelectorAll('.gv-round').forEach(function(r){r.classList.remove('active');}); el.classList.add('active'); }
+}
+function completeRound(roundId) {
+  var el = document.getElementById('gv-round-' + roundId);
+  if (el) { el.classList.remove('active'); el.classList.add('complete'); }
+}
+
+function showGVConsensus(consensus) {
+  showGVVerdict(consensus, null);
+}
+
+// ============== DETAIL PANEL ==============
+
+function showGVDetail(node) {
+  var panel = document.getElementById('gv-detail-panel');
+  var agent = node.agentData || {};
+  var traits = agent.behavioral_traits || {};
+
+  document.getElementById('gv-dp-name').textContent = node.id;
+  document.getElementById('gv-dp-role').textContent = agent.role || node.role || '--';
+  document.getElementById('gv-dp-status').innerHTML = '<span style="color:#00ff41">\u25CF ONLINE</span>';
+  document.getElementById('gv-dp-personality').textContent = agent.personality || 'Standard agent profile';
+  document.getElementById('gv-dp-catchphrase').textContent = '"' + (agent.catchphrase || '...') + '"';
+  document.getElementById('gv-dp-backstory').textContent = agent.backstory || 'No backstory loaded';
+  document.getElementById('gv-dp-risk').textContent = (agent.risk_tolerance||5)+'/10 '+ '\u2588'.repeat(agent.risk_tolerance||5)+'\u2591'.repeat(10-(agent.risk_tolerance||5));
+  document.getElementById('gv-dp-expertise').textContent = (agent.expertise||[]).join(', ') || '--';
+  document.getElementById('gv-dp-allies').textContent = (agent.allies||[]).join(', ') || 'None';
+  document.getElementById('gv-dp-rivals').textContent = (agent.rivals||[]).join(', ') || 'None';
+
+  // Sources with links
+  var sources = getAgentSources(agent.role || '');
+  var srcEl = document.getElementById('gv-dp-expertise');
+  if (srcEl) {
+    srcEl.innerHTML = sources.map(function(s){
+      return '<a href="'+s.url+'" target="_blank" style="color:#00ff41;text-decoration:underline">'+s.label+'</a>';
+    }).join(', ');
+  }
+
+  // Trait bars
+  var traitsEl = document.getElementById('gv-dp-traits');
+  traitsEl.innerHTML = '';
+  var traitNames = {'contrarian_score':'Contrarian','memory_weight':'Memory','herd_susceptibility':'Herd Follow','overconfidence':'Overconfidence','recency_bias':'Recency Bias','anchoring_strength':'Anchoring'};
+  Object.keys(traitNames).forEach(function(key) {
+    var val = traits[key] || 0;
+    var div = document.createElement('div');
+    div.style.marginBottom = '6px';
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:.55rem"><span style="color:#555">' + traitNames[key] + '</span><span style="color:#00ff41">' + (val*100).toFixed(0) + '%</span></div><div class="gv-dp-trait-bar"><div class="gv-dp-trait-fill" style="width:'+(val*100)+'%;background:'+(val>0.7?'#ff4444':val>0.4?'#ffaa00':'#00ff41')+'"></div></div>';
+    traitsEl.appendChild(div);
+  });
+
+  // Current vote
+  var vote = gvAgentVotes[node.id];
+  if (vote) {
+    document.getElementById('gv-dp-vote').innerHTML = '<span style="color:'+(vote.vote==='YES'?'#00ff41':'#ff4444')+'">'+vote.vote+' ('+vote.confidence.toFixed(0)+'%)</span>';
+    document.getElementById('gv-dp-reasoning').textContent = vote.reasoning || '--';
+  } else {
+    document.getElementById('gv-dp-vote').textContent = 'Awaiting input';
+    document.getElementById('gv-dp-reasoning').textContent = 'No active prediction';
+  }
+
+  // Stats
+  document.getElementById('gv-dp-stats').textContent = 'Loading...';
+  fetch('/api/godview/agent/'+node.id+'/stats').then(function(r){return r.json();}).then(function(s) {
+    document.getElementById('gv-dp-stats').innerHTML = 'Predictions: '+(s.total_predictions||0)+' | Win Rate: '+((s.win_rate||0)*100).toFixed(1)+'% | Streak: '+(s.current_streak||0);
+  }).catch(function() { document.getElementById('gv-dp-stats').textContent = 'No data yet'; });
+
+  panel.classList.add('open');
+  document.querySelectorAll('.gv-agent-group').forEach(function(n){n.classList.remove('gv-selected');});
+  var nodeEl = document.getElementById('gv-node-'+node.id);
+  if (nodeEl) nodeEl.classList.add('gv-selected');
+}
+
+function closeGVDetail() {
+  document.getElementById('gv-detail-panel').classList.remove('open');
+}
+
+// ============== EVENTS / METRICS / UPTIME ==============
+
 function startGVEvents() {
   if (gvEventTimer) clearInterval(gvEventTimer);
-  var list = document.getElementById('gv-events-list');
-
-  function addEvent(text, highlight) {
-    var now = new Date();
-    var time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
-    var agentIdx = Math.floor(Math.random() * gvAgents.length);
-    var agent = gvAgents[agentIdx];
-
-    var div = document.createElement('div');
-    div.className = 'gv-event new' + (highlight ? ' highlight' : '');
-    div.innerHTML = '<span class="gv-etime">' + time + '</span> <span class="gv-eid">A' + String(agentIdx+1).padStart(2,'0') + '</span> <span class="gv-eaction">' + (text || GV_ACTIONS[Math.floor(Math.random() * GV_ACTIONS.length)]) + '</span>';
-
-    list.insertBefore(div, list.firstChild);
-
-    // Keep max 100 events
-    while (list.children.length > 100) list.removeChild(list.lastChild);
-
-    // Remove 'new' class after animation
-    setTimeout(function() { div.classList.remove('new'); }, 2000);
-
-    // Flash the corresponding node
-    var nodeEl = document.getElementById('gv-node-' + agent.codename);
-    if (nodeEl) {
-      nodeEl.classList.add('active');
-      setTimeout(function() { nodeEl.classList.remove('active'); }, 1500);
-    }
-
-    gvTxCount++;
-    document.getElementById('gv-tx').textContent = gvTxCount;
+  for (var i = 0; i < 3; i++) {
+    setTimeout(function() { addGVEvent(GV_ACTIONS[Math.floor(Math.random()*GV_ACTIONS.length)], false); }, i * 300);
   }
-
-  // Initial burst
-  for (var i = 0; i < 5; i++) {
-    setTimeout(function() { addEvent(); }, i * 200);
-  }
-
-  // Ongoing events
   gvEventTimer = setInterval(function() {
-    addEvent();
-    gvTokensProcessed += Math.floor(1000 + Math.random() * 5000);
-  }, 800 + Math.random() * 1200);
+    if (gvActiveAgentCount === 0) {
+      addGVEvent(GV_ACTIONS[Math.floor(Math.random()*GV_ACTIONS.length)], false);
+    }
+    gvTokensProcessed += Math.floor(500 + Math.random() * 2000);
+  }, 2000 + Math.random() * 3000);
 }
 
 function startGVMetrics() {
   if (gvMetricsTimer) clearInterval(gvMetricsTimer);
-
   gvMetricsTimer = setInterval(function() {
-    var throughput = 60 + Math.random() * 30;
-    var latency = 18 + Math.random() * 12;
-    var ops = 3800 + Math.floor(Math.random() * 2000);
-    var mem = 55 + Math.random() * 20;
-    var cpu = 45 + Math.random() * 30;
-    var queue = 80 + Math.floor(Math.random() * 80);
+    var isActive = gvActiveAgentCount > 0;
+    var throughput = isActive ? (60 + Math.random()*30) : (5 + Math.random()*10);
+    var latency = isActive ? (18 + Math.random()*12) : (2 + Math.random()*5);
+    var ops = isActive ? (3800 + Math.floor(Math.random()*2000)) : Math.floor(Math.random()*200);
+    var mem = isActive ? (55 + Math.random()*20) : (15 + Math.random()*10);
+    var cpu = isActive ? (45 + Math.random()*30) : (3 + Math.random()*8);
+    var queue = isActive ? (80 + Math.floor(Math.random()*80)) : 0;
 
     document.getElementById('gv-throughput').textContent = Math.floor(throughput) + '%';
     document.getElementById('gv-throughput-bar').style.width = throughput + '%';
@@ -2903,18 +3373,13 @@ function startGVMetrics() {
     document.getElementById('gv-queue').textContent = queue;
     document.getElementById('gv-errors').textContent = '0';
 
-    // Format tokens
-    var tokenStr = gvTokensProcessed > 1000000 ?
-      (gvTokensProcessed / 1000000).toFixed(1) + 'M' :
-      gvTokensProcessed > 1000 ?
-      (gvTokensProcessed / 1000).toFixed(0) + 'K' : gvTokensProcessed;
+    var tokenStr = gvTokensProcessed > 1000000 ? (gvTokensProcessed/1000000).toFixed(1)+'M' : gvTokensProcessed > 1000 ? (gvTokensProcessed/1000).toFixed(0)+'K' : gvTokensProcessed;
     document.getElementById('gv-tokens').textContent = tokenStr;
 
-    // Color bars based on value
     var cpuBar = document.getElementById('gv-cpu-bar');
-    cpuBar.className = 'gv-metric-bar-fill ' + (cpu > 80 ? 'red' : cpu > 60 ? 'yellow' : 'green');
+    cpuBar.className = 'gv-metric-bar-fill ' + (cpu>80?'red':cpu>60?'yellow':'green');
     var memBar = document.getElementById('gv-mem-bar');
-    memBar.className = 'gv-metric-bar-fill ' + (mem > 80 ? 'red' : mem > 60 ? 'yellow' : 'green');
+    memBar.className = 'gv-metric-bar-fill ' + (mem>80?'red':mem>60?'yellow':'green');
   }, 2000);
 }
 
@@ -2922,362 +3387,58 @@ function startGVUptime() {
   if (gvUptimeTimer) clearInterval(gvUptimeTimer);
   gvUptimeTimer = setInterval(function() {
     var elapsed = Math.floor((Date.now() - gvStartTime) / 1000);
-    var h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-    var m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-    var s = String(elapsed % 60).padStart(2, '0');
-    document.getElementById('gv-uptime').textContent = h + ':' + m + ':' + s;
-
+    var h = String(Math.floor(elapsed/3600)).padStart(2,'0');
+    var m = String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
+    var s = String(elapsed%60).padStart(2,'0');
+    document.getElementById('gv-uptime').textContent = h+':'+m+':'+s;
     var now = new Date();
-    document.getElementById('gv-utc').textContent =
-      String(now.getUTCHours()).padStart(2,'0') + ':' +
-      String(now.getUTCMinutes()).padStart(2,'0') + ':' +
-      String(now.getUTCSeconds()).padStart(2,'0');
+    document.getElementById('gv-utc').textContent = String(now.getUTCHours()).padStart(2,'0')+':'+String(now.getUTCMinutes()).padStart(2,'0')+':'+String(now.getUTCSeconds()).padStart(2,'0');
   }, 1000);
-}
-
-function showGVDetail(node) {
-  var panel = document.getElementById('gv-detail-panel');
-  var agent = node.agentData || {};
-  var traits = agent.behavioral_traits || {};
-
-  document.getElementById('gv-dp-name').textContent = node.id;
-  document.getElementById('gv-dp-role').textContent = agent.role || node.role || '--';
-  document.getElementById('gv-dp-status').innerHTML = '<span style="color:#00ff41">● ONLINE</span>';
-  document.getElementById('gv-dp-personality').textContent = agent.personality || 'Standard agent profile';
-  document.getElementById('gv-dp-catchphrase').textContent = '"' + (agent.catchphrase || '...') + '"';
-  document.getElementById('gv-dp-backstory').textContent = agent.backstory || 'No backstory loaded';
-  document.getElementById('gv-dp-risk').textContent = (agent.risk_tolerance || 5) + '/10 ' + '█'.repeat(agent.risk_tolerance || 5) + '░'.repeat(10 - (agent.risk_tolerance || 5));
-  document.getElementById('gv-dp-expertise').textContent = (agent.expertise || []).join(', ') || '--';
-  document.getElementById('gv-dp-allies').textContent = (agent.allies || []).join(', ') || 'None';
-  document.getElementById('gv-dp-rivals').textContent = (agent.rivals || []).join(', ') || 'None';
-
-  // Trait bars
-  var traitsEl = document.getElementById('gv-dp-traits');
-  traitsEl.innerHTML = '';
-  var traitNames = {'contrarian_score':'Contrarian','memory_weight':'Memory','herd_susceptibility':'Herd Follow','overconfidence':'Overconfidence','recency_bias':'Recency Bias','anchoring_strength':'Anchoring'};
-  Object.keys(traitNames).forEach(function(key) {
-    var val = traits[key] || 0;
-    var div = document.createElement('div');
-    div.style.marginBottom = '6px';
-    div.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:.55rem"><span style="color:#555">' + traitNames[key] + '</span><span style="color:#00ff41">' + (val * 100).toFixed(0) + '%</span></div><div class="gv-dp-trait-bar"><div class="gv-dp-trait-fill" style="width:' + (val * 100) + '%;background:' + (val > 0.7 ? '#ff4444' : val > 0.4 ? '#ffaa00' : '#00ff41') + '"></div></div>';
-    traitsEl.appendChild(div);
-  });
-
-  // Current vote
-  var vote = gvAgentVotes[node.id];
-  if (vote) {
-    document.getElementById('gv-dp-vote').innerHTML = '<span style="color:' + (vote.vote === 'YES' ? '#00ff41' : '#ff4444') + '">' + vote.vote + ' (' + vote.confidence.toFixed(0) + '%)</span>';
-    document.getElementById('gv-dp-reasoning').textContent = vote.reasoning || '--';
-  } else {
-    document.getElementById('gv-dp-vote').textContent = 'Awaiting input';
-    document.getElementById('gv-dp-reasoning').textContent = 'No active prediction';
-  }
-
-  // Stats
-  document.getElementById('gv-dp-stats').textContent = 'Loading...';
-  fetch('/api/godview/agent/' + node.id + '/stats').then(function(r){return r.json()}).then(function(s) {
-    document.getElementById('gv-dp-stats').innerHTML =
-      'Predictions: ' + (s.total_predictions || 0) +
-      ' | Win Rate: ' + ((s.win_rate || 0) * 100).toFixed(1) + '%' +
-      ' | Streak: ' + (s.current_streak || 0);
-  }).catch(function() {
-    document.getElementById('gv-dp-stats').textContent = 'No data yet';
-  });
-
-  panel.classList.add('open');
-
-  // Highlight node
-  document.querySelectorAll('.gv-node').forEach(function(n) { n.classList.remove('active'); });
-  var nodeEl = document.getElementById('gv-node-' + node.id);
-  if (nodeEl) nodeEl.classList.add('active');
-}
-
-function closeGVDetail() {
-  document.getElementById('gv-detail-panel').classList.remove('open');
-}
-
-async function gvSubmitQuestion() {
-  var input = document.getElementById('gv-cmd-input');
-  var question = input.value.trim();
-  if (!question) return;
-
-  // Clean up command-style input
-  question = question.replace(/^omen\.oracle\.predict\s*["']?/i, '').replace(/["']$/, '');
-  if (!question) return;
-
-  gvCurrentQuestion = question;
-  gvAgentVotes = {};
-  input.value = '';
-  input.placeholder = 'Processing: ' + question.substring(0, 40) + '...';
-
-  document.getElementById('gv-pool').textContent = 'Processing';
-  document.getElementById('gv-swarm').textContent = 'Voting';
-
-  // Add event
-  addGVEvent('> SCENARIO INJECTED: "' + question.substring(0, 50) + '"', true);
-
-  // Reset all nodes
-  document.querySelectorAll('.gv-node').forEach(function(n) {
-    n.classList.remove('voted-yes', 'voted-no', 'voting');
-  });
-
-  // Activate links
-  document.querySelectorAll('.gv-link').forEach(function(l) {
-    l.classList.add('active');
-  });
-
-  // Start streaming agent votes
-  try {
-    var resp = await fetch('/api/godview/predict', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({question: question})
-    });
-
-    if (resp.ok) {
-      var data = await resp.json();
-      if (data.votes) {
-        // Show research context
-        if (data.research_context) {
-          showResearchContext(data.research_context, data.research_time_ms);
-        }
-        // Show rounds
-        if (data.rounds) {
-          showRoundIndicators(data.rounds);
-        }
-        // Stream votes with round awareness
-        simulateVoteStream(data.votes, data.consensus, data);
-      }
-    } else {
-      simulateLocalVotes(question);
-    }
-  } catch(e) {
-    simulateLocalVotes(question);
-  }
-}
-
-function showResearchContext(research, timeMs) {
-  var el = document.getElementById('gv-research');
-  var textEl = document.getElementById('gv-research-text');
-  if (el && textEl) {
-    el.style.display = 'block';
-    // Truncate and format
-    var text = research.substring(0, 500);
-    textEl.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<span style="color:#00ff41">$1</span>');
-    if (timeMs) {
-      var titleEl = el.querySelector('.gv-research-title');
-      if (titleEl) titleEl.textContent = 'RESEARCH CONTEXT (' + (timeMs/1000).toFixed(1) + 's)';
-    }
-    addGVEvent('RESEARCH briefing loaded (' + (timeMs/1000).toFixed(1) + 's)', false);
-  }
-}
-
-function showRoundIndicators(rounds) {
-  var container = document.getElementById('gv-rounds');
-  if (container) {
-    container.style.display = 'flex';
-    // Mark research as complete
-    var researchEl = document.getElementById('gv-round-research');
-    if (researchEl) researchEl.classList.add('complete');
-  }
-}
-
-function activateRound(roundId) {
-  var el = document.getElementById('gv-round-' + roundId);
-  if (el) {
-    // Deactivate all
-    document.querySelectorAll('.gv-round').forEach(function(r) { r.classList.remove('active'); });
-    el.classList.add('active');
-  }
-}
-
-function completeRound(roundId) {
-  var el = document.getElementById('gv-round-' + roundId);
-  if (el) {
-    el.classList.remove('active');
-    el.classList.add('complete');
-  }
-}
-
-function showFactions(factions, voteChanges) {
-  var panel = document.getElementById('gv-factions');
-  var list = document.getElementById('gv-factions-list');
-  if (!panel || !list) return;
-  panel.classList.add('visible');
-  list.innerHTML = '';
-  factions.forEach(function(f) {
-    var isBull = f.stance === 'YES';
-    var div = document.createElement('div');
-    div.className = 'gv-faction ' + (isBull ? 'bulls' : 'bears');
-    div.innerHTML = '<div class="gv-faction-name">' + (isBull ? '🟢 ' : '🔴 ') + f.name + '</div>' +
-      '<div class="gv-faction-meta">' + f.count + ' agents | Avg conf: ' + f.avg_confidence + '%</div>' +
-      '<div class="gv-faction-leader">👑 Leader: ' + f.leader + '</div>' +
-      '<div class="gv-faction-members">' + f.members.slice(0, 8).join(', ') + (f.members.length > 8 ? '...' : '') + '</div>';
-    list.appendChild(div);
-  });
-
-  // Show vote changes
-  if (voteChanges && voteChanges.length > 0) {
-    var changesContainer = document.getElementById('gv-changes');
-    var changesList = document.getElementById('gv-changes-list');
-    if (changesContainer && changesList) {
-      changesContainer.style.display = 'block';
-      changesList.innerHTML = '';
-      voteChanges.forEach(function(vc) {
-        var div = document.createElement('div');
-        div.className = 'gv-change';
-        div.innerHTML = '<strong>' + vc.codename + '</strong> <span class="flip-from">' + vc.from + '</span> → <span class="flip-to">' + vc.to + '</span>';
-        changesList.appendChild(div);
-      });
-    }
-  }
-}
-
-function simulateVoteStream(votes, consensus, fullData) {
-  var delay = 0;
-  var sortedVotes = votes.sort(function() { return Math.random() - 0.5; });
-
-  // Separate round 1 and round 2 votes
-  var round1Votes = sortedVotes.filter(function(v) { return (v.round || 1) === 1; });
-  var round2Votes = sortedVotes.filter(function(v) { return (v.round || 1) === 2; });
-  var allVotes = round1Votes.concat(round2Votes);
-  if (allVotes.length === 0) allVotes = sortedVotes;
-
-  // Activate Round 1
-  activateRound('1');
-  addGVEvent('ROUND 1: Initial vote — ' + sortedVotes.length + ' agents', false);
-
-  var round2Started = false;
-
-  allVotes.forEach(function(v, i) {
-    delay += 80 + Math.random() * 200;
-
-    // Check if we crossed into round 2
-    if (!round2Started && (v.round || 1) === 2) {
-      round2Started = true;
-      delay += 800; // Pause between rounds
-      setTimeout(function() {
-        completeRound('1');
-        activateRound('2');
-        addGVEvent('━━━ ROUND 2: DEBATE PHASE ━━━', false);
-        addGVEvent(round2Votes.length + ' agents re-evaluating positions...', false);
-      }, delay - 400);
-    }
-
-    setTimeout(function() {
-      gvAgentVotes[v.codename] = v;
-      var nodeEl = document.getElementById('gv-node-' + v.codename);
-      if (nodeEl) {
-        nodeEl.classList.remove('voting');
-        nodeEl.classList.add(v.vote === 'YES' ? 'voted-yes' : 'voted-no');
-      }
-
-      var roundTag = (v.round || 1) === 2 ? ' [R2]' : '';
-      addGVEvent('A' + String(v.id || i+1).padStart(2,'0') + ' ' + v.codename + ' → ' + v.vote + ' (' + v.confidence.toFixed(0) + '%)' + roundTag, true);
-
-      gvTokensProcessed += Math.floor(2000 + Math.random() * 8000);
-
-      if (i === allVotes.length - 1) {
-        setTimeout(function() {
-          completeRound('2');
-          // Show factions
-          if (fullData && fullData.factions) {
-            activateRound('factions');
-            showFactions(fullData.factions, fullData.vote_changes);
-            addGVEvent('━━━ FACTIONS FORMED ━━━', false);
-            fullData.factions.forEach(function(f) {
-              addGVEvent(f.name + ': ' + f.count + ' agents (leader: ' + f.leader + ')', false);
-            });
-            if (fullData.vote_changes && fullData.vote_changes.length > 0) {
-              addGVEvent('━━━ VOTE FLIPS: ' + fullData.vote_changes.length + ' agents changed ━━━', false);
-              fullData.vote_changes.forEach(function(vc) {
-                addGVEvent(vc.codename + ' flipped ' + vc.from + ' → ' + vc.to, true);
-              });
-            }
-            completeRound('factions');
-          }
-
-          setTimeout(function() {
-            activateRound('consensus');
-            showGVConsensus(consensus || calculateConsensus(sortedVotes));
-            completeRound('consensus');
-          }, 1000);
-        }, 500);
-      }
-    }, delay);
-
-    // Show voting state
-    setTimeout(function() {
-      var nodeEl = document.getElementById('gv-node-' + v.codename);
-      if (nodeEl) nodeEl.classList.add('voting');
-    }, delay - 80);
-  });
-}
-
-function simulateLocalVotes(question) {
-  var votes = gvAgents.map(function(a) {
-    var isYes = Math.random() > 0.4;
-    var conf = 45 + Math.random() * 50;
-    return {
-      codename: a.codename,
-      id: a.id,
-      vote: isYes ? 'YES' : 'NO',
-      confidence: conf,
-      reasoning: a.codename + ' analyzed the scenario based on ' + (a.expertise ? a.expertise[0] : 'general knowledge'),
-      round: 1
-    };
-  });
-  simulateVoteStream(votes, null, null);
-}
-
-function calculateConsensus(votes) {
-  var yes = votes.filter(function(v){return v.vote === 'YES'}).length;
-  var total = votes.length;
-  var pct = (yes / total * 100).toFixed(1);
-  var avgConf = votes.reduce(function(s,v){return s + v.confidence}, 0) / total;
-  return {
-    direction: yes > total/2 ? 'YES' : 'NO',
-    percentage: pct,
-    yes_count: yes,
-    no_count: total - yes,
-    avg_confidence: avgConf.toFixed(1)
-  };
-}
-
-function showGVConsensus(consensus) {
-  document.getElementById('gv-pool').textContent = 'Active';
-  document.getElementById('gv-swarm').textContent = 'Consensus';
-
-  addGVEvent('═══════════════════════════', false);
-  addGVEvent('CONSENSUS: ' + consensus.direction + ' (' + consensus.percentage + '% of agents)', true);
-  addGVEvent('YES: ' + consensus.yes_count + ' | NO: ' + consensus.no_count + ' | Avg Conf: ' + consensus.avg_confidence + '%', true);
-  addGVEvent('═══════════════════════════', false);
-
-  // Deactivate link animations
-  setTimeout(function() {
-    document.querySelectorAll('.gv-link').forEach(function(l) {
-      l.classList.remove('active');
-    });
-  }, 3000);
-
-  document.getElementById('gv-cmd-input').placeholder = 'omen.oracle.predict "your question here"';
 }
 
 function addGVEvent(text, highlight) {
   var list = document.getElementById('gv-events-list');
   var now = new Date();
-  var time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
-
+  var time = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
   var div = document.createElement('div');
   div.className = 'gv-event new' + (highlight ? ' highlight' : '');
   div.innerHTML = '<span class="gv-etime">' + time + '</span> <span class="gv-eaction">' + text + '</span>';
   list.insertBefore(div, list.firstChild);
-
   while (list.children.length > 150) list.removeChild(list.lastChild);
-  setTimeout(function() { div.classList.remove('new'); }, 2000);
+  setTimeout(function(){div.classList.remove('new');}, 2000);
   gvTxCount++;
   document.getElementById('gv-tx').textContent = gvTxCount;
 }
+
+function showFactions(factions, voteChanges) {
+  var el = document.getElementById('gv-factions');
+  if (!el) return;
+  el.classList.add('visible');
+  el.innerHTML = '<div style="font-size:.7rem;color:#00ff41;margin-bottom:8px;font-weight:700">FACTIONS</div>';
+  (factions||[]).forEach(function(f) {
+    var isBull = f.name.toLowerCase().indexOf('bull') >= 0;
+    var div = document.createElement('div');
+    div.className = 'gv-faction ' + (isBull ? 'bulls' : 'bears');
+    div.innerHTML = '<div class="gv-faction-name">' + f.name + '</div>' +
+      '<div class="gv-faction-meta">' + f.count + ' agents | Avg: ' + (f.avg_confidence||0).toFixed(0) + '%</div>' +
+      '<div class="gv-faction-leader">Leader: ' + (f.leader||'--') + '</div>' +
+      '<div class="gv-faction-members">' + (f.members||[]).join(', ') + '</div>';
+    el.appendChild(div);
+  });
+  if (voteChanges && voteChanges.length > 0) {
+    var changesDiv = document.createElement('div');
+    changesDiv.className = 'gv-changes';
+    changesDiv.innerHTML = '<div style="font-size:.6rem;color:#ffaa00;margin:8px 0 4px">VOTE FLIPS</div>';
+    voteChanges.forEach(function(vc) {
+      var d = document.createElement('div');
+      d.className = 'gv-change';
+      d.innerHTML = vc.codename + ': <span class="flip-from">' + vc.from + '</span> \u2192 <span class="flip-to">' + vc.to + '</span>';
+      changesDiv.appendChild(d);
+    });
+    el.appendChild(changesDiv);
+  }
+}
+
 
 </script>
 </body>
