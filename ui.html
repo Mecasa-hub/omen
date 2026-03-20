@@ -2680,7 +2680,56 @@ var AGENT_SOURCES = {
   'FINAL ARBITER':  [{label:'All Votes',url:'#'},{label:'Consensus',url:'#'}]
 };
 
-function getAgentSources(role) {
+function getAgentSources(role, codename) {
+  // Per-agent unique sources based on vault expertise
+  var CODENAME_SOURCES = {
+    'ORCHESTRATOR': [{label:'Polymarket',url:'https://polymarket.com'},{label:'Metaculus',url:'https://www.metaculus.com'},{label:'News Aggregator',url:'https://news.google.com'}],
+    'SENTINEL': [{label:'Reuters Alerts',url:'https://www.reuters.com'},{label:'GDELT Project',url:'https://www.gdeltproject.org'},{label:'Risk Monitor',url:'https://reliefweb.int'}],
+    'VECTOR': [{label:'Kaggle Datasets',url:'https://www.kaggle.com'},{label:'Wolfram Alpha',url:'https://www.wolframalpha.com'},{label:'Statista',url:'https://www.statista.com'}],
+    'SYNAPSE': [{label:'Google Scholar',url:'https://scholar.google.com'},{label:'arXiv',url:'https://arxiv.org'},{label:'ResearchGate',url:'https://www.researchgate.net'}],
+    'CIPHER': [{label:'Whale Alert',url:'https://whale-alert.io'},{label:'Etherscan',url:'https://etherscan.io'},{label:'Chainalysis',url:'https://www.chainalysis.com'}],
+    'DISPATCH': [{label:'GitHub Trends',url:'https://github.com/trending'},{label:'Stack Overflow',url:'https://stackoverflow.com'},{label:'Dev.to',url:'https://dev.to'}],
+    'BEACON': [{label:'TikTok Trends',url:'https://www.tiktok.com/discover'},{label:'Google Trends',url:'https://trends.google.com'},{label:'Instagram Explore',url:'https://www.instagram.com/explore'}],
+    'MIRROR': [{label:'Counter Arguments',url:'https://www.snopes.com'},{label:'FactCheck',url:'https://www.factcheck.org'},{label:'PolitiFact',url:'https://www.politifact.com'}],
+    'FLUX': [{label:'TradingView',url:'https://www.tradingview.com'},{label:'Binance Charts',url:'https://www.binance.com/en/markets'},{label:'CoinGlass',url:'https://www.coinglass.com'}],
+    'PRISM': [{label:'Bloomberg',url:'https://www.bloomberg.com'},{label:'FT Analysis',url:'https://www.ft.com'},{label:'The Economist',url:'https://www.economist.com'}],
+    'NEXUS': [{label:'DefiLlama',url:'https://defillama.com'},{label:'DeFi Pulse',url:'https://www.defipulse.com'},{label:'Messari',url:'https://messari.io'}],
+    'VORTEX': [{label:'Santiment',url:'https://santiment.net'},{label:'Glassnode',url:'https://glassnode.com'},{label:'IntoTheBlock',url:'https://www.intotheblock.com'}],
+    'RAVEN': [{label:'X/Twitter OSINT',url:'https://x.com/search'},{label:'Reddit Intel',url:'https://www.reddit.com/r/CryptoCurrency'},{label:'Telegram Channels',url:'https://t.me/s/crypto'}],
+    'ANCHOR': [{label:'Delphi Digital',url:'https://www.delphidigital.io'},{label:'CoinDesk',url:'https://www.coindesk.com'},{label:'The Block',url:'https://www.theblock.co'}],
+    'TORCH': [{label:'Investopedia',url:'https://www.investopedia.com'},{label:'Khan Academy',url:'https://www.khanacademy.org'},{label:'Visual Capitalist',url:'https://www.visualcapitalist.com'}],
+    'ATLAS': [{label:'Al Jazeera',url:'https://www.aljazeera.com'},{label:'Foreign Affairs',url:'https://www.foreignaffairs.com'},{label:'CSIS',url:'https://www.csis.org'}],
+    'EMBER': [{label:'UN Data',url:'https://data.un.org'},{label:'World Bank',url:'https://data.worldbank.org'},{label:'Our World in Data',url:'https://ourworldindata.org'}],
+    'FROST': [{label:'Nate Silver',url:'https://www.natesilver.net'},{label:'538 Archive',url:'https://projects.fivethirtyeight.com'},{label:'Calibration DB',url:'https://www.metaculus.com/calibration'}],
+    'GLYPH': [{label:'TradingView Patterns',url:'https://www.tradingview.com/chart'},{label:'Historical Charts',url:'https://www.macrotrends.net'},{label:'Cycle Analysis',url:'https://www.lookintobitcoin.com'}],
+    'HELIX': [{label:'Complexity Explorer',url:'https://www.complexityexplorer.org'},{label:'Systems Dynamics',url:'https://systemdynamics.org'},{label:'Cascade Risk',url:'https://www.bis.org/stability'}],
+    'ION': [{label:'Oil Price',url:'https://oilprice.com'},{label:'EIA Data',url:'https://www.eia.gov'},{label:'Commodity Charts',url:'https://www.tradingeconomics.com/commodities'}],
+    'JADE': [{label:'South China Post',url:'https://www.scmp.com'},{label:'Nikkei Asia',url:'https://asia.nikkei.com'},{label:'CGTN',url:'https://www.cgtn.com'}],
+    'KNOT': [{label:'Reddit Data',url:'https://www.reddit.com/r/dataisbeautiful'},{label:'Alternative Data',url:'https://alternativedata.org'},{label:'Correlation Engine',url:'https://www.macroaxis.com/correlation'}],
+    'LOOM': [{label:'X/Twitter Viral',url:'https://x.com/explore'},{label:'Reddit WallStreetBets',url:'https://www.reddit.com/r/wallstreetbets'},{label:'Meme Tracker',url:'https://knowyourmeme.com'}],
+    'MIST': [{label:'Uncertainty Lab',url:'https://www.fooledbyrandomness.com'},{label:'Black Swan Data',url:'https://www.bis.org/review'},{label:'Volatility Index',url:'https://www.cboe.com/tradable_products/vix'}],
+    'NOVA': [{label:'Unusual Whales',url:'https://unusualwhales.com'},{label:'Gamma Squeeze',url:'https://www.coinglass.com/LiquidationMap'},{label:'Short Interest',url:'https://finviz.com/screener.ashx'}],
+    'ONYX': [{label:'Nansen',url:'https://www.nansen.ai'},{label:'Arkham Intel',url:'https://platform.arkhamintelligence.com'},{label:'Dark Pool Data',url:'https://www.nasdaq.com/market-activity/dark-pool'}],
+    'ORBIT': [{label:'FRED Data',url:'https://fred.stlouisfed.org'},{label:'ECB Watch',url:'https://www.ecb.europa.eu'},{label:'Fed Minutes',url:'https://www.federalreserve.gov/monetarypolicy'}],
+    'PINE': [{label:'S&P Index',url:'https://www.spglobal.com'},{label:'Mean Reversion',url:'https://www.portfoliovisualizer.com'},{label:'Historical Returns',url:'https://www.longtermtrends.net'}],
+    'QUARTZ': [{label:'Polymarket Odds',url:'https://polymarket.com'},{label:'PredictIt',url:'https://www.predictit.org'},{label:'Kalshi',url:'https://kalshi.com'}],
+    'QUILL': [{label:'Media Bias Chart',url:'https://adfontesmedia.com'},{label:'NewsWhip',url:'https://www.newswhip.com'},{label:'BuzzSumo',url:'https://buzzsumo.com'}],
+    'REEF': [{label:'Order Book Depth',url:'https://www.binance.com/en/orderbook'},{label:'Kaiko Data',url:'https://www.kaiko.com'},{label:'CoinGlass Liquidation',url:'https://www.coinglass.com/LiquidationMap'}],
+    'SLATE': [{label:'SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar'},{label:'Macro Data',url:'https://tradingeconomics.com'},{label:'Census Bureau',url:'https://data.census.gov'}],
+    'THORN': [{label:'Fear & Greed Index',url:'https://alternative.me/crypto/fear-and-greed-index'},{label:'Sentiment Extreme',url:'https://www.sentimentrader.com'},{label:'Contrarian Hub',url:'https://www.reddit.com/r/contrarian'}],
+    'UMBRA': [{label:'Whale Alert Live',url:'https://whale-alert.io/transactions'},{label:'On-Chain Intel',url:'https://explorer.bitquery.io'},{label:'Insider Tracker',url:'https://www.dataroma.com/m/home.php'}],
+    'VALVE': [{label:'Kelly Calculator',url:'https://www.albionresearch.com/kelly'},{label:'Risk Metrics',url:'https://www.msci.com/our-solutions/esg-investing/risk-center'},{label:'Drawdown Monitor',url:'https://www.portfoliovisualizer.com/drawdowns'}],
+    'WREN': [{label:'Polymarket New',url:'https://polymarket.com/markets?_s=newest'},{label:'Augur',url:'https://augur.net'},{label:'Manifold Markets',url:'https://manifold.markets'}],
+    'XENON': [{label:'ESPN',url:'https://www.espn.com'},{label:'Oddschecker',url:'https://www.oddschecker.com'},{label:'Space News',url:'https://spacenews.com'}],
+    'YIELD': [{label:'DeFi Yield',url:'https://defillama.com/yields'},{label:'Aave',url:'https://aave.com'},{label:'Compound',url:'https://compound.finance'}],
+    'ZEPHYR': [{label:'Wisdom of Crowds',url:'https://www.metaculus.com'},{label:'Consensus Data',url:'https://polymarket.com'},{label:'Final Analysis',url:'https://www.bloomberg.com/opinion'}],
+    'BOLT': [{label:'CoinGecko Live',url:'https://www.coingecko.com'},{label:'Binance Futures',url:'https://www.binance.com/en/futures'},{label:'News Flash',url:'https://www.coindesk.com/livewire'}],
+    'CROWN': [{label:'Nansen Whale',url:'https://www.nansen.ai/research'},{label:'Etherscan Whales',url:'https://etherscan.io/accounts'},{label:'Whale Map',url:'https://whalemap.io'}],
+    'DELTA': [{label:'Dune Analytics',url:'https://dune.com'},{label:'Token Terminal',url:'https://tokenterminal.com'},{label:'CryptoQuant',url:'https://cryptoquant.com'}],
+    'ECHO': [{label:'LunarCrush',url:'https://lunarcrush.com'},{label:'Reddit Sentiment',url:'https://www.reddit.com/r/CryptoCurrency/hot'},{label:'X Sentiment',url:'https://x.com/search?q=crypto'}],
+    'FLINT': [{label:'Event Calendar',url:'https://coinmarketcal.com'},{label:'Earnings Whispers',url:'https://www.earningswhispers.com'},{label:'IPO Monitor',url:'https://www.ipomonitor.com'}]
+  };
+  if (codename && CODENAME_SOURCES[codename]) return CODENAME_SOURCES[codename];
   return AGENT_SOURCES[role] || [{label:'Data Feed',url:'https://www.coingecko.com'},{label:'Analysis',url:'https://www.tradingview.com'}];
 }
 
@@ -2893,17 +2942,88 @@ function buildGVGraph() {
 
 function gvTick() {
   gvLinkGroup.selectAll('line')
-    .attr('x1', function(d){return d.source.x;})
-    .attr('y1', function(d){return d.source.y;})
-    .attr('x2', function(d){return d.target.x;})
-    .attr('y2', function(d){return d.target.y;});
+    .attr('x1', function(d){return d.source && d.source.x ? d.source.x : 0;})
+    .attr('y1', function(d){return d.source && d.source.y ? d.source.y : 0;})
+    .attr('x2', function(d){return d.target && d.target.x ? d.target.x : 0;})
+    .attr('y2', function(d){return d.target && d.target.y ? d.target.y : 0;});
 
   gvNodeGroup.selectAll('.gv-agent-group')
     .attr('transform', function(d) {
+      if (!d || typeof d.x === 'undefined') return '';
       d.x = Math.max(25, Math.min(gvW - 25, d.x));
       d.y = Math.max(25, Math.min(gvH - 25, d.y));
       return 'translate(' + d.x + ',' + d.y + ')';
     });
+}
+
+// === DEBATE VISUALIZATION: Animated agent-to-agent links ===
+function showDebateLinks(voter, peers, delayMs) {
+  if (!gvNodeGroup || !gvLinkGroup) return;
+  var zoomContainer = gvLinkGroup.node() ? gvLinkGroup.node().parentNode : null;
+  if (!zoomContainer) return;
+  var debateGroup = d3.select(zoomContainer).select('.gv-debate-layer');
+  if (debateGroup.empty()) {
+    debateGroup = d3.select(zoomContainer).insert('g', '.gv-nodes-layer').attr('class', 'gv-debate-layer');
+  }
+
+  setTimeout(function() {
+    var voterNode = gvNodes.find(function(n) { return n.id === voter; });
+    if (!voterNode) return;
+
+    peers.forEach(function(peerName, pi) {
+      var peerNode = gvNodes.find(function(n) { return n.id === peerName; });
+      if (!peerNode) return;
+
+      setTimeout(function() {
+        var debateLine = debateGroup.append('line')
+          .attr('class', 'gv-debate-link')
+          .attr('x1', voterNode.x).attr('y1', voterNode.y)
+          .attr('x2', peerNode.x).attr('y2', peerNode.y)
+          .attr('stroke', '#ffaa00')
+          .attr('stroke-width', 2)
+          .attr('stroke-dasharray', '6,4')
+          .attr('opacity', 0)
+          .style('filter', 'drop-shadow(0 0 4px rgba(255,170,0,0.6))');
+
+        // Animate dash movement
+        var totalLen = Math.sqrt(Math.pow(peerNode.x - voterNode.x, 2) + Math.pow(peerNode.y - voterNode.y, 2));
+        debateLine.append('animate')
+          .attr('attributeName', 'stroke-dashoffset')
+          .attr('values', '0;' + Math.floor(totalLen))
+          .attr('dur', '2s')
+          .attr('repeatCount', 'indefinite');
+
+        // Fade in
+        debateLine.transition().duration(400).attr('opacity', 0.7);
+
+        // Pulse the voter node orange briefly
+        var voterEl = d3.select('#gv-node-' + voter);
+        if (!voterEl.empty()) {
+          voterEl.select('circle:first-of-type')
+            .transition().duration(200)
+            .attr('stroke', '#ffaa00').attr('stroke-width', 3)
+            .transition().duration(800)
+            .attr('stroke', '#00ff41').attr('stroke-width', 1.5);
+        }
+
+        // Pulse the peer node
+        var peerEl = d3.select('#gv-node-' + peerName);
+        if (!peerEl.empty()) {
+          peerEl.select('circle:first-of-type')
+            .transition().duration(300)
+            .attr('stroke', '#ffaa00').attr('stroke-width', 2)
+            .transition().duration(600)
+            .attr('stroke', '#00ff41').attr('stroke-width', 1.5);
+        }
+
+        // Add event stream entry
+        addGVEvent(voter + ' ↔ ' + peerName + ' debating...', false);
+
+        // Fade out after 3.5 seconds
+        debateLine.transition().delay(3500).duration(1000).attr('opacity', 0).remove();
+      }, pi * 250);
+    });
+  }, delayMs || 0);
 }
 
 function clearSwarmForNewQuestion() {
@@ -2913,9 +3033,10 @@ function clearSwarmForNewQuestion() {
   gvAgentVotes = {};
   gvActiveAgentCount = 0;
 
-  // Remove drawn elements
-  gvNodeGroup.selectAll('.gv-agent-group').remove();
+  // Remove drawn elements (keep center OMEN node!)
+  gvNodeGroup.selectAll('.gv-agent-group:not(.gv-center-node)').remove();
   gvLinkGroup.selectAll('line').remove();
+  gvLinkGroup.selectAll('.gv-debate-link').remove();
   d3.select('.gv-verdict-overlay').remove();
   d3.select('#gv-idle-text').remove();
 
@@ -2935,7 +3056,7 @@ function addAgentToSwarm(agent, vote, delay) {
     var isYes = vote && vote.vote === 'YES';
     var conf = vote ? vote.confidence : 50;
     var agentR = Math.max(10, Math.min(18, 8 + conf / 15));
-    var sources = getAgentSources(agent.role || '');
+    var sources = getAgentSources(agent.role || '', agent.codename || '');
     var outerR = Math.min(gvW, gvH) * 0.32;
 
     // Agent node
@@ -3248,6 +3369,16 @@ function streamVotesProgressively(votes, consensus, fullData) {
         activateRound('2');
         addGVEvent('\u2501\u2501\u2501 ROUND 2: DEBATE PHASE \u2501\u2501\u2501', false);
         addGVEvent(round2.length + ' agents re-evaluating...', false);
+        // Trigger debate visualization links between agents
+        round2.forEach(function(r2vote, r2i) {
+          var debatePeers = [];
+          for (var dp = 0; dp < 3; dp++) {
+            var randIdx = Math.floor(Math.random() * allVotes.length);
+            var peer = allVotes[randIdx].codename;
+            if (peer !== r2vote.codename && debatePeers.indexOf(peer) === -1) debatePeers.push(peer);
+          }
+          showDebateLinks(r2vote.codename, debatePeers, r2i * 400);
+        });
         document.getElementById('gv-swarm').textContent = 'Debating R2';
       }, transDelay);
     }
@@ -3373,7 +3504,7 @@ function showGVDetail(node) {
   document.getElementById('gv-dp-rivals').textContent = (agent.rivals||[]).join(', ') || 'None';
 
   // Sources with links
-  var sources = getAgentSources(agent.role || '');
+  var sources = getAgentSources(agent.role || '', agent.codename || '');
   var srcEl = document.getElementById('gv-dp-expertise');
   if (srcEl) {
     srcEl.innerHTML = sources.map(function(s){
