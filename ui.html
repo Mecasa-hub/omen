@@ -2996,7 +2996,7 @@ function gvTick() {
 
   gvNodeGroup.selectAll('.gv-agent-group')
     .attr('transform', function(d) {
-      if (!d || typeof d.x === 'undefined') return '';
+      if (!d || typeof d.x === 'undefined' || typeof d.y === 'undefined') return '';
       d.x = Math.max(25, Math.min(gvW - 25, d.x));
       d.y = Math.max(25, Math.min(gvH - 25, d.y));
       return 'translate(' + d.x + ',' + d.y + ')';
@@ -3095,6 +3095,36 @@ function clearSwarmForNewQuestion() {
   // Update counter
   document.getElementById('gv-agent-count').textContent = '0/45';
 }
+
+function rebuildCenterNode() {
+  if (!gvNodeGroup) return;
+  var centerG = gvNodeGroup.append('g').attr('class', 'gv-center-node gv-agent-group')
+    .attr('id', 'gv-node-OMEN')
+    .attr('transform', 'translate(' + gvW/2 + ',' + gvH/2 + ')')
+    .style('cursor', 'grab')
+    .call(d3.drag()
+      .on('start', function(event){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
+      .on('drag', function(event){gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
+      .on('end', function(event){if(!event.active) gvSimulation.alphaTarget(0); gvCenterNode.fx=null; gvCenterNode.fy=null;})
+    );
+  var pulse1 = centerG.append('circle').attr('r', 45).attr('fill', 'none')
+    .attr('stroke', '#00ff41').attr('stroke-width', 1).attr('opacity', 0.15);
+  pulse1.append('animate').attr('attributeName','r').attr('values','43;65;43').attr('dur','3s').attr('repeatCount','indefinite');
+  pulse1.append('animate').attr('attributeName','opacity').attr('values','0.15;0.3;0.15').attr('dur','3s').attr('repeatCount','indefinite');
+  var pulse2 = centerG.append('circle').attr('r', 60).attr('fill', 'none')
+    .attr('stroke', '#00ff41').attr('stroke-width', 0.5).attr('opacity', 0.08);
+  pulse2.append('animate').attr('attributeName','r').attr('values','55;80;55').attr('dur','4.5s').attr('repeatCount','indefinite');
+  centerG.append('circle').attr('r', 42).attr('fill', '#050f05')
+    .attr('stroke', '#00ff41').attr('stroke-width', 2)
+    .style('filter', 'drop-shadow(0 0 15px rgba(0,255,65,0.5))');
+  centerG.append('text').attr('text-anchor','middle').attr('y',-8)
+    .attr('fill','#00ff41').attr('font-size','14px').attr('font-weight','700')
+    .attr('font-family',"'JetBrains Mono',monospace").text('OMEN');
+  centerG.append('text').attr('text-anchor','middle').attr('y',14)
+    .attr('fill','#ffffff').attr('font-size','18px').attr('font-weight','400')
+    .attr('font-family','serif').text('℧');
+}
+
 
 function addAgentToSwarm(agent, vote, delay) {
   setTimeout(function() {
@@ -3206,9 +3236,14 @@ function updateGVGraph(newNodeId, isYes, confidence) {
     .transition().duration(600).attr('opacity', function(d){ return d.type==='source'?0.35:0.45; });
 
   // --- Redraw NODES (agents + sources) ---
-  var nodeSel = gvNodeGroup.selectAll('.gv-agent-group')
+  var nodeSel = gvNodeGroup.selectAll('.gv-agent-group:not(.gv-center-node)')
     .data(gvNodes.filter(function(n){return n.type!=='center';}), function(d){return d.id;});
   nodeSel.exit().remove();
+
+  // SAFETY: ensure center node still exists in DOM
+  if (!gvNodeGroup.select('.gv-center-node').node() && gvCenterNode) {
+    rebuildCenterNode();
+  }
 
   var newNodes = nodeSel.enter().append('g')
     .attr('class','gv-agent-group')
