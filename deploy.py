@@ -1337,10 +1337,18 @@ async def backtest_history(request: Request):
     async with aiosqlite.connect(str(DB_PATH)) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
-            "SELECT id, config, accuracy, simulated_pnl, markets_tested, created_at "
+            "SELECT id, config, results, accuracy, simulated_pnl, markets_tested, created_at "
             "FROM backtest_results WHERE user_id = ? ORDER BY created_at DESC LIMIT 20",
             (user["id"],))
-        rows = [dict(r) for r in await cursor.fetchall()]
+        rows = []
+        for r in await cursor.fetchall():
+            row = dict(r)
+            # Parse the results JSON so frontend gets trade details
+            try:
+                row["results"] = json.loads(row.get("results", "{}"))
+            except (json.JSONDecodeError, TypeError):
+                row["results"] = {}
+            rows.append(row)
         return JSONResponse(rows)
 
 

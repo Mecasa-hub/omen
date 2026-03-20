@@ -2220,21 +2220,86 @@ async function loadBacktestHistory(){
     var r=await safeFetch('/api/backtest/history',{headers:{'Authorization':'Bearer '+token}});
     var hist=await r.json();
     if(hist&&hist.length){
-      $('bt-history').innerHTML=hist.map(function(h){
+      $('bt-history').innerHTML=hist.map(function(h, idx){
         var acc=h.accuracy||0;
         var pnl=h.simulated_pnl||0;
         var accColor=acc>=60?'#10B981':'#EF4444';
         var pnlColor=pnl>=0?'#10B981':'#EF4444';
         var dateStr=(h.created_at||'').substring(0,16).replace('T',' ');
-        return '<div class="bt-history-card">'+
-          '<div><div class="bt-h-label">Date</div><div class="bt-h-value" style="font-size:.85rem">'+dateStr+'</div></div>'+
-          '<div><div class="bt-h-label">Markets</div><div class="bt-h-value">'+(h.markets_tested||0)+'</div></div>'+
-          '<div><div class="bt-h-label">Accuracy</div><div class="bt-h-value" style="color:'+accColor+'">'+acc+'%</div></div>'+
-          '<div><div class="bt-h-label">Simulated PnL</div><div class="bt-h-value" style="color:'+pnlColor+'">$'+pnl+'</div></div>'+
+        var details=(h.results&&h.results.details)||[];
+        var correct=details.filter(function(d){return d.correct;}).length;
+        var wrong=details.filter(function(d){return !d.correct;}).length;
+
+        // Build trade rows
+        var tradeRows=details.map(function(d){
+          var predBadge=d.predicted==='YES'?'badge-green':'badge-red';
+          var actBadge=d.actual==='YES'?'badge-green':'badge-red';
+          var icon=d.correct?'<span style="color:#10B981">&#10003;</span>':'<span style="color:#EF4444">&#10007;</span>';
+          var pColor=(d.pnl||0)>=0?'#10B981':'#EF4444';
+          return '<tr style="font-size:.75rem">'+
+            '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 10px" title="'+d.question+'">'+d.question+'</td>'+
+            '<td style="padding:8px 6px;text-align:center"><span class="badge '+predBadge+'">'+d.predicted+'</span></td>'+
+            '<td style="padding:8px 6px;text-align:center"><span class="badge '+actBadge+'">'+d.actual+'</span></td>'+
+            '<td class="mono" style="padding:8px 6px;text-align:center">'+(d.confidence||0)+'%</td>'+
+            '<td style="padding:8px 6px;text-align:center">'+icon+'</td>'+
+            '<td class="mono" style="padding:8px 6px;text-align:right;color:'+pColor+';font-weight:600">$'+(d.pnl||0)+'</td>'+
+            '</tr>';
+        }).join('');
+
+        var detailsHTML=details.length>0?
+          '<div id="bt-expand-'+idx+'" style="display:none;grid-column:1/-1;margin-top:12px;border-top:1px solid #eee;padding-top:12px">'+
+            '<div style="display:flex;gap:16px;margin-bottom:12px">'+
+              '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 16px;text-align:center;flex:1">'+
+                '<div style="font-size:1.2rem;font-weight:700;color:#10B981;font-family:monospace">'+correct+'</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">Correct</div></div>'+
+              '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 16px;text-align:center;flex:1">'+
+                '<div style="font-size:1.2rem;font-weight:700;color:#EF4444;font-family:monospace">'+wrong+'</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">Wrong</div></div>'+
+              '<div style="background:#F5F5F5;border:1px solid #E5E5E5;border-radius:8px;padding:10px 16px;text-align:center;flex:1">'+
+                '<div style="font-size:1.2rem;font-weight:700;color:'+pnlColor+';font-family:monospace">$'+pnl+'</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">Net PnL</div></div>'+
+            '</div>'+
+            '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'+
+              '<thead><tr style="background:#f9f9f9">'+
+                '<th style="text-align:left;padding:8px 10px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Market Question</th>'+
+                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Predicted</th>'+
+                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Actual</th>'+
+                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Conf</th>'+
+                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Result</th>'+
+                '<th style="text-align:right;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">PnL</th>'+
+              '</tr></thead><tbody>'+tradeRows+'</tbody></table></div></div>'
+          :'<div id="bt-expand-'+idx+'" style="display:none;grid-column:1/-1;padding:16px;text-align:center;color:#999;font-size:.8rem">No trade details available for this backtest</div>';
+
+        return '<div class="bt-history-card" style="display:block;cursor:pointer" onclick="toggleBtExpand('+idx+', this)">'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;align-items:center">'+
+            '<div><div class="bt-h-label">Date</div><div class="bt-h-value" style="font-size:.85rem">'+dateStr+'</div></div>'+
+            '<div><div class="bt-h-label">Markets</div><div class="bt-h-value">'+(h.markets_tested||0)+'</div></div>'+
+            '<div><div class="bt-h-label">Accuracy</div><div class="bt-h-value" style="color:'+accColor+'">'+acc+'%</div></div>'+
+            '<div style="display:flex;align-items:center;justify-content:space-between">'+
+              '<div><div class="bt-h-label">Simulated PnL</div><div class="bt-h-value" style="color:'+pnlColor+'">$'+pnl+'</div></div>'+
+              '<span id="bt-arrow-'+idx+'" style="font-size:1.2rem;color:#ccc;transition:transform .2s">&#9660;</span>'+
+            '</div>'+
+          '</div>'+
+          detailsHTML+
           '</div>';
       }).join('');
     }
   }catch(e){console.error('BT history error:',e)}
+}
+
+function toggleBtExpand(idx, card) {
+  var el = document.getElementById('bt-expand-'+idx);
+  var arrow = document.getElementById('bt-arrow-'+idx);
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+    card.style.borderColor = '#000';
+  } else {
+    el.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+    card.style.borderColor = '#eee';
+  }
 }
 
 // ── Phase 3: Navigation Updates ────────────────────────────
