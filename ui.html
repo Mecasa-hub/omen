@@ -2743,49 +2743,66 @@ function buildGVGraph() {
     .attr('width', gvW).attr('height', gvH)
     .style('background', '#000');
 
-  // Dot grid
+  // Zoom/pan container
+  var gvZoomGroup = gvSvg.append('g').attr('class', 'gv-zoom-container');
+  var zoomBehavior = d3.zoom()
+    .scaleExtent([0.2, 6])
+    .on('zoom', function(event) { gvZoomGroup.attr('transform', event.transform); });
+  gvSvg.call(zoomBehavior);
+  gvSvg.on('dblclick.zoom', function() { gvSvg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity); });
+
+  // Dot grid (inside zoom container)
   for (var gx = 0; gx < gvW; gx += 30) {
     for (var gy = 0; gy < gvH; gy += 30) {
-      gvSvg.append('circle').attr('cx', gx).attr('cy', gy).attr('r', 0.5).attr('fill', '#1a3a1a').attr('opacity', 0.3);
+      gvZoomGroup.append('circle').attr('cx', gx).attr('cy', gy).attr('r', 0.5).attr('fill', '#1a3a1a').attr('opacity', 0.3);
     }
   }
 
-  // Layers
-  gvLinkGroup = gvSvg.append('g').attr('class', 'gv-links-layer');
-  gvNodeGroup = gvSvg.append('g').attr('class', 'gv-nodes-layer');
+  // Layers (inside zoom container so they zoom too)
+  gvLinkGroup = gvZoomGroup.append('g').attr('class', 'gv-links-layer');
+  gvNodeGroup = gvZoomGroup.append('g').attr('class', 'gv-nodes-layer');
 
   // Single pulsing OMEN center node
-  gvCenterNode = { id: 'OMEN', type: 'center', role: 'ORACLE', x: gvW/2, y: gvH/2, fx: gvW/2, fy: gvH/2, r: 35 };
+  gvCenterNode = { id: 'OMEN', type: 'center', role: 'ORACLE', x: gvW/2, y: gvH/2, r: 42 };
   gvNodes = [gvCenterNode];
   gvLinkData = [];
   gvActiveAgentCount = 0;
 
-  var centerG = gvNodeGroup.append('g').attr('class', 'gv-center-node')
-    .attr('transform', 'translate(' + gvW/2 + ',' + gvH/2 + ')');
+  var centerG = gvNodeGroup.append('g').attr('class', 'gv-center-node gv-agent-group')
+    .attr('id', 'gv-node-OMEN')
+    .attr('transform', 'translate(' + gvW/2 + ',' + gvH/2 + ')')
+    .style('cursor', 'grab')
+    .call(d3.drag()
+      .on('start', function(event){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
+      .on('drag', function(event){gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
+      .on('end', function(event){if(!event.active) gvSimulation.alphaTarget(0); gvCenterNode.fx=null; gvCenterNode.fy=null;})
+    );
 
-  // Animated pulse rings
-  var pulse1 = centerG.append('circle').attr('r', 40).attr('fill', 'none')
+  // Animated pulse rings (larger for bigger center)
+  var pulse1 = centerG.append('circle').attr('r', 48).attr('fill', 'none')
     .attr('stroke', '#00ff41').attr('stroke-width', 1).attr('opacity', 0.15);
-  pulse1.append('animate').attr('attributeName','r').attr('values','38;58;38').attr('dur','3s').attr('repeatCount','indefinite');
+  pulse1.append('animate').attr('attributeName','r').attr('values','46;68;46').attr('dur','3s').attr('repeatCount','indefinite');
   pulse1.append('animate').attr('attributeName','opacity').attr('values','0.15;0.3;0.15').attr('dur','3s').attr('repeatCount','indefinite');
 
-  var pulse2 = centerG.append('circle').attr('r', 55).attr('fill', 'none')
+  var pulse2 = centerG.append('circle').attr('r', 62).attr('fill', 'none')
     .attr('stroke', '#00ff41').attr('stroke-width', 0.5).attr('opacity', 0.08);
-  pulse2.append('animate').attr('attributeName','r').attr('values','50;75;50').attr('dur','4.5s').attr('repeatCount','indefinite');
+  pulse2.append('animate').attr('attributeName','r').attr('values','58;85;58').attr('dur','4.5s').attr('repeatCount','indefinite');
 
-  // Main body
-  centerG.append('circle').attr('r', 35).attr('fill', '#050f05')
-    .attr('stroke', '#00ff41').attr('stroke-width', 2)
-    .style('filter', 'drop-shadow(0 0 15px rgba(0,255,65,0.5))');
-  centerG.append('text').attr('text-anchor','middle').attr('y',-5)
-    .attr('fill','#00ff41').attr('font-size','13px').attr('font-weight','700')
+  // Main body (bigger: r=42)
+  centerG.append('circle').attr('r', 42).attr('fill', '#050f05')
+    .attr('stroke', '#00ff41').attr('stroke-width', 2.5)
+    .style('filter', 'drop-shadow(0 0 18px rgba(0,255,65,0.5))');
+  centerG.append('text').attr('text-anchor','middle').attr('y',-8)
+    .attr('fill','#00ff41').attr('font-size','14px').attr('font-weight','700')
     .attr('font-family',"'JetBrains Mono',monospace").text('OMEN');
-  centerG.append('text').attr('text-anchor','middle').attr('y',12)
-    .attr('fill','#007711').attr('font-size','7px')
-    .attr('font-family',"'JetBrains Mono',monospace").text('ORACLE v2.1');
+  centerG.append('text').attr('text-anchor','middle').attr('y',16)
+    .attr('fill','#ffffff').attr('font-size','22px').attr('font-weight','400')
+    .attr('font-family','serif')
+    .style('filter','drop-shadow(0 0 6px rgba(255,255,255,0.4))')
+    .text('℧');
 
-  // Idle prompt
-  gvSvg.append('text').attr('id','gv-idle-text')
+  // Idle prompt (inside zoom container)
+  gvZoomGroup.append('text').attr('id','gv-idle-text')
     .attr('x', gvW/2).attr('y', gvH/2 + 65)
     .attr('text-anchor','middle').attr('fill','#333').attr('font-size','10px')
     .attr('font-family',"'JetBrains Mono',monospace")
@@ -2947,13 +2964,13 @@ function updateGVGraph(newNodeId, isYes, confidence) {
   linkSel.exit().remove();
   linkSel.enter().append('line')
     .attr('stroke', function(d){
-      if (d.type==='source') return '#0a2a0a';
+      if (d.type==='source') return '#112266';
       if (d.type==='agent') return '#0f3f0f';
       return '#0a1a0a';
     })
-    .attr('stroke-width', function(d){ return d.type==='source'?0.4:d.type==='agent'?1.2:0.6; })
+    .attr('stroke-width', function(d){ return d.type==='source'?0.5:d.type==='agent'?1.2:0.6; })
     .attr('opacity', 0)
-    .transition().duration(600).attr('opacity', function(d){ return d.type==='source'?0.25:0.45; });
+    .transition().duration(600).attr('opacity', function(d){ return d.type==='source'?0.35:0.45; });
 
   // --- Redraw NODES (agents + sources) ---
   var nodeSel = gvNodeGroup.selectAll('.gv-agent-group')
@@ -3005,24 +3022,25 @@ function updateGVGraph(newNodeId, isYes, confidence) {
       .text((d.role||'').substring(0,12));
   });
 
-  // Source sub-bubbles (smaller, clickable)
+  // Source sub-bubbles (BLUE theme, smaller, clickable)
   newNodes.filter(function(d){return d.type==='source';}).each(function(d) {
     var g = d3.select(this);
-    // Outer ring
-    g.append('circle').attr('r', 7).attr('fill','#060d06')
-      .attr('stroke','#1a4a1a').attr('stroke-width', 0.5).attr('opacity', 0.8);
-    // Inner dot
-    g.append('circle').attr('r', 2).attr('fill','#00aa33').attr('opacity', 0.6);
-    // Label
+    // Outer ring - blue
+    g.append('circle').attr('r', 7).attr('fill','#060610')
+      .attr('stroke','#2244aa').attr('stroke-width', 0.5).attr('opacity', 0.85)
+      .style('filter','drop-shadow(0 0 3px rgba(50,100,255,0.3))');
+    // Inner dot - blue
+    g.append('circle').attr('r', 2.5).attr('fill','#4488ff').attr('opacity', 0.7);
+    // Label - blue
     g.append('text').attr('text-anchor','middle').attr('y', 13)
-      .attr('fill','#2a6a2a').attr('font-size','4px')
+      .attr('fill','#4477cc').attr('font-size','4px')
       .attr('font-family',"'JetBrains Mono',monospace")
       .text(d.label.substring(0,10));
-    // Underline if clickable
+    // Hover highlight if clickable
     if (d.url && d.url !== '#') {
       g.append('title').text('Click to open: ' + d.url);
-      g.on('mouseover', function(){d3.select(this).select('circle').attr('stroke','#00ff41').attr('stroke-width',1.5);})
-        .on('mouseout', function(){d3.select(this).select('circle').attr('stroke','#1a4a1a').attr('stroke-width',0.5);});
+      g.on('mouseover', function(){d3.select(this).select('circle').attr('stroke','#66aaff').attr('stroke-width',1.5);})
+        .on('mouseout', function(){d3.select(this).select('circle').attr('stroke','#2244aa').attr('stroke-width',0.5);});
     }
   });
 
