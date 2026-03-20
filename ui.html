@@ -278,7 +278,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 <nav class="navbar">
   <div class="nav-brand" onclick="navigate('dashboard')" style="display:flex;align-items:center;gap:6px;font-family:JetBrains Mono,monospace"><span style="font-family:Georgia,serif;font-size:1.4rem;color:#00ff41">℧</span><span style="font-size:1.1rem;font-weight:700;letter-spacing:3px">OMEN</span></div>
   <div class="nav-links">
-    <button class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">Dashboard</button>
+    <button class="nav-link" data-page="dashboard" onclick="navigate('dashboard')">Dashboard</button>
     <button class="nav-link" data-page="oracle" onclick="navigate('oracle')">Oracle</button>
     <button class="nav-link" data-page="whales" onclick="navigate('whales')">Whales</button>
     <button class="nav-link" data-page="trading" onclick="navigate('trading')">Trading</button>
@@ -287,7 +287,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <button class="nav-link" data-page="leaderboard" onclick="navigate('leaderboard')">Leaderboard</button>
     <button class="nav-link" data-page="autopilot" onclick="navigate('autopilot')">Auto-Pilot</button>
     <button class="nav-link" data-page="backtest" onclick="navigate('backtest')">Backtest</button>
-    <button class="nav-link" data-page="godview" onclick="navigate('godview')">⚡ God View</button>
+    <button class="nav-link active" data-page="godview" onclick="navigate('godview')">👁 OMEN Eye</button>
 
   </div>
   <div class="nav-right">
@@ -298,7 +298,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 </nav>
 
 <!-- DASHBOARD -->
-<div class="page active" id="page-dashboard" style="position:relative;overflow:hidden"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Georgia,serif;font-size:min(50vw,400px);color:rgba(0,0,0,0.04);pointer-events:none;z-index:0;user-select:none;line-height:1">℧</div>
+<div class="page" id="page-dashboard" style="position:relative;overflow:hidden"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Georgia,serif;font-size:min(50vw,400px);color:rgba(0,0,0,0.04);pointer-events:none;z-index:0;user-select:none;line-height:1">℧</div>
   <div class="section-header">System Overview</div>
   <div class="stats-row" id="stats-row">
     <div class="stat-card"><div class="stat-value" id="st-predictions">--</div><div class="stat-label">Predictions</div></div>
@@ -658,15 +658,15 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     #lb-table-wrap::-webkit-scrollbar { width:4px; }
     #lb-table-wrap::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
   
-/* ============ GOD VIEW TERMINAL ============ */
+/* ============ OMEN EYE TERMINAL ============ */
 #page-godview{background:#000 !important;color:#00ff41;padding:0 !important;max-width:100% !important;overflow:hidden;font-family:'JetBrains Mono',monospace}
 #page-godview *{font-family:'JetBrains Mono',monospace}
 
-/* God View: Research Panel */
+/* OMEN Eye: Research Panel */
 .gv-research{background:#0a0f0a;border:1px solid #1a3a1a;border-radius:4px;padding:8px;margin-top:4px;max-height:120px;overflow-y:auto;font-size:.55rem;color:#7a9f7a;line-height:1.4}
 .gv-research-title{color:#00ff41;font-size:.65rem;font-weight:700;margin-bottom:4px}
 
-/* God View: Factions Panel */
+/* OMEN Eye: Factions Panel */
 .gv-factions{display:none;position:absolute;right:10px;top:110px;width:220px;background:#0a0a0a;border:1px solid #1a3a1a;border-radius:6px;padding:10px;z-index:20;max-height:400px;overflow-y:auto}
 .gv-factions.visible{display:block}
 .gv-faction{padding:8px;margin-bottom:6px;border-radius:4px;border:1px solid #1a3a1a}
@@ -678,14 +678,14 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .gv-faction-leader{font-size:.55rem;color:#ffaa00;margin-bottom:2px}
 .gv-faction-members{font-size:.45rem;color:#555;line-height:1.3}
 
-/* God View: Round Indicator */
+/* OMEN Eye: Round Indicator */
 .gv-rounds{display:flex;gap:8px;align-items:center;padding:0 15px;height:24px;background:#050a05;border-bottom:1px solid #0f1f0f}
 .gv-round{font-size:.55rem;color:#333;padding:2px 8px;border-radius:10px;border:1px solid #1a1a1a}
 .gv-round.active{color:#00ff41;border-color:#00ff41;background:#0a1a0a}
 .gv-round.complete{color:#007711;border-color:#007711}
 .gv-round-label{font-size:.5rem;color:#444;margin-right:4px}
 
-/* God View: Vote Changes */
+/* OMEN Eye: Vote Changes */
 .gv-changes{margin-top:6px}
 .gv-change{font-size:.5rem;padding:3px 6px;margin:2px 0;border-radius:3px;background:#1a1a0a;border-left:2px solid #ffaa00;color:#cca}
 .gv-change .flip-from{color:#ff4444;text-decoration:line-through}
@@ -942,8 +942,8 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 </div>
 
 
-<!-- ============ GOD VIEW TERMINAL ============ -->
-<div class="page" id="page-godview">
+<!-- ============ OMEN EYE TERMINAL ============ -->
+<div class="page active" id="page-godview">
 <div class="gv-terminal" id="gv-terminal">
   <!-- Boot overlay -->
   <div class="gv-boot-overlay" id="gv-boot">
@@ -959,7 +959,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     <div class="gv-logo">
       <div class="gv-logo-dot"></div>
       <span class="gv-logo-text" style="display:flex;align-items:center;gap:6px"><span style="font-family:Georgia,serif;font-size:1rem">℧</span>OMEN</span>
-      <span style="color:#333;margin-left:8px">GOD VIEW</span>
+      <span style="color:#333;margin-left:8px">OMEN EYE</span>
     </div>
     <div class="gv-sysinfo">
       <span>SYS <span class="gv-val">v2.0.1</span></span>
@@ -2652,7 +2652,7 @@ function loadTags() {
 
 
 
-// ============ GOD VIEW TERMINAL ============
+// ============ OMEN EYE TERMINAL ============
 var gvInitialized = false;
 var gvAgents = [];
 var gvSimulation = null;
@@ -3779,6 +3779,8 @@ function showFactions(factions, voteChanges) {
 }
 
 
+// Auto-init OMEN Eye (default page)
+setTimeout(initGodView, 500);
 </script>
 </body>
 </html>
