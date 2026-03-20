@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#features"><img src="https://img.shields.io/badge/AI_Agents-1200+-7C3AED?style=for-the-badge&logo=openai&logoColor=white" alt="AI Agents"></a>
+  <a href="#features"><img src="https://img.shields.io/badge/AI_Agents-45-7C3AED?style=for-the-badge&logo=openai&logoColor=white" alt="AI Agents"></a>
   <a href="#whale-intelligence"><img src="https://img.shields.io/badge/Whales_Tracked-50+-F59E0B?style=for-the-badge&logo=ethereum&logoColor=white" alt="Whales"></a>
   <a href="#pricing"><img src="https://img.shields.io/badge/Crypto_Payments-Polygon-7C3AED?style=for-the-badge&logo=polygon&logoColor=white" alt="Polygon"></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Deploy-1_Click-3B82F6?style=for-the-badge&logo=docker&logoColor=white" alt="Deploy"></a>
@@ -38,7 +38,7 @@
 
 OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](https://polymarket.com). It combines:
 
-- 🧠 **Swarm Intelligence** — 1,200 AI agents debate outcomes and reach consensus
+- 🧠 **Swarm Intelligence** — 45 AI agents debate outcomes and reach consensus
 - 🐋 **Whale Intelligence** — Live on-chain tracking of top Polymarket wallets on Polygon
 - 📊 **Real Trading** — Manual, Oracle-driven, and copy-trade execution via Polymarket CLOB
 - 💰 **Crypto Payments** — Pay with MATIC/USDC on Polygon. No subscriptions.
@@ -66,7 +66,7 @@ OMEN is an **AI-powered prediction and copy-trading platform** for [Polymarket](
     <td><img src="docs/screenshots/whales.png" alt="Whale Tracker" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>5 AI agents debate live, 1,200-dot swarm matrix votes</em></td>
+    <td align="center"><em>45 AI agents debate live with research-driven swarm votes</em></td>
     <td align="center"><em>Live on-chain whale tracking on Polygon</em></td>
   </tr>
   <tr>
@@ -133,12 +133,12 @@ The Oracle uses a **5-agent swarm** powered by **Gemini 2.0 Flash** with distinc
 | 🟡 **Maverick** | Contrarian | Challenges consensus |
 | 🟣 **Clio** | Historian | Historical patterns and precedent |
 
-Agents make **real LLM API calls** → Debate independently → Vote → 1,200-dot swarm matrix animates → Verdict with confidence score.
+Agents make **real LLM API calls** → Debate independently → Vote → Swarm matrix animates → Verdict with confidence score.
 
-### ⚔️ War Room — 1,200 AI Agents Vote Live
+### ⚔️ War Room — 45 AI Agents Vote Live
 
 - Each agent card reveals sequentially with real AI reasoning
-- **1,200-dot swarm matrix** with ripple animation shows consensus forming
+- **45-agent swarm network** with ripple animation shows consensus forming
 - Green = YES, Red = NO — watch the swarm converge in real-time
 - Whale agreement dots overlay for confidence boost
 - Final verdict card with confidence percentage
@@ -193,7 +193,7 @@ Agents make **real LLM API calls** → Debate independently → Vote → 1,200-d
 │       └────────────┼──────────┼─────────┼───────┘      │
 │                    ▼          ▼         ▼              │
 │         ╔════════════════════════════════════╗          │
-│         ║  1,200 SWARM AGENTS VOTE           ║          │
+│         ║  45 SWARM AGENTS VOTE           ║          │
 │         ║  663 YES / 537 NO                  ║          │
 │         ╚════════════════════════════════════╝          │
 │                         │                              │
@@ -346,7 +346,7 @@ omen/
 ## ✅ Phase 1 — Foundation (Complete)
 - [x] 🔮 Oracle Engine with 5-agent AI swarm (Gemini 2.0 Flash)
 - [x] 🎨 MiroFish-inspired minimal UI (black & white theme)
-- [x] ⚔️ War Room with 1,200-dot animated swarm matrix
+- [x] ⚔️ War Room with 45-agent animated swarm network
 - [x] 🐋 Live whale tracking on Polygon blockchain
 - [x] 💰 Crypto payments (MATIC/USDC on Polygon)
 - [x] 📊 Polymarket market discovery via Gamma API

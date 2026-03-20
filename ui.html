@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>OMEN - The Oracle Machine</title>
+<title>℧ OMEN — Oracle Machine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -276,7 +276,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 </head>
 <body>
 <nav class="navbar">
-  <div class="nav-brand" onclick="navigate('dashboard')">OMEN</div>
+  <div class="nav-brand" onclick="navigate('dashboard')" style="display:flex;align-items:center;gap:6px;font-family:JetBrains Mono,monospace"><span style="font-family:Georgia,serif;font-size:1.4rem;color:#00ff41">℧</span><span style="font-size:1.1rem;font-weight:700;letter-spacing:3px">OMEN</span></div>
   <div class="nav-links">
     <button class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">Dashboard</button>
     <button class="nav-link" data-page="oracle" onclick="navigate('oracle')">Oracle</button>
@@ -298,7 +298,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 </nav>
 
 <!-- DASHBOARD -->
-<div class="page active" id="page-dashboard">
+<div class="page active" id="page-dashboard" style="position:relative;overflow:hidden"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Georgia,serif;font-size:min(50vw,400px);color:rgba(0,0,0,0.04);pointer-events:none;z-index:0;user-select:none;line-height:1">℧</div>
   <div class="section-header">System Overview</div>
   <div class="stats-row" id="stats-row">
     <div class="stat-card"><div class="stat-value" id="st-predictions">--</div><div class="stat-label">Predictions</div></div>
@@ -958,7 +958,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
   <div class="gv-topbar">
     <div class="gv-logo">
       <div class="gv-logo-dot"></div>
-      <span class="gv-logo-text">OMEN ORACLE</span>
+      <span class="gv-logo-text" style="display:flex;align-items:center;gap:6px"><span style="font-family:Georgia,serif;font-size:1rem">℧</span>OMEN</span>
       <span style="color:#333;margin-left:8px">GOD VIEW</span>
     </div>
     <div class="gv-sysinfo">
@@ -2837,7 +2837,7 @@ function runBootSequence() {
 
   var bootLines = [
     '> omen.sys.init()',
-    'Loading OMEN Oracle Machine v2.1.0...',
+    'Loading ℧ OMEN Oracle Machine...',
     'Initializing memory vault: /agents/vault/',
     'Loading behavioral profiles... 45 agents found',
     'Connecting to Gemini 2.0 Flash engine...',
