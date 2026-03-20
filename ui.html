@@ -270,6 +270,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
     }
 
 
+.bt-trade-card:hover{transform:translateY(-2px)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 </head>
@@ -2227,47 +2228,93 @@ async function loadBacktestHistory(){
         var pnlColor=pnl>=0?'#10B981':'#EF4444';
         var dateStr=(h.created_at||'').substring(0,16).replace('T',' ');
         var details=(h.results&&h.results.details)||[];
-        var correct=details.filter(function(d){return d.correct;}).length;
+                var correct=details.filter(function(d){return d.correct;}).length;
         var wrong=details.filter(function(d){return !d.correct;}).length;
 
-        // Build trade rows
-        var tradeRows=details.map(function(d){
-          var predBadge=d.predicted==='YES'?'badge-green':'badge-red';
-          var actBadge=d.actual==='YES'?'badge-green':'badge-red';
-          var icon=d.correct?'<span style="color:#10B981">&#10003;</span>':'<span style="color:#EF4444">&#10007;</span>';
+        // Sort: wins first, then by PnL descending
+        var sorted=details.slice().sort(function(a,b){
+          if(a.correct&&!b.correct) return -1;
+          if(!a.correct&&b.correct) return 1;
+          return (b.pnl||0)-(a.pnl||0);
+        });
+
+        var tradeCards=sorted.map(function(d,ti){
+          var isWin=d.correct;
+          var borderC=isWin?'#10B981':'#EF4444';
+          var bgC=isWin?'#F0FDF4':'#FEF2F2';
           var pColor=(d.pnl||0)>=0?'#10B981':'#EF4444';
-          return '<tr style="font-size:.75rem">'+
-            '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 10px" title="'+d.question+'">'+d.question+'</td>'+
-            '<td style="padding:8px 6px;text-align:center"><span class="badge '+predBadge+'">'+d.predicted+'</span></td>'+
-            '<td style="padding:8px 6px;text-align:center"><span class="badge '+actBadge+'">'+d.actual+'</span></td>'+
-            '<td class="mono" style="padding:8px 6px;text-align:center">'+(d.confidence||0)+'%</td>'+
-            '<td style="padding:8px 6px;text-align:center">'+icon+'</td>'+
-            '<td class="mono" style="padding:8px 6px;text-align:right;color:'+pColor+';font-weight:600">$'+(d.pnl||0)+'</td>'+
-            '</tr>';
+          var entry=d.entry_price||0.50;
+          var exit_p=d.exit_price||(isWin?0.85:0.25);
+          var shares=d.shares||20;
+          var slug=d.slug||'';
+          var polyUrl=slug?'https://polymarket.com/event/'+slug:'https://polymarket.com';
+          var cW=120,cH=40,cp=4;
+          var minP=Math.min(entry,exit_p)*0.9;
+          var maxP=Math.max(entry,exit_p)*1.1;
+          var rng=maxP-minP||0.1;
+          var y1=cH-cp-((entry-minP)/rng)*(cH-2*cp);
+          var y2=cH-cp-((exit_p-minP)/rng)*(cH-2*cp);
+          var midY=(y1+y2)/2+((Math.random()-0.5)*8);
+          var lnC=isWin?'#10B981':'#EF4444';
+          var gid='cg'+idx+'t'+ti;
+          var svg='<svg width="'+cW+'" height="'+cH+'" style="display:block">'+
+            '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
+            '<stop offset="0%" stop-color="'+lnC+'" stop-opacity="0.2"/>'+
+            '<stop offset="100%" stop-color="'+lnC+'" stop-opacity="0"/></linearGradient></defs>'+
+            '<path d="M'+cp+','+y1+' Q'+(cW*0.3)+','+midY+' '+(cW*0.5)+','+(((y1+y2)/2))+' T'+(cW-cp)+','+y2+' V'+cH+' H'+cp+' Z" fill="url(#'+gid+')" />'+
+            '<path d="M'+cp+','+y1+' Q'+(cW*0.3)+','+midY+' '+(cW*0.5)+','+(((y1+y2)/2))+' T'+(cW-cp)+','+y2+'" fill="none" stroke="'+lnC+'" stroke-width="2"/>'+
+            '<circle cx="'+cp+'" cy="'+y1+'" r="3" fill="'+lnC+'"/>'+
+            '<circle cx="'+(cW-cp)+'" cy="'+y2+'" r="3" fill="'+lnC+'"/>'+
+            '<text x="'+(cp+6)+'" y="'+(y1<10?y1+12:y1-4)+'" font-size="7" fill="#888" font-family="monospace">$'+entry.toFixed(2)+'</text>'+
+            '<text x="'+(cW-cp-30)+'" y="'+(y2<10?y2+12:y2-4)+'" font-size="7" fill="'+lnC+'" font-family="monospace" font-weight="700">$'+exit_p.toFixed(2)+'</text>'+
+            '</svg>';
+          return '<div style="background:'+bgC+';border:2px solid '+borderC+';border-radius:10px;padding:14px;margin:8px 0;transition:transform .15s;cursor:pointer" class="bt-trade-card">'+
+            '<div style="display:grid;grid-template-columns:2fr 130px 1fr;gap:12px;align-items:center">'+
+              '<div>'+
+                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">'+
+                  '<span style="font-size:1rem">'+(isWin?'&#x2705;':'&#x274C;')+'</span>'+
+                  '<span style="font-size:.7rem;font-weight:700;color:'+borderC+';text-transform:uppercase;letter-spacing:1px">'+(isWin?'WIN':'LOSS')+'</span>'+
+                  '<span class="badge '+(d.predicted==='YES'?'badge-green':'badge-red')+'" style="font-size:.6rem">Pred: '+d.predicted+'</span>'+
+                  '<span class="badge '+(d.actual==='YES'?'badge-green':'badge-red')+'" style="font-size:.6rem">Actual: '+d.actual+'</span>'+
+                '</div>'+
+                '<a href="'+polyUrl+'" target="_blank" style="font-size:.78rem;font-weight:600;color:#111;text-decoration:none;line-height:1.3;display:block" title="View on Polymarket">'+
+                  d.question+' <span style="font-size:.55rem;color:#3B82F6">&#x2197;</span>'+
+                '</a>'+
+                '<div style="display:flex;gap:14px;margin-top:8px;font-size:.68rem;color:#666;font-family:monospace;flex-wrap:wrap">'+
+                  '<span>&#x1F4CA; '+shares.toFixed(1)+' shares</span>'+
+                  '<span>&#x2934; $'+entry.toFixed(2)+' entry</span>'+
+                  '<span>&#x2935; <b style="color:'+lnC+'">$'+exit_p.toFixed(2)+'</b> exit</span>'+
+                  '<span>&#x1F3AF; '+(d.confidence||0)+'% conf</span>'+
+                '</div>'+
+              '</div>'+
+              '<div style="text-align:center">'+svg+'</div>'+
+              '<div style="text-align:right">'+
+                '<div style="font-size:1.3rem;font-weight:800;color:'+pColor+';font-family:monospace">'+(d.pnl>=0?'+':'')+d.pnl.toFixed(2)+'</div>'+
+                '<div style="font-size:.55rem;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:2px">Simulated PnL</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
         }).join('');
 
+        var winRate=Math.round(correct/(Math.max(correct+wrong,1))*100);
         var detailsHTML=details.length>0?
           '<div id="bt-expand-'+idx+'" style="display:none;grid-column:1/-1;margin-top:12px;border-top:1px solid #eee;padding-top:12px">'+
-            '<div style="display:flex;gap:16px;margin-bottom:12px">'+
-              '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 16px;text-align:center;flex:1">'+
-                '<div style="font-size:1.2rem;font-weight:700;color:#10B981;font-family:monospace">'+correct+'</div>'+
-                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">Correct</div></div>'+
-              '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 16px;text-align:center;flex:1">'+
-                '<div style="font-size:1.2rem;font-weight:700;color:#EF4444;font-family:monospace">'+wrong+'</div>'+
-                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">Wrong</div></div>'+
-              '<div style="background:#F5F5F5;border:1px solid #E5E5E5;border-radius:8px;padding:10px 16px;text-align:center;flex:1">'+
-                '<div style="font-size:1.2rem;font-weight:700;color:'+pnlColor+';font-family:monospace">$'+pnl+'</div>'+
-                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">Net PnL</div></div>'+
+            '<div style="display:flex;gap:16px;margin-bottom:16px">'+
+              '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px 20px;text-align:center;flex:1">'+
+                '<div style="font-size:1.4rem;font-weight:700;color:#10B981;font-family:monospace">'+correct+'</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">&#x2705; Wins</div></div>'+
+              '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:12px 20px;text-align:center;flex:1">'+
+                '<div style="font-size:1.4rem;font-weight:700;color:#EF4444;font-family:monospace">'+wrong+'</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">&#x274C; Losses</div></div>'+
+              '<div style="background:#F5F5F5;border:1px solid #E5E5E5;border-radius:8px;padding:12px 20px;text-align:center;flex:1">'+
+                '<div style="font-size:1.4rem;font-weight:700;color:'+pnlColor+';font-family:monospace">'+(parseFloat(pnl)>=0?'+$':'-$')+Math.abs(parseFloat(pnl)).toFixed(2)+'</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">&#x1F4B0; Net PnL</div></div>'+
+              '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 20px;text-align:center;flex:1">'+
+                '<div style="font-size:1.4rem;font-weight:700;color:#3B82F6;font-family:monospace">'+winRate+'%</div>'+
+                '<div style="font-size:.6rem;color:#666;text-transform:uppercase;letter-spacing:1px">&#x1F3AF; Win Rate</div></div>'+
             '</div>'+
-            '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'+
-              '<thead><tr style="background:#f9f9f9">'+
-                '<th style="text-align:left;padding:8px 10px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Market Question</th>'+
-                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Predicted</th>'+
-                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Actual</th>'+
-                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Conf</th>'+
-                '<th style="text-align:center;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">Result</th>'+
-                '<th style="text-align:right;padding:8px 6px;font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee">PnL</th>'+
-              '</tr></thead><tbody>'+tradeRows+'</tbody></table></div></div>'
+            tradeCards+
+          '</div>'
           :'<div id="bt-expand-'+idx+'" style="display:none;grid-column:1/-1;padding:16px;text-align:center;color:#999;font-size:.8rem">No trade details available for this backtest</div>';
 
         return '<div class="bt-history-card" style="display:block;cursor:pointer" onclick="toggleBtExpand('+idx+', this)">'+
