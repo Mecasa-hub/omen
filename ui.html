@@ -707,7 +707,7 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .gv-metric-bar-fill.green{background:#00ff41}
 .gv-metric-bar-fill.yellow{background:#ffaa00}
 .gv-metric-bar-fill.red{background:#ff4444}
-.gv-main{display:flex;flex:1;overflow:hidden}
+.gv-main{display:flex;flex:1;overflow:hidden;height:0;min-height:0}
 .gv-events{width:280px;border-right:1px solid #1a3a1a;display:flex;flex-direction:column;flex-shrink:0}
 .gv-events-header{padding:8px 12px;font-size:.65rem;color:#555;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #111}
 .gv-events-list{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#1a3a1a #000}
@@ -717,8 +717,8 @@ h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}.subtitle{color:var(--gray
 .gv-event .gv-eid{color:#00aa33;font-weight:700}
 .gv-event .gv-eaction{color:#666}
 .gv-event.highlight .gv-eaction{color:#00ff41}
-.gv-graph{flex:1;position:relative;overflow:hidden}
-.gv-graph svg{width:100%;height:100%}
+.gv-graph{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.gv-graph svg{display:block;max-width:100%;max-height:100%;margin:auto}
 .gv-node .gv-ncircle{fill:#0a0f0a;stroke:#1a4a1a;stroke-width:1.5;cursor:pointer;transition:all .3s}
 .gv-node:hover .gv-ncircle{stroke:#00ff41;fill:#0a1a0a;filter:drop-shadow(0 0 8px rgba(0,255,65,0.3))}
 .gv-node.active .gv-ncircle{stroke:#00ff41;fill:#0a1a0a;stroke-width:2;filter:drop-shadow(0 0 10px rgba(0,255,65,0.5))}
@@ -1576,7 +1576,7 @@ function navigate(page){
   if(page==='portfolio')loadPortfolio();
   if(page==='autopilot')loadAutopilot();
   if(page==='backtest')loadBacktestHistory();
-  if(page==='godview')initGodView();
+  if(page==='godview')setTimeout(initGodView, 300);
 }
 function updateAuth(){
   if(token&&username){$('nav-user').textContent=username;const w=localStorage.getItem('omen_wallet');if(w&&$('wallet-addr'))$('wallet-addr').textContent=w.slice(0,6)+'...'+w.slice(-4);$('auth-btn').textContent='Logout';$('auth-btn').onclick=()=>{token=null;username=null;localStorage.removeItem('omen_token');localStorage.removeItem('omen_user');localStorage.removeItem('omen_wallet');if($('wallet-addr'))$('wallet-addr').textContent='';updateAuth()}}
@@ -2781,7 +2781,19 @@ function getAgentSources(role, codename) {
 }
 
 function initGodView() {
-  if (gvInitialized) return;
+  if (gvInitialized) {
+    // If already initialized, just ensure center node is positioned correctly
+    var ctr = document.getElementById('gv-graph');
+    if (ctr && gvCenterNode && gvSvg) {
+      var rw = ctr.clientWidth || ctr.getBoundingClientRect().width;
+      var rh = ctr.clientHeight || ctr.getBoundingClientRect().height;
+      if (rw > 200 && rh > 200 && (Math.abs(rw - gvW) > 50 || Math.abs(rh - gvH) > 50)) {
+        gvInitialized = false;
+        document.getElementById('gv-graph').innerHTML = '';
+        gvNodes = []; gvLinkData = [];
+      } else { return; }
+    } else { return; }
+  }
   gvInitialized = true;
   gvStartTime = Date.now();
   document.getElementById('gv-pid').textContent = Math.floor(10000 + Math.random() * 89999);
@@ -2895,13 +2907,16 @@ function startGodView() {
 
 function buildGVGraph() {
   var container = document.getElementById('gv-graph');
-  gvW = container.clientWidth || container.offsetWidth || 800;
-  gvH = container.clientHeight || container.offsetHeight || 500;
-  if (gvW < 100 || gvH < 100) { setTimeout(buildGVGraph, 200); return; }
+  // Use fixed aspect ratio graph - always works regardless of container size
+  // Width: viewport minus sidebar (280) minus padding (40)
+  gvW = Math.min(1200, Math.max(600, window.innerWidth - 340));
+  // Height: 16:9-ish ratio, capped reasonably
+  gvH = Math.min(700, Math.max(400, Math.floor(gvW * 0.58)));
   container.innerHTML = '';
 
   gvSvg = d3.select('#gv-graph').append('svg')
     .attr('width', gvW).attr('height', gvH)
+    .attr('viewBox', '0 0 ' + gvW + ' ' + gvH)
     .style('background', '#000');
 
   // Zoom/pan container
@@ -2924,19 +2939,20 @@ function buildGVGraph() {
   gvNodeGroup = gvZoomGroup.append('g').attr('class', 'gv-nodes-layer');
 
   // Single pulsing OMEN center node
-  gvCenterNode = { id: 'OMEN', type: 'center', role: 'ORACLE', x: gvW/2, y: gvH/2, r: 42 };
+  gvCenterNode = { id: 'OMEN', type: 'center', role: 'ORACLE', x: gvW/2, y: gvH/2, fx: gvW/2, fy: gvH/2, r: 42 };
   gvNodes = [gvCenterNode];
   gvLinkData = [];
   gvActiveAgentCount = 0;
 
   var centerG = gvNodeGroup.append('g').attr('class', 'gv-center-node gv-agent-group')
     .attr('id', 'gv-node-OMEN')
+    .datum(gvCenterNode)
     .attr('transform', 'translate(' + gvW/2 + ',' + gvH/2 + ')')
     .style('cursor', 'grab')
     .call(d3.drag()
-      .on('start', function(event){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
-      .on('drag', function(event){gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
-      .on('end', function(event){if(!event.active) gvSimulation.alphaTarget(0); gvCenterNode.fx=null; gvCenterNode.fy=null;})
+      .on('start', function(event,d){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); d.fx=event.x; d.fy=event.y;})
+      .on('drag', function(event,d){d.fx=event.x; d.fy=event.y;})
+      .on('end', function(event,d){if(!event.active) gvSimulation.alphaTarget(0); d.fx=event.x; d.fy=event.y;})
     );
 
   // Animated pulse rings (larger for bigger center)
@@ -2978,6 +2994,30 @@ function buildGVGraph() {
     .force('y', d3.forceY(gvH/2).strength(0.02))
     .alpha(0.05)
     .on('tick', gvTick);
+
+  // Resize handler: recalculate center when container resizes
+  var gvResizeObserver = new ResizeObserver(function(entries) {
+    var entry = entries[0];
+    var newW = entry.contentRect.width;
+    var newH = entry.contentRect.height;
+    if (newW > 100 && newH > 100 && (Math.abs(newW - gvW) > 50 || Math.abs(newH - gvH) > 50)) {
+      gvW = newW;
+      gvH = newH;
+      gvSvg.attr('width', gvW).attr('height', gvH).attr('viewBox', '0 0 ' + gvW + ' ' + gvH);
+      if (gvCenterNode) {
+        gvCenterNode.x = gvW/2;
+        gvCenterNode.y = gvH/2;
+        gvCenterNode.fx = gvW/2;
+        gvCenterNode.fy = gvH/2;
+      }
+      gvSimulation.force('center', d3.forceCenter(gvW/2, gvH/2));
+      gvSimulation.force('centerPin', d3.forceX(gvW/2).strength(function(d){ return d.type==='center' ? 0.8 : 0; }));
+      gvSimulation.force('centerPinY', d3.forceY(gvH/2).strength(function(d){ return d.type==='center' ? 0.8 : 0; }));
+      gvSimulation.alpha(0.3).restart();
+    }
+  });
+  gvResizeObserver.observe(container);
+
 
   // Resize handler
   window.addEventListener('resize', function() {
@@ -3100,12 +3140,13 @@ function rebuildCenterNode() {
   if (!gvNodeGroup) return;
   var centerG = gvNodeGroup.append('g').attr('class', 'gv-center-node gv-agent-group')
     .attr('id', 'gv-node-OMEN')
+    .datum(gvCenterNode)
     .attr('transform', 'translate(' + gvW/2 + ',' + gvH/2 + ')')
     .style('cursor', 'grab')
     .call(d3.drag()
-      .on('start', function(event){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
-      .on('drag', function(event){gvCenterNode.fx=event.x; gvCenterNode.fy=event.y;})
-      .on('end', function(event){if(!event.active) gvSimulation.alphaTarget(0); gvCenterNode.fx=null; gvCenterNode.fy=null;})
+      .on('start', function(event,d){if(!event.active) gvSimulation.alphaTarget(0.3).restart(); d.fx=event.x; d.fy=event.y;})
+      .on('drag', function(event,d){d.fx=event.x; d.fy=event.y;})
+      .on('end', function(event,d){if(!event.active) gvSimulation.alphaTarget(0); d.fx=event.x; d.fy=event.y;})
     );
   var pulse1 = centerG.append('circle').attr('r', 45).attr('fill', 'none')
     .attr('stroke', '#00ff41').attr('stroke-width', 1).attr('opacity', 0.15);
@@ -3216,6 +3257,8 @@ function updateGVGraph(newNodeId, isYes, confidence) {
     if (d.type==='source') return -15;
     return -60;
   }));
+  gvSimulation.force('centerPin', d3.forceX(gvW/2).strength(function(d){ return d.type==='center' ? 0.8 : 0; }));
+  gvSimulation.force('centerPinY', d3.forceY(gvH/2).strength(function(d){ return d.type==='center' ? 0.8 : 0; }));
   gvSimulation.alpha(0.6).restart();
 
   // --- Redraw LINKS ---
